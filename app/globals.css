@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fbf6ec;
+  --foreground: #2b1d0e;
+
+  --cream: #fbf6ec;
+  --cream-deep: #f3e7d0;
+  --honey: #d99a18;
+  --honey-light: #f0b740;
+  --amber: #b9740f;
+  --bark: #6b3f1d;
+  --bark-deep: #3f2611;
+  --leaf: #6b7d4a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-honey: var(--honey);
+  --color-honey-light: var(--honey-light);
+  --color-amber: var(--amber);
+  --color-bark: var(--bark);
+  --color-bark-deep: var(--bark-deep);
+  --color-leaf: var(--leaf);
+
+  --font-sans: var(--font-sans-latin), var(--font-arabic), system-ui, sans-serif;
+  --font-serif: var(--font-serif-latin), var(--font-arabic), Georgia, serif;
+  --font-arabic: var(--font-arabic), system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Use the Arabic typeface throughout when the document is RTL */
+html[dir="rtl"] body {
+  font-family: var(--font-arabic);
+}
+
+.font-display {
+  font-family: var(--font-serif);
+}
+html[dir="rtl"] .font-display {
+  font-family: var(--font-arabic);
+}
+
+/* Subtle honeycomb texture used behind hero / CTA */
+.honeycomb-bg {
+  background-color: var(--cream);
+  background-image:
+    radial-gradient(circle at center, rgba(217, 154, 24, 0.08) 0, rgba(217, 154, 24, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(217, 154, 24, 0.08) 0, rgba(217, 154, 24, 0.08) 1px, transparent 1px);
+  background-size: 28px 48px;
+  background-position: 0 0, 14px 24px;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.7s ease-out both;
+}
