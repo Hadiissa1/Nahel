@@ -7,8 +7,10 @@ export interface Variant {
   id: string;
   /** e.g. "500g"; empty when the product has a single option. */
   label: string;
-  /** Price in cents; null = "price on request". */
+  /** Price the customer pays, in cents (the sale price during a sale); null = "price on request". */
   price: number | null;
+  /** Regular price, shown crossed out, while this size is on sale; otherwise null. */
+  wasPrice: number | null;
   /** Units in stock; null = stock not tracked. */
   stock: number | null;
 }
@@ -40,6 +42,17 @@ export function photoUrl(photo: string, size: "sm" | "lg") {
 
 export function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+}
+
+/** Percent off during a sale (e.g. 20 for -20 %), or 0. */
+export function discountPercent(v: Variant) {
+  if (v.wasPrice === null || v.price === null || v.wasPrice <= v.price) return 0;
+  return Math.round(((v.wasPrice - v.price) / v.wasPrice) * 100);
+}
+
+/** Biggest sale on any in-stock size of a product (for the "-20 %" badge). */
+export function bestDiscount(variants: Variant[]) {
+  return Math.max(0, ...variants.filter((v) => !isOutOfStock(v)).map(discountPercent));
 }
 
 export function isOutOfStock(v: Variant) {

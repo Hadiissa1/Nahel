@@ -2,6 +2,8 @@ import "server-only";
 import { db } from "@/lib/db";
 import { CONTACT } from "@/lib/config";
 import { MAX_CART_QTY, formatPrice } from "@/lib/catalog-types";
+import { findUsablePromo } from "@/lib/promo";
+import { computeDiscount, type PromoError } from "@/lib/promo-types";
 
 export type OrderStatus = "new" | "confirmed" | "delivered" | "cancelled";
 export const ORDER_STATUSES: OrderStatus[] = ["new", "confirmed", "delivered", "cancelled"];
@@ -24,6 +26,10 @@ export interface Order {
   address: string;
   note: string;
   lang: "ar" | "en";
+  /** Before the promo code discount (null on orders from before codes existed). */
+  subtotal: number | null;
+  promoCode: string | null;
+  discount: number;
   total: number | null;
   createdAt: string;
   updatedAt: string;
@@ -37,13 +43,16 @@ export interface OrderRequest {
   address: string;
   note: string;
   lang: "ar" | "en";
+  /** Normalized promo code, if the customer entered one. */
+  promo?: string;
 }
 
 export type Shortage = { name: { ar: string; en: string }; label: string; available: number };
 
 export type PlaceResult =
   | { ok: true; orderId: number; whatsappUrl: string }
-  | { ok: false; error: "empty" | "unavailable"; shortages?: Shortage[] };
+  | { ok: false; error: "empty" | "unavailable"; shortages?: Shortage[] }
+  | { ok: false; error: "promo"; promoError: PromoError; minTotal?: number };
 
 interface VariantRow {
   variant_id: string;
@@ -74,6 +83,8 @@ const pick = (t: { ar: string; en: string }, lang: "ar" | "en") =>
 
 const MSG = {
   intro: { ar: "مرحباً نحّال! طلب رقم", en: "Hello Nahel! Order no." },
+  subtotal: { ar: "المجموع", en: "Subtotal" },
+  code: { ar: "كود الخصم", en: "Promo code" },
   total: { ar: "الإجمالي", en: "Total" },
   onRequest: { ar: "السعر عند الطلب", en: "price on request" },
   name: { ar: "الاسم", en: "Name" },
@@ -83,7 +94,13 @@ const MSG = {
 };
 
 /** The WhatsApp message the customer sends us; built from server-side data. */
-function whatsappMessage(id: number, req: OrderRequest, items: OrderItem[], total: number | null) {
+function whatsappMessage(
+  id: number,
+  req: OrderRequest,
+  items: OrderItem[],
+  total: number | null,
+  promo: { code: string; subtotal: number; discount: number } | null,
+) {
   const L = req.lang;
   const rows = items.map((i) => {
     const name = pick(i.name, L) + (i.label ? ` (${i.label})` : "");
@@ -95,6 +112,8 @@ function whatsappMessage(id: number, req: OrderRequest, items: OrderItem[], tota
     "",
     ...rows,
     "",
+    promo ? `${MSG.subtotal[L]}: ${formatPrice(promo.subtotal)}` : null,
+    promo ? `${MSG.code[L]} ${promo.code}: -${formatPrice(promo.discount)}` : null,
     total !== null ? `${MSG.total[L]}: ${formatPrice(total)}` : null,
     `${MSG.name[L]}: ${req.name}`,
     `${MSG.phone[L]}: +${req.phone}`,
@@ -123,7 +142,10 @@ export function placeOrder(req: OrderRequest): PlaceResult {
   return tx(() => {
     const d = db();
     const get = d.prepare(
-      `SELECT v.id AS variant_id, v.product_id, v.label, v.price, v.stock,
+      `SELECT v.id AS variant_id, v.product_id, v.label,
+              CASE WHEN v.sale_price IS NOT NULL AND v.price IS NOT NULL AND v.sale_price < v.price
+                   THEN v.sale_price ELSE v.price END AS price,
+              v.stock,
               p.name_ar, p.name_en, p.visible
        FROM variants v JOIN products p ON p.id = v.product_id
        WHERE v.id = ? AND v.product_id = ?`,
@@ -149,14 +171,29 @@ export function placeOrder(req: OrderRequest): PlaceResult {
     }
     if (shortages.length) return { ok: false as const, error: "unavailable" as const, shortages };
 
-    const total = items.every((i) => i.unitPrice !== null)
+    const subtotal = items.every((i) => i.unitPrice !== null)
       ? items.reduce((s, i) => s + i.unitPrice! * i.qty, 0)
       : null;
+
+    // Promo code: checked again here, whatever the cart showed.
+    let promo: { code: string; subtotal: number; discount: number } | null = null;
+    if (req.promo) {
+      const found = findUsablePromo(req.promo);
+      if ("error" in found) return { ok: false as const, error: "promo" as const, promoError: found.error };
+      if (subtotal === null) return { ok: false as const, error: "promo" as const, promoError: "needs_prices" as const };
+      if (found.rule.minTotal !== null && subtotal < found.rule.minTotal) {
+        return { ok: false as const, error: "promo" as const, promoError: "min_total" as const, minTotal: found.rule.minTotal };
+      }
+      promo = { code: found.rule.code, subtotal, discount: computeDiscount(found.rule, subtotal) };
+    }
+    const total = subtotal === null ? null : subtotal - (promo?.discount ?? 0);
+
     const r = d
       .prepare(
-        "INSERT INTO orders (name, phone, address, note, lang, total) VALUES (?, ?, ?, ?, ?, ?)",
+        `INSERT INTO orders (name, phone, address, note, lang, subtotal, promo_code, discount, total)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(req.name, req.phone, req.address, req.note, req.lang, total);
+      .run(req.name, req.phone, req.address, req.note, req.lang, subtotal, promo?.code ?? null, promo?.discount ?? 0, total);
     const orderId = Number(r.lastInsertRowid);
     const insItem = d.prepare(
       `INSERT INTO order_items (order_id, product_id, variant_id, name_ar, name_en, label, unit_price, qty)
@@ -165,7 +202,7 @@ export function placeOrder(req: OrderRequest): PlaceResult {
     for (const i of items) {
       insItem.run(orderId, i.productId, i.variantId, i.name.ar, i.name.en, i.label, i.unitPrice, i.qty);
     }
-    const text = whatsappMessage(orderId, req, items, total);
+    const text = whatsappMessage(orderId, req, items, total, promo);
     return {
       ok: true as const,
       orderId,
@@ -184,6 +221,10 @@ interface OrderRow {
   address: string;
   note: string;
   lang: "ar" | "en";
+  subtotal: number | null;
+  promo_code: string | null;
+  discount: number;
+  promo_counted: number;
   total: number | null;
   stock_applied: number;
   created_at: string;
@@ -232,6 +273,9 @@ export function listOrders(limit = 300): Order[] {
     address: r.address,
     note: r.note,
     lang: r.lang,
+    subtotal: r.subtotal,
+    promoCode: r.promo_code,
+    discount: r.discount,
     total: r.total,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -261,6 +305,8 @@ export type StatusResult =
  *   size lacks stock, nothing changes and the shortages are reported).
  * - Cancelling a confirmed order puts the quantities back.
  * The `stock_applied` flag guarantees stock moves at most once per order.
+ * A promo code's use is counted on confirmation too (and given back on
+ * cancellation), so unconfirmed fake orders can't use up a code.
  */
 export function setOrderStatus(id: number, next: OrderStatus): StatusResult {
   return tx(() => {
@@ -290,12 +336,20 @@ export function setOrderStatus(id: number, next: OrderStatus): StatusResult {
       for (const [variantId, qty] of need) stockChanged = Number(dec.run(qty, variantId).changes) > 0 || stockChanged;
       d.prepare("UPDATE orders SET stock_applied = 1 WHERE id = ?").run(id);
     }
+    if (next === "confirmed" && order.promo_code && !order.promo_counted) {
+      d.prepare("UPDATE promo_codes SET uses = uses + 1 WHERE code = ?").run(order.promo_code);
+      d.prepare("UPDATE orders SET promo_counted = 1 WHERE id = ?").run(id);
+    }
 
     if (next === "cancelled" && order.stock_applied) {
       // Sizes deleted since then are simply skipped.
       const inc = d.prepare("UPDATE variants SET stock = stock + ? WHERE id = ? AND stock IS NOT NULL");
       for (const i of items) stockChanged = Number(inc.run(i.qty, i.variant_id).changes) > 0 || stockChanged;
       d.prepare("UPDATE orders SET stock_applied = 0 WHERE id = ?").run(id);
+    }
+    if (next === "cancelled" && order.promo_counted) {
+      d.prepare("UPDATE promo_codes SET uses = MAX(0, uses - 1) WHERE code = ?").run(order.promo_code);
+      d.prepare("UPDATE orders SET promo_counted = 0 WHERE id = ?").run(id);
     }
 
     d.prepare("UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?").run(next, id);

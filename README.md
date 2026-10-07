@@ -8,6 +8,8 @@ Tailwind CSS v4 and SQLite.
 - Sizes (e.g. 250 g / 500 g / 1 kg) with their own price and stock
 - Cart saved in the browser, checked against the live catalog and stock
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
+- **Sales and promo codes**: a sale price per size (old price crossed out,
+  "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
 - **A page per product** (`/product/<id>`) to share on WhatsApp, Facebook or
   Instagram, with a photo preview, and found by Google (product data, sitemap)
 - **Store management at `/admin`**: orders with automatic stock; add, edit,
@@ -50,6 +52,7 @@ Open `https://<your-site>/admin`, sign in with `ADMIN_PASSWORD`, then:
 |---|---|
 | Add a product | **+ Add a product** → photo (📷 camera or 🖼️ gallery), names, sizes with price and stock → **Save** |
 | Change price / sizes / photo | **Edit** on the product |
+| Put a size on sale | **Edit** → fill **Sale price** (lower than the price) → **Save**. Empty it to end the sale |
 | Update stock after a sale | Type the new number in the stock box on the list → **Save** |
 | Take a product off the shop temporarily | **Hide from shop** (it stays in the admin) |
 | Remove a product for good | **Delete** (asks for confirmation) |
@@ -80,6 +83,28 @@ How an order works:
 | **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
 
 Placing an order never changes stock by itself: fake orders can't empty it.
+
+### Sales and promo codes
+
+**Sale price**: in a product's sizes, fill **Sale price**. The shop then shows
+the new price with the normal one crossed out and a red "-20 %" badge, and
+orders use the sale price. Empty the field to end the sale.
+
+**Promo codes** (**Promo codes** tab):
+
+| Field | Meaning |
+|---|---|
+| Code | What the customer types (letters/numbers, e.g. `RAMADAN10`; upper or lower case both work) |
+| Discount | A percent (1–90 %) or an amount in $ off the cart |
+| Minimum order | Optional: the code only works from this cart total |
+| Last day | Optional: the code stops at the end of that day (Beirut time) |
+| Max uses | Optional: how many confirmed orders can use it |
+
+The customer types the code in the cart and sees the discount at once. The
+server checks the code again when the order is placed, and the order and the
+WhatsApp message show the code and discount. A use is counted when **you
+confirm** the order, and given back if you cancel it. **Pause** stops a code
+without deleting it. Tip: put the code in a promotion (Promotions tab).
 Prices in an order are those of the site at the time of ordering.
 
 ### Promotions

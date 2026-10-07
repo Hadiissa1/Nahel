@@ -174,6 +174,9 @@ export function ProductList({
                           <td className="py-1.5 pe-3 font-medium text-bark/80">{v.label || "—"}</td>
                           <td className="py-1.5 pe-3 text-bark/70">
                             {v.price !== null ? formatPrice(v.price) : a.list.noPrice[lang]}
+                            {v.wasPrice !== null && (
+                              <del className="ms-1 font-normal text-bark/45">{formatPrice(v.wasPrice)}</del>
+                            )}
                           </td>
                           <td className="py-1.5">
                             <StockEditor

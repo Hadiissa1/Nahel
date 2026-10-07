@@ -20,6 +20,8 @@ import {
   sendCampaign,
   sendTestCampaign,
 } from "@/lib/subscribers";
+import { createPromoCode, deletePromoCode, setPromoActive, shopToday } from "@/lib/promo";
+import { MAX_PERCENT, normalizeCode } from "@/lib/promo-types";
 import {
   PRODUCTS_TAG,
   createProduct,
@@ -88,10 +90,11 @@ function parseProduct(fd: FormData): { input?: ProductInput; errors: FieldErrors
   const labels = fd.getAll("variant_label").map(clean);
   const prices = fd.getAll("variant_price").map(clean);
   const stocks = fd.getAll("variant_stock").map(clean);
+  const sales = fd.getAll("variant_sale").map(clean);
   const count = labels.length;
   if (count === 0) errors.variants = "variants_required";
   if (count > LIMITS.variants) errors.variants = "variants_max";
-  if (ids.length !== count || prices.length !== count || stocks.length !== count)
+  if (ids.length !== count || prices.length !== count || stocks.length !== count || sales.length !== count)
     errors.variants = "invalid";
 
   const seen = new Set<string>();
@@ -106,10 +109,17 @@ function parseProduct(fd: FormData): { input?: ProductInput; errors: FieldErrors
     if (price === "invalid") errors[`variant_price_${i}`] = "price_invalid";
     const stock = parseStock(stocks[i] ?? "");
     if (stock === "invalid") errors[`variant_stock_${i}`] = "stock_invalid";
+    const sale = parsePrice(sales[i] ?? "");
+    if (sale === "invalid") errors[`variant_sale_${i}`] = "price_invalid";
+    else if (sale !== null && (price === null || price === "invalid"))
+      errors[`variant_sale_${i}`] = "sale_needs_price";
+    else if (sale !== null && typeof price === "number" && sale >= price)
+      errors[`variant_sale_${i}`] = "sale_not_lower";
     variants.push({
       id: ids[i] || undefined,
       label,
       price: price === "invalid" ? null : price,
+      salePrice: typeof sale === "number" ? sale : null,
       stock: stock === "invalid" ? null : stock,
     });
   }
@@ -270,4 +280,63 @@ export async function deleteOrderAction(id: number): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (!Number.isInteger(id)) return { ok: false };
   return { ok: deleteOrder(id) };
+}
+
+// ---------- Promo codes ----------
+
+export type CodeState = { errors?: FieldErrors; created?: string };
+
+export async function createPromoCodeAction(_prev: CodeState, fd: FormData): Promise<CodeState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const code = normalizeCode(clean(fd.get("code")));
+  if (!code) errors.code = "code_invalid";
+
+  const kind = fd.get("kind") === "amount" ? "amount" : "percent";
+  const rawValue = clean(fd.get("value"));
+  let value = 0;
+  if (kind === "percent") {
+    value = /^\d{1,2}$/.test(rawValue) ? parseInt(rawValue, 10) : 0;
+    if (value < 1 || value > MAX_PERCENT) errors.value = "percent_invalid";
+  } else {
+    const p = parsePrice(rawValue);
+    if (typeof p !== "number" || p <= 0) errors.value = "amount_invalid";
+    else value = p;
+  }
+
+  const minTotal = parsePrice(clean(fd.get("min_total")));
+  if (minTotal === "invalid") errors.min_total = "amount_invalid";
+
+  const expiresOn = clean(fd.get("expires_on")) || null;
+  if (expiresOn && (!/^\d{4}-\d{2}-\d{2}$/.test(expiresOn) || expiresOn < shopToday()))
+    errors.expires_on = "date_invalid";
+
+  const rawUses = clean(fd.get("max_uses"));
+  const maxUses = rawUses === "" ? null : /^\d{1,6}$/.test(rawUses) ? parseInt(rawUses, 10) : 0;
+  if (maxUses !== null && maxUses < 1) errors.max_uses = "uses_invalid";
+
+  if (Object.keys(errors).length) return { errors };
+  const r = createPromoCode({
+    code: code!,
+    kind,
+    value,
+    minTotal: minTotal === "invalid" ? null : minTotal,
+    expiresOn,
+    maxUses,
+  });
+  if (r === "taken") return { errors: { code: "code_taken" } };
+  refresh();
+  return { created: code! };
+}
+
+export async function setPromoActiveAction(code: string, active: boolean): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof code !== "string" || typeof active !== "boolean" || code.length > 40) return { ok: false };
+  return { ok: setPromoActive(code, active) };
+}
+
+export async function deletePromoCodeAction(code: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof code !== "string" || code.length > 40) return { ok: false };
+  return { ok: deletePromoCode(code) };
 }

@@ -163,6 +163,8 @@ export const t = {
     copied: { en: "Link copied!", ar: "تم نسخ الرابط!" },
     related: { en: "You may also like", ar: "قد يعجبك أيضاً" },
     onlyLeft: { en: "Only {n} left", ar: "بقي {n} فقط" },
+    wasPrice: { en: "Was", ar: "كان" },
+    saleBadge: { en: "{n}% off", ar: "خصم {n}%" },
   },
 
   trust: [
@@ -320,6 +322,25 @@ export const t = {
     },
     err_rate: { en: "Too many orders. Please try again later.", ar: "طلبات كثيرة. حاول لاحقاً." },
     available: { en: "available: {n}", ar: "المتوفر: {n}" },
+    subtotal: { en: "Subtotal", ar: "المجموع" },
+    promo: { en: "Promo code", ar: "كود الخصم" },
+    promoApply: { en: "Apply", ar: "تطبيق" },
+    promoRemove: { en: "Remove code", ar: "إزالة الكود" },
+    promoApplied: { en: "Code {c}", ar: "الكود {c}" },
+    promoPercent: { en: "{n}% off", ar: "خصم {n}%" },
+    promo_not_found: { en: "This code doesn't exist.", ar: "هذا الكود غير موجود." },
+    promo_expired: { en: "This code has expired.", ar: "انتهت صلاحية هذا الكود." },
+    promo_used_up: { en: "This code is no longer available.", ar: "هذا الكود لم يعد متاحاً." },
+    promo_min_total: { en: "This code applies from {p} of purchases.", ar: "يُطبَّق هذا الكود ابتداءً من {p} من المشتريات." },
+    promo_needs_prices: {
+      en: "This code can't apply while some items are priced on request.",
+      ar: "لا يمكن تطبيق الكود ما دامت بعض المنتجات سعرها عند الطلب.",
+    },
+    promo_rate: { en: "Too many tries. Please wait a few minutes.", ar: "محاولات كثيرة. انتظر بضع دقائق." },
+    err_promo: {
+      en: "Your promo code can no longer be used. Remove it to order:",
+      ar: "لم يعد بالإمكان استخدام كود الخصم. أزِله لإتمام الطلب:",
+    },
   },
 
   testimonials: {

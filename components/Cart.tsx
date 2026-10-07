@@ -3,9 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { useCart, type CartLine } from "@/components/CartProvider";
-import { placeOrderAction, type OrderState } from "@/app/orders/actions";
+import { checkPromoAction, placeOrderAction, type OrderState } from "@/app/orders/actions";
 import { t } from "@/lib/translations";
 import { formatPrice, pickText } from "@/lib/catalog-types";
+import { computeDiscount, type PromoError, type PromoRule } from "@/lib/promo-types";
 import { Bag, Plus, Minus, Trash, Close, Whatsapp } from "@/components/icons";
 
 type Step = "cart" | "details" | "done";
@@ -16,7 +17,46 @@ export function Cart() {
   const [step, setStep] = useState<Step>("cart");
   const [result, setResult] = useState<OrderState>({});
   const [pending, startTransition] = useTransition();
+  const [promo, setPromo] = useState<PromoRule | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoMsg, setPromoMsg] = useState<PromoError | "rate" | null>(null);
+  const [checking, startChecking] = useTransition();
   const c = t.cart;
+
+  // The discount follows the cart; the server checks it again on ordering.
+  const promoBlock: PromoError | null = !promo
+    ? null
+    : !hasPrices
+      ? "needs_prices"
+      : promo.minTotal !== null && total < promo.minTotal
+        ? "min_total"
+        : null;
+  const discount = promo && !promoBlock ? computeDiscount(promo, total) : 0;
+
+  const promoText = (e: PromoError | "rate", minTotal?: number | null) =>
+    c[`promo_${e}`][lang].replace("{p}", formatPrice(minTotal ?? promo?.minTotal ?? 0));
+
+  const applyPromo = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const code = promoInput.trim();
+    if (!code) return;
+    startChecking(async () => {
+      const r = await checkPromoAction(code);
+      if ("rule" in r) {
+        setPromo(r.rule);
+        setPromoMsg(null);
+        setPromoInput("");
+      } else {
+        setPromoMsg(r.error);
+      }
+    });
+  };
+
+  const removePromo = () => {
+    setPromo(null);
+    setPromoMsg(null);
+    if (result.error === "promo") setResult({});
+  };
 
   const label = (l: CartLine) =>
     l.option.label
@@ -47,11 +87,13 @@ export function Cart() {
     const fd = new FormData(e.currentTarget);
     fd.set("lines", JSON.stringify(lines.map((l) => ({ id: l.id, variant: l.variant, qty: l.qty }))));
     fd.set("lang", lang);
+    if (promo && discount > 0) fd.set("promo", promo.code);
     startTransition(async () => {
       const r = await placeOrderAction({}, fd);
       setResult(r);
       if (r.done) {
         clear();
+        setPromo(null);
         setStep("done");
       }
     });
@@ -64,10 +106,37 @@ export function Cart() {
     empty: c.err_empty,
     unavailable: c.err_unavailable,
     rate: c.err_rate,
+    promo: c.err_promo,
   };
   const errorText = result.error ? errors[result.error][lang] : null;
   const field =
     "mt-1 w-full rounded-xl border border-bark/15 bg-white px-3.5 py-2.5 text-sm text-bark outline-none focus:border-honey focus:ring-2 focus:ring-honey/30";
+
+  const totals = (
+    <>
+      {promoBlock && (
+        <p className="mb-2 text-xs font-medium text-amber">{promoText(promoBlock)}</p>
+      )}
+      {hasPrices && discount > 0 && (
+        <dl className="mb-1 space-y-1 text-sm text-bark/70">
+          <div className="flex justify-between">
+            <dt>{c.subtotal[lang]}</dt>
+            <dd>{formatPrice(total)}</dd>
+          </div>
+          <div className="flex justify-between text-leaf">
+            <dt>{c.promoApplied[lang].replace("{c}", promo!.code)}</dt>
+            <dd dir="ltr">-{formatPrice(discount)}</dd>
+          </div>
+        </dl>
+      )}
+      {hasPrices && (
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-bark/70">{c.total[lang]}</span>
+          <span className="font-display text-xl font-bold text-bark-deep">{formatPrice(total - discount)}</span>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -173,6 +242,14 @@ export function Cart() {
               {errorText && (
                 <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
                   {errorText}
+                  {result.promoError && (
+                    <p className="mt-1">
+                      {promoText(result.promoError, result.minTotal)}{" "}
+                      <button type="button" onClick={removePromo} className="font-semibold underline">
+                        {c.promoRemove[lang]}
+                      </button>
+                    </p>
+                  )}
                   {result.shortages && (
                     <ul className="mt-1 list-disc ps-5">
                       {result.shortages.map((s, i) => (
@@ -189,12 +266,7 @@ export function Cart() {
             </div>
 
             <div className="border-t border-bark/10 bg-white/60 px-5 py-4">
-              {hasPrices && (
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-medium text-bark/70">{c.total[lang]}</span>
-                  <span className="font-display text-xl font-bold text-bark-deep">{formatPrice(total)}</span>
-                </div>
-              )}
+              {totals}
               <button
                 type="submit"
                 disabled={pending}
@@ -241,6 +313,9 @@ export function Cart() {
                         <p className="truncate text-xs text-bark/55">{t.nav[i.product.category][lang]}</p>
                         <p className="mt-0.5 text-xs font-semibold text-amber">
                           {i.option.price !== null ? formatPrice(i.option.price) : c.priceOnRequest[lang]}
+                          {i.option.wasPrice !== null && (
+                            <del className="ms-1.5 font-normal text-bark/45">{formatPrice(i.option.wasPrice)}</del>
+                          )}
                         </p>
                       </div>
 
@@ -279,12 +354,51 @@ export function Cart() {
 
             {lines.length > 0 && (
               <div className="border-t border-bark/10 bg-white/60 px-5 py-4">
-                {hasPrices && (
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-bark/70">{c.total[lang]}</span>
-                    <span className="font-display text-xl font-bold text-bark-deep">{formatPrice(total)}</span>
+                {promo ? (
+                  <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-leaf/10 px-3 py-2 text-sm">
+                    <span className="font-semibold text-bark-deep" dir="auto">
+                      🏷️ {c.promoApplied[lang].replace("{c}", promo.code)}
+                      {promo.kind === "percent" && (
+                        <span className="ms-1 font-normal text-bark/70">
+                          ({c.promoPercent[lang].replace("{n}", String(promo.value))})
+                        </span>
+                      )}
+                    </span>
+                    <button type="button" onClick={removePromo} className="text-xs font-semibold text-red-700 hover:underline">
+                      {c.promoRemove[lang]}
+                    </button>
                   </div>
+                ) : (
+                  <form onSubmit={applyPromo} className="mb-3 flex gap-2">
+                    <input
+                      value={promoInput}
+                      onChange={(e) => {
+                        setPromoInput(e.target.value);
+                        setPromoMsg(null);
+                      }}
+                      maxLength={20}
+                      dir="ltr"
+                      autoCapitalize="characters"
+                      autoComplete="off"
+                      aria-label={c.promo[lang]}
+                      placeholder={c.promo[lang]}
+                      className="min-w-0 flex-1 rounded-xl border border-bark/15 bg-white px-3 py-2 text-sm uppercase text-bark outline-none placeholder:normal-case focus:border-honey focus:ring-2 focus:ring-honey/30"
+                    />
+                    <button
+                      type="submit"
+                      disabled={checking || !promoInput.trim()}
+                      className="rounded-xl border border-bark/20 bg-white px-4 py-2 text-sm font-semibold text-bark hover:border-honey disabled:opacity-50"
+                    >
+                      {c.promoApply[lang]}
+                    </button>
+                  </form>
                 )}
+                {promoMsg && (
+                  <p role="alert" className="-mt-1 mb-3 text-xs font-medium text-red-700">
+                    {promoText(promoMsg)}
+                  </p>
+                )}
+                {totals}
                 <button
                   onClick={() => setStep("details")}
                   className="w-full rounded-xl bg-gradient-to-br from-honey to-amber py-3 text-sm font-semibold text-white shadow-lg shadow-honey/30 transition-transform hover:scale-[1.02]"

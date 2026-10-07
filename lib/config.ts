@@ -5,3 +5,6 @@ export const CONTACT = {
   whatsapp: "96170000000", // digits only, for wa.me links
   email: "hello@nahel.com",
 };
+
+/** The shop's time zone: promo codes are valid until the end of their last day here. */
+export const SHOP_TIME_ZONE = "Asia/Beirut";

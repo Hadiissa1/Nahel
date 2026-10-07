@@ -189,6 +189,20 @@ export function OrderList({ orders }: { orders: Order[] }) {
                         </td>
                       </tr>
                     ))}
+                    {x.promoCode && (
+                      <>
+                        <tr className="border-t border-bark/15 text-bark/70">
+                          <td className="py-1.5">{o.subtotal[lang]}</td>
+                          <td />
+                          <td className="py-1.5 text-end">{x.subtotal !== null ? formatPrice(x.subtotal) : "—"}</td>
+                        </tr>
+                        <tr className="text-leaf">
+                          <td className="py-1.5" dir="auto">🏷️ {o.code[lang].replace("{c}", x.promoCode)}</td>
+                          <td />
+                          <td className="py-1.5 text-end" dir="ltr">-{formatPrice(x.discount)}</td>
+                        </tr>
+                      </>
+                    )}
                     <tr className="border-t border-bark/15 font-semibold">
                       <td className="py-1.5 text-bark">{o.total[lang]}</td>
                       <td />

@@ -8,6 +8,7 @@ import { Bag } from "@/components/icons";
 import { OptionPicker, ProductMedia, defaultOption } from "@/components/ProductMedia";
 import { StockAndPrice } from "@/components/StockAndPrice";
 import { ShareButtons } from "@/components/ShareButtons";
+import { SaleBadge } from "@/components/SaleBadge";
 import { ProductCard } from "@/components/ProductCard";
 import { t } from "@/lib/translations";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
@@ -49,6 +50,7 @@ export function ProductDetail({
 
           <div className="flex flex-col gap-4 p-6 sm:p-8">
             <div className="flex flex-wrap gap-2 text-xs font-semibold">
+              <SaleBadge variants={product.variants} className="py-1" />
               <span className="rounded-full bg-honey/15 px-3 py-1 text-amber">
                 {t.nav[product.category][lang]}
               </span>

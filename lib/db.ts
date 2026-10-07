@@ -84,11 +84,40 @@ CREATE TABLE IF NOT EXISTS order_items (
   qty         INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS order_items_order ON order_items(order_id);
+CREATE TABLE IF NOT EXISTS promo_codes (
+  code        TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('percent','amount')),
+  value       INTEGER NOT NULL,
+  min_total   INTEGER,
+  expires_on  TEXT,
+  max_uses    INTEGER,
+  uses        INTEGER NOT NULL DEFAULT 0,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL
 );
 `;
+
+/** Columns added after the first release: added in place to existing databases. */
+const ADDED_COLUMNS: [table: string, column: string, type: string][] = [
+  ["variants", "sale_price", "INTEGER"],
+  ["orders", "subtotal", "INTEGER"],
+  ["orders", "promo_code", "TEXT"],
+  ["orders", "discount", "INTEGER NOT NULL DEFAULT 0"],
+  ["orders", "promo_counted", "INTEGER NOT NULL DEFAULT 0"],
+];
+
+function migrate(db: DatabaseSync) {
+  for (const [table, column, type] of ADDED_COLUMNS) {
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === column)) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+    }
+  }
+}
 
 function seed(db: DatabaseSync) {
   const insertProduct = db.prepare(
@@ -128,6 +157,7 @@ function open() {
   // IMMEDIATE lock stops two processes starting together from both seeding.
   db.exec("BEGIN IMMEDIATE");
   try {
+    migrate(db);
     if (!db.prepare("SELECT 1 FROM meta WHERE key = 'seeded'").get()) {
       seed(db);
       db.prepare("INSERT INTO meta (key, value) VALUES ('seeded', datetime('now'))").run();

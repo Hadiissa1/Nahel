@@ -29,6 +29,7 @@ interface VariantRow {
   product_id: string;
   label: string;
   price: number | null;
+  sale_price: number | null;
   stock: number | null;
 }
 
@@ -45,7 +46,14 @@ function load(where: string, ...params: string[]): AdminProduct[] {
   const byProduct = new Map<string, Variant[]>();
   for (const v of variants) {
     const list = byProduct.get(v.product_id) ?? [];
-    list.push({ id: v.id, label: v.label, price: v.price, stock: v.stock });
+    const onSale = v.sale_price !== null && v.price !== null && v.sale_price < v.price;
+    list.push({
+      id: v.id,
+      label: v.label,
+      price: onSale ? v.sale_price : v.price,
+      wasPrice: onSale ? v.price : null,
+      stock: v.stock,
+    });
     byProduct.set(v.product_id, list);
   }
   return rows.map((r) => ({
@@ -98,7 +106,14 @@ export interface ProductInput {
   origin: { ar: string; en: string };
   desc: { ar: string; en: string };
   visible: boolean;
-  variants: { id?: string; label: string; price: number | null; stock: number | null }[];
+  variants: {
+    id?: string;
+    label: string;
+    price: number | null;
+    /** Must be lower than `price`; null = not on sale. */
+    salePrice: number | null;
+    stock: number | null;
+  }[];
 }
 
 function tx<T>(fn: () => T): T {
@@ -127,10 +142,10 @@ function writeVariants(productId: string, variants: ProductInput["variants"]) {
     const id = v.id && existing.has(v.id) ? v.id : randomUUID();
     kept.add(id);
     d.prepare(
-      `INSERT INTO variants (id, product_id, label, price, stock, sort) VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO variants (id, product_id, label, price, sale_price, stock, sort) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET label = excluded.label, price = excluded.price,
-         stock = excluded.stock, sort = excluded.sort`,
-    ).run(id, productId, v.label, v.price, v.stock, i);
+         sale_price = excluded.sale_price, stock = excluded.stock, sort = excluded.sort`,
+    ).run(id, productId, v.label, v.price, v.salePrice, v.stock, i);
   });
   for (const id of existing) {
     if (!kept.has(id)) d.prepare("DELETE FROM variants WHERE id = ?").run(id);

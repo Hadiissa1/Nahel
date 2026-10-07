@@ -14,6 +14,7 @@ export function AdminHeader({ newOrders = 0 }: { newOrders?: number }) {
     { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products") },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
+    { href: "/admin/codes", label: a.nav.codes[lang], active: path.startsWith("/admin/codes") },
   ];
   return (
     <header className="sticky top-0 z-40 border-b border-bark/10 bg-cream/95 backdrop-blur">

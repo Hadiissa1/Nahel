@@ -8,6 +8,7 @@ import { Bag } from "@/components/icons";
 import { OptionPicker, ProductMedia, defaultOption } from "@/components/ProductMedia";
 import { ProductDialog } from "@/components/ProductDialog";
 import { StockAndPrice } from "@/components/StockAndPrice";
+import { SaleBadge } from "@/components/SaleBadge";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
 export function ProductCard({ product }: { product: CatalogProduct }) {
@@ -28,6 +29,7 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
         className="relative block h-44 cursor-zoom-in overflow-hidden"
       >
         <ProductMedia product={product} className="h-full w-full" />
+        <SaleBadge variants={product.variants} className="absolute top-3 start-3" />
         {pickText(product.origin, lang) && (
           <span className="absolute bottom-3 start-3 rounded-full bg-bark-deep/70 px-2.5 py-0.5 text-[11px] font-medium text-cream backdrop-blur">
             {pickText(product.origin, lang)}

@@ -6,14 +6,21 @@ import { normalizeWhatsapp } from "@/lib/subscribers";
 import { MAX_CART_QTY } from "@/lib/catalog-types";
 import { MAX_ORDER_LINES, placeOrder, type OrderRequest, type Shortage } from "@/lib/orders";
 import { PRODUCTS_TAG } from "@/lib/products";
+import { findUsablePromo } from "@/lib/promo";
+import { normalizeCode, type PromoError, type PromoRule } from "@/lib/promo-types";
 
 const perIp = rateLimiter(10, 60 * 60 * 1000);
 const siteWide = rateLimiter(300, 60 * 60 * 1000);
+// Code checks: enough for real customers, too few to guess codes by trying.
+const promoPerIp = rateLimiter(15, 10 * 60 * 1000);
+const promoSiteWide = rateLimiter(3000, 10 * 60 * 1000);
 
 export type OrderState = {
   done?: { orderId: number; whatsappUrl: string };
-  error?: "name" | "phone" | "too_long" | "empty" | "unavailable" | "rate";
+  error?: "name" | "phone" | "too_long" | "empty" | "unavailable" | "rate" | "promo";
   shortages?: Shortage[];
+  promoError?: PromoError;
+  minTotal?: number;
 };
 
 const clean = (v: FormDataEntryValue | null, max: number) =>
@@ -56,6 +63,9 @@ export async function placeOrderAction(_prev: OrderState, fd: FormData): Promise
   if (name.length > 80 || address.length > 300 || note.length > 500) return { error: "too_long" };
   const phone = normalizeWhatsapp(String(fd.get("phone") ?? "").slice(0, 40));
   if (!phone || phone === "invalid") return { error: "phone" };
+  const rawPromo = String(fd.get("promo") ?? "");
+  const promo = rawPromo ? normalizeCode(rawPromo) : undefined;
+  if (promo === null) return { error: "promo", promoError: "not_found" };
 
   if (!perIp(await clientIp()) || !siteWide("all")) return { error: "rate" };
 
@@ -66,11 +76,29 @@ export async function placeOrderAction(_prev: OrderState, fd: FormData): Promise
     address,
     note,
     lang: fd.get("lang") === "en" ? "en" : "ar",
+    promo,
   });
   if (!result.ok) {
+    if (result.error === "promo") {
+      return { error: "promo", promoError: result.promoError, minTotal: result.minTotal };
+    }
     // Stock or availability changed since the page loaded: refresh the shop.
     if (result.error === "unavailable") updateTag(PRODUCTS_TAG);
     return { error: result.error, shortages: result.shortages };
   }
   return { done: { orderId: result.orderId, whatsappUrl: result.whatsappUrl } };
+}
+
+export type PromoCheck = { rule: PromoRule } | { error: PromoError | "rate" };
+
+/**
+ * Look up a promo code for the cart. Only says whether the code exists and
+ * what it gives: minimum total and prices are checked again when ordering.
+ */
+export async function checkPromoAction(raw: string): Promise<PromoCheck> {
+  if (typeof raw !== "string" || raw.length > 40) return { error: "not_found" };
+  if (!promoPerIp(await clientIp()) || !promoSiteWide("all")) return { error: "rate" };
+  const code = normalizeCode(raw);
+  if (!code) return { error: "not_found" };
+  return findUsablePromo(code);
 }

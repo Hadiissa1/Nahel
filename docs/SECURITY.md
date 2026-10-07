@@ -53,6 +53,17 @@
 | Formule piégée dans l'export Excel | Les cellules commençant par `=`, `+`, `-`, `@` sont neutralisées. | `app/admin/subscribers/export/route.ts` |
 | Données personnelles exposées | Liste, export et envoi réservés à l'administrateur (vérifié côté serveur, testé : export refusé sans connexion). | `app/admin/` |
 
+### Soldes et codes promo
+
+| Risque | Protection | Où |
+|---|---|---|
+| Remise inventée par le client | Le navigateur n'envoie que le **nom du code**. Le serveur relit le code dans la base au moment de la commande (actif, date, nombre d'utilisations, minimum) et **calcule lui-même** la remise (testé : un code mis en pause entre-temps est refusé). | `lib/orders.ts`, `lib/promo.ts` |
+| Prix soldé falsifié | Le prix soldé vient de la base ; il doit être inférieur au prix normal (vérifié à l'enregistrement). | `app/admin/actions.ts` |
+| Deviner des codes en essayant | 15 essais / 10 min par IP, 3000 / 10 min au total (testé). Un code en pause répond comme un code inexistant. | `app/orders/actions.ts` |
+| Épuiser un code avec de fausses commandes | Une utilisation n'est comptée qu'à la **confirmation** de la commande par vous, et rendue en cas d'annulation (testé). | `lib/orders.ts` |
+| Remise supérieure au panier | Pourcentage limité à 90 % ; un montant fixe ne dépasse jamais le total. | `lib/promo-types.ts` |
+| Gestion des codes | Création, pause et suppression réservées à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
+
 ### Pages produit et partage
 
 | Risque | Protection | Où |
@@ -82,6 +93,11 @@
 **Commandes : 29 vérifications, toutes réussies** (passage de commande, validation, prix falsifié ignoré, quantité au-delà du stock refusée, confirmation qui retire le stock, refus si stock insuffisant, double confirmation sans effet, annulation qui remet le stock, livraison, accès admin seulement, limite anti-abus).
 
 **Promotions : 40 vérifications, toutes réussies.**
+
+**Soldes et codes promo : 45 vérifications, toutes réussies** (prix soldé refusé s'il n'est pas inférieur,
+prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
+calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
+à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
 
 **Pages produit : 29 vérifications, toutes réussies** (page en arabe puis en anglais, ajout au panier,
 copie du lien, WhatsApp, aperçu de partage 1200×630 qui change avec la photo, prix et stock dans

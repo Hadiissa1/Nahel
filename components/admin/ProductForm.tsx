@@ -35,13 +35,14 @@ async function preparePhoto(file: File): Promise<File> {
   return file;
 }
 
-type Row = { key: string; id: string; label: string; price: string; stock: string };
+type Row = { key: string; id: string; label: string; price: string; sale: string; stock: string };
 let rowKey = 0;
 const newRow = (r: Partial<Row> = {}): Row => ({
   key: `r${rowKey++}`,
   id: "",
   label: "",
   price: "",
+  sale: "",
   stock: "",
   ...r,
 });
@@ -59,7 +60,9 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           newRow({
             id: v.id,
             label: v.label,
-            price: v.price === null ? "" : (v.price / 100).toString(),
+            // On sale: the catalog price is the sale price, wasPrice the normal one.
+            price: (v.wasPrice ?? v.price) === null ? "" : ((v.wasPrice ?? v.price)! / 100).toString(),
+            sale: v.wasPrice !== null && v.price !== null ? (v.price / 100).toString() : "",
             stock: v.stock === null ? "" : String(v.stock),
           }),
         )
@@ -237,12 +240,16 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         {err("variants") && <p className="mt-2 text-xs text-red-700">{err("variants")}</p>}
         <div className="mt-3 space-y-3">
           {rows.map((r, i) => (
-            <div key={r.key} className="grid grid-cols-[1fr_1fr_1fr_auto] items-start gap-2">
+            <div
+              key={r.key}
+              className="grid grid-cols-2 items-start gap-2 border-b border-bark/5 pb-3 last:border-0 sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:border-0 sm:pb-0"
+            >
               <input type="hidden" name="variant_id" value={r.id} />
               {(
                 [
                   ["label", "variant_label", a.form.optionLabel[lang], "text"],
                   ["price", "variant_price", a.form.price[lang], "decimal"],
+                  ["sale", "variant_sale", a.form.salePrice[lang], "decimal"],
                   ["stock", "variant_stock", a.form.stock[lang], "numeric"],
                 ] as const
               ).map(([key, name, label, mode]) => (
@@ -270,7 +277,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
                 onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}
                 aria-label={a.form.removeOption[lang]}
                 title={a.form.removeOption[lang]}
-                className="mt-6 grid h-10 w-10 place-items-center rounded-xl border border-bark/15 text-bark/60 hover:border-red-300 hover:text-red-700 disabled:opacity-30"
+                className="col-span-2 grid h-10 w-10 place-items-center justify-self-end rounded-xl border border-bark/15 sm:col-span-1 sm:mt-6 sm:justify-self-auto text-bark/60 hover:border-red-300 hover:text-red-700 disabled:opacity-30"
               >
                 ✕
               </button>
