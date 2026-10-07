@@ -3,6 +3,7 @@ import { getDeliveryZones } from "@/lib/delivery";
 import { CatalogProvider } from "@/components/CatalogProvider";
 import { CartProvider } from "@/components/CartProvider";
 import { Cart } from "@/components/Cart";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
   // Cached and shared by all visitors; expired when the admin changes products.
@@ -11,6 +12,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
     <CatalogProvider products={products}>
       <CartProvider>
         {children}
+        <WhatsAppButton />
         <Cart zones={zones} />
       </CartProvider>
     </CatalogProvider>

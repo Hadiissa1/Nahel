@@ -372,6 +372,15 @@ export const t = {
     },
   },
 
+  whatsappButton: {
+    label: { en: "Chat on WhatsApp", ar: "تواصل عبر واتساب" },
+    hello: { en: "Hello Nahel! I have a question.", ar: "مرحباً نحّال! لدي سؤال." },
+    aboutProduct: {
+      en: "Hello Nahel! I'm interested in: {p}",
+      ar: "مرحباً نحّال! أنا مهتم بـ: {p}",
+    },
+  },
+
   testimonials: {
     eyebrow: { en: "Testimonials", ar: "آراء العملاء" },
     title: { en: "Loved by Families & Beekeepers", ar: "محبوب من العائلات والنحّالين" },

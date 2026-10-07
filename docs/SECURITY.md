@@ -117,6 +117,10 @@ prix barré et badge, données Google au prix soldé, codes invalides refusés, 
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
 
+**Bouton WhatsApp flottant : 18 vérifications, toutes réussies** (anglais et arabe, coin bas droit / bas gauche,
+message dans la langue du visiteur, nom du produit sur sa page, ouverture sûre dans un nouvel onglet,
+reste en place au défilement, caché par le panier ouvert, absent de l'admin, mobile sans défilement horizontal).
+
 **Alertes de retour en stock : 28 vérifications, toutes réussies** (taille épuisée sélectionnable mais
 pas ajoutable, e-mail ou WhatsApp, contact invalide refusé, pas de doublon, page produit en arabe sur mobile,
 alerte refusée pour une taille en stock ou un autre produit, liste d'attente, e-mails envoyés tout seuls

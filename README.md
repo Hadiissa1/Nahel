@@ -10,7 +10,9 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
-- **"Notify me when it's back"** on sold-out sizes: automatic email, or a
+- **Floating WhatsApp button** on every shop page (on a product page, the
+  message already names the product)
+- **"Notify me when it's back" on sold-out sizes: automatic email, or a
   ready WhatsApp message for the owner, as soon as stock is added
 - **Delivery areas** (Beirut, Mount Lebanon…) with their fee, optionally free
   from a cart total, chosen by the customer at checkout
@@ -174,7 +176,8 @@ link in the quick view, or share it:
 | What | Where |
 |---|---|
 | Interface text (en/ar) | `lib/translations.ts`, admin text in `lib/admin-i18n.ts` |
-| WhatsApp number, phone, email | `lib/config.ts` |
+| WhatsApp number, phone, email (also used by the floating WhatsApp button) | `lib/config.ts` |
+| Floating WhatsApp button messages | `lib/translations.ts` → `whatsappButton` |
 
 ## Docs
 
