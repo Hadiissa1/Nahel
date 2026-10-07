@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Traceability**: lot numbers with harvest date, origin and lab analysis
+  (PDF), a QR code per lot for the jar label, and a "check your jar" page
 - **Customer reviews** (1–5 stars) that you approve before they appear;
   stars on product cards and in Google results
 - **Floating WhatsApp button** on every shop page (on a product page, the
@@ -91,6 +93,24 @@ How an order works:
 | **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
 
 Placing an order never changes stock by itself: fake orders can't empty it.
+
+### Lots & traceability
+
+**Lots** tab: one entry per batch of jars.
+
+| Field | Meaning |
+|---|---|
+| Lot number | Printed on the jar, e.g. `OAK-2026-01` (letters, digits, dashes; upper-cased automatically) |
+| Product, harvest date, region / apiary | What the customer sees |
+| Notes (AR/EN) | Optional, e.g. "Raw, cold-extracted" |
+| Lab analysis | Optional PDF (4 MB max); customers can download it |
+| Show on the product page | Tick for lots currently on sale; untick to archive (still checkable) |
+
+- Each lot has a **QR code** (Download QR → SVG, for your label printer or
+  designer). It opens `https://<your-site>/lot/<number>`; `SITE_URL` must be set.
+- Customers can also type the number at **/lot** (link in the footer).
+- Product pages show a **Traceability** block with their current lots.
+- Deleting a lot deletes its PDF, and its QR code stops working.
 
 ### Customer reviews
 

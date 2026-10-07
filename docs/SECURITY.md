@@ -64,6 +64,15 @@
 | Remise supérieure au panier | Pourcentage limité à 90 % ; un montant fixe ne dépasse jamais le total. | `lib/promo-types.ts` |
 | Gestion des codes | Création, pause et suppression réservées à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
 
+### Traçabilité (lots et PDF)
+
+| Risque | Protection | Où |
+|---|---|---|
+| Faux PDF (script ou autre fichier renommé) | Le contenu est vérifié (signature `%PDF-`), pas le nom du fichier ; 4 Mo au plus (testé avec un faux PDF). | `lib/doc-store.ts` |
+| PDF piégé ouvert dans le site | Les PDF sont **téléchargés** (`Content-Disposition: attachment`) et s'ouvrent dans l'application PDF de l'appareil, jamais dans les pages du site ; `nosniff`. | `app/docs/[file]/route.ts` |
+| Lire d'autres fichiers du serveur (`../nahel.db`) | Seuls les noms aléatoires générés par le serveur sont acceptés (testé : 404). | `lib/doc-store.ts` |
+| Gestion des lots | Réservée à l'administrateur (vérifié côté serveur). Lots d'un produit masqué non affichés. | `app/admin/actions.ts`, `lib/lots.ts` |
+
 ### Avis clients
 
 | Risque | Protection | Où |
@@ -125,6 +134,12 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Traçabilité : 27 vérifications, toutes réussies** (n° de lot invalide ou en double refusé, faux PDF refusé,
+PDF stocké sous un nom aléatoire, QR code pointant vers la bonne page, lot actuel sur la page produit
+et lot archivé absent, téléchargement du PDF, recherche « oak 2025 09 », lot inconnu, adresse malformée,
+pages de lot non indexées, tentatives d'accès à d'autres fichiers refusées, remplacement et suppression
+du PDF (fichier effacé), produit masqué, suppression, arabe sur mobile).
 
 **Avis clients : 24 vérifications, toutes réussies** (étoiles obligatoires, texte trop court refusé, avis en attente
 invisibles dans la page et les données Google, note et produit falsifiés refusés, validation dans l'admin,

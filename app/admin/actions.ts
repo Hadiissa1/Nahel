@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { deleteAlert, sendRestockEmails } from "@/lib/stock-alerts";
 import { REVIEWS_TAG, deleteReview, setReviewApproved } from "@/lib/reviews";
+import { LOTS_TAG, deleteLot, saveLot } from "@/lib/lots";
+import { normalizeLotCode } from "@/lib/lot-types";
+import { DocError, deleteDoc, saveDoc } from "@/lib/doc-store";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
@@ -434,4 +437,66 @@ export async function deleteReviewAction(id: string): Promise<{ ok: boolean }> {
     updateTag(PRODUCTS_TAG);
   }
   return { ok };
+}
+
+// ---------- Lots (traceability) ----------
+
+export type LotState = { errors?: FieldErrors; saved?: number };
+
+export async function saveLotAction(prev: LotState, fd: FormData): Promise<LotState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const code = normalizeLotCode(clean(fd.get("code")));
+  if (!code) errors.code = "lot_code_invalid";
+  const productId = clean(fd.get("product")).slice(0, 100);
+  if (!productId) errors.product = "required";
+  const harvestOn = clean(fd.get("harvest_on")) || null;
+  if (harvestOn && !/^\d{4}-\d{2}-\d{2}$/.test(harvestOn)) errors.harvest_on = "invalid";
+  const text = (key: string, max: number) => {
+    const v = String(fd.get(key) ?? "").replace(/\r\n/g, "\n").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").trim();
+    if (v.length > max) errors[key] = "too_long";
+    return v.slice(0, max);
+  };
+  const region = { ar: text("region_ar", 120), en: text("region_en", 120) };
+  const notes = { ar: text("notes_ar", 1000), en: text("notes_en", 1000) };
+  if (Object.keys(errors).length) return { errors };
+
+  const file = fd.get("certificate");
+  let newDoc: string | null = null;
+  if (file instanceof File && file.size > 0) {
+    try {
+      newDoc = await saveDoc(file);
+    } catch (e) {
+      return { errors: { certificate: e instanceof DocError ? `doc_${e.message}` : "doc_format" } };
+    }
+  }
+  const remove = fd.get("remove_certificate") === "1";
+  const id = clean(fd.get("id")).slice(0, 100) || null;
+  const r = saveLot(
+    id,
+    { code: code!, productId, harvestOn, region, notes, current: fd.get("current") === "on" },
+    newDoc ?? (remove ? null : undefined),
+  );
+  if (!r.ok) {
+    await deleteDoc(newDoc);
+    return { errors: r.error === "code_taken" ? { code: "lot_code_taken" } : { form: r.error } };
+  }
+  await deleteDoc(r.oldCertificate);
+  updateTag(LOTS_TAG);
+  // Product pages show their lots: refresh them too (seen otherwise to keep
+  // serving the page from before the change for a few requests).
+  updateTag(PRODUCTS_TAG);
+  refresh();
+  return { saved: (prev.saved ?? 0) + 1 };
+}
+
+export async function deleteLotAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  const doc = deleteLot(id);
+  if (doc === false) return { ok: false };
+  await deleteDoc(doc);
+  updateTag(LOTS_TAG);
+  updateTag(PRODUCTS_TAG);
+  return { ok: true };
 }

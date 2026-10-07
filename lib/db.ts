@@ -8,6 +8,7 @@ import { equipmentProducts, healthProducts, honeyProducts } from "@/lib/data";
 /** Where the database and uploaded photos live. Must be persistent storage. */
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 export const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
+export const DOCS_DIR = path.join(DATA_DIR, "docs");
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS products (
@@ -129,6 +130,20 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS reviews_product ON reviews(product_id, approved);
+CREATE TABLE IF NOT EXISTS lots (
+  id           TEXT PRIMARY KEY,
+  code         TEXT NOT NULL UNIQUE,
+  product_id   TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  harvest_on   TEXT,
+  region_ar    TEXT NOT NULL DEFAULT '',
+  region_en    TEXT NOT NULL DEFAULT '',
+  notes_ar     TEXT NOT NULL DEFAULT '',
+  notes_en     TEXT NOT NULL DEFAULT '',
+  certificate  TEXT,
+  current      INTEGER NOT NULL DEFAULT 1,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS lots_product ON lots(product_id);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL
@@ -194,6 +209,7 @@ function seed(db: DatabaseSync) {
 
 function open() {
   mkdirSync(UPLOAD_DIR, { recursive: true });
+  mkdirSync(DOCS_DIR, { recursive: true });
   const db = new DatabaseSync(path.join(DATA_DIR, "nahel.db"));
   // WAL + busy timeout: safe when several server processes share the file.
   db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;");

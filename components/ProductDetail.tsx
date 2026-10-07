@@ -12,6 +12,8 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { SaleBadge } from "@/components/SaleBadge";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductReviews } from "@/components/ProductReviews";
+import { ProductLots } from "@/components/LotDetails";
+import type { Lot } from "@/lib/lot-types";
 import type { Review } from "@/lib/review-types";
 import { t } from "@/lib/translations";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
@@ -20,10 +22,12 @@ export function ProductDetail({
   product,
   related,
   reviews,
+  lots,
 }: {
   product: CatalogProduct;
   related: CatalogProduct[];
   reviews: Review[];
+  lots: Lot[];
 }) {
   const { lang } = useLang();
   const { add } = useCart();
@@ -108,6 +112,8 @@ export function ProductDetail({
             </div>
           </div>
         </article>
+
+        <ProductLots lots={lots} />
 
         <ProductReviews productId={product.id} rating={product.rating} reviews={reviews} />
 

@@ -72,6 +72,8 @@ Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLi
   (60 s par un CDN). Une modification dans l'admin vide le cache aussitôt.
 - **Commandes** : enregistrées dans la base (statut nouveau → confirmé → livré, ou annulé) ;
   le stock baisse à la confirmation et revient en cas d'annulation. Données clients visibles dans l'admin seulement.
+- **Traçabilité** : lots (n°, récolte, origine, analyse PDF), QR code par lot, page publique `/lot`
+  — ce que font les meilleures boutiques européennes (voir §1).
 - **Avis clients** : notés de 1 à 5, publiés seulement après validation du gérant, moyenne affichée
   sur les produits et transmise à Google.
 - **Alertes de retour en stock** : le client laisse un e-mail ou un WhatsApp sur une taille épuisée ;

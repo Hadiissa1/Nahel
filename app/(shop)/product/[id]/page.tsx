@@ -7,6 +7,7 @@ import { ProductDetail } from "@/components/ProductDetail";
 import { getCatalog, getProduct } from "@/lib/products";
 import { siteUrl } from "@/lib/site";
 import { getApprovedReviews } from "@/lib/reviews";
+import { getProductLots } from "@/lib/lots";
 import type { Review } from "@/lib/review-types";
 import { isOutOfStock, photoUrl, type CatalogProduct } from "@/lib/catalog-types";
 
@@ -127,13 +128,13 @@ async function Content({ params }: { params: PageProps<"/product/[id]">["params"
   const { id } = await params;
   const product = await getProduct(id);
   if (!product) notFound();
-  const reviews = await getApprovedReviews(product.id);
+  const [reviews, lots] = await Promise.all([getApprovedReviews(product.id), getProductLots(product.id)]);
   const related = (await getCatalog())
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
   return (
     <>
-      <ProductDetail product={product} related={related} reviews={reviews} />
+      <ProductDetail product={product} related={related} reviews={reviews} lots={lots} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(product, reviews) }} />
     </>
   );

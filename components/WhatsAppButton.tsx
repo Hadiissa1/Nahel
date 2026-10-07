@@ -1,7 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
-import { usePathname } from "next/navigation";
 import { useLang } from "@/components/LanguageProvider";
 import { useCatalog } from "@/components/CatalogProvider";
 import { Whatsapp } from "@/components/icons";
@@ -9,42 +7,41 @@ import { CONTACT } from "@/lib/config";
 import { t } from "@/lib/translations";
 import { pickText } from "@/lib/catalog-types";
 
+const waUrl = (text: string) => `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(text)}`;
+
 /**
  * Floating "chat on WhatsApp" button on every shop page. On a product page
  * the message is pre-filled with that product's name.
  *
- * Reading the URL must happen inside <Suspense> (pages are prerendered): the
- * prerendered page shows the generic button, the product one streams in.
+ * The page address is read when the button is clicked, not while rendering:
+ * reading it during rendering would make every product page partly dynamic
+ * (it has to sit in <Suspense>), and a page regenerating after an admin change
+ * could then mix old HTML with new data.
  */
 export function WhatsAppButton() {
-  return (
-    <Suspense fallback={<WhatsAppLink />}>
-      <ForCurrentPage />
-    </Suspense>
-  );
-}
-
-function ForCurrentPage() {
   const { lang } = useLang();
   const { byId } = useCatalog();
-  const path = usePathname();
-  const productId = path.startsWith("/product/") ? decodeURIComponent(path.slice("/product/".length)) : null;
-  const product = productId ? byId.get(productId) : undefined;
-  return (
-    <WhatsAppLink
-      text={product && t.whatsappButton.aboutProduct[lang].replace("{p}", pickText(product.name, lang))}
-    />
-  );
-}
-
-function WhatsAppLink({ text: custom }: { text?: string }) {
-  const { lang } = useLang();
   const w = t.whatsappButton;
-  const text = custom ?? w.hello[lang];
+
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const path = window.location.pathname;
+    if (!path.startsWith("/product/")) return;
+    let id = path.slice("/product/".length);
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      return;
+    }
+    const product = byId.get(id);
+    if (product) {
+      e.currentTarget.href = waUrl(w.aboutProduct[lang].replace("{p}", pickText(product.name, lang)));
+    }
+  };
 
   return (
     <a
-      href={`https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(text)}`}
+      href={waUrl(w.hello[lang])}
+      onClick={onClick}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={w.label[lang]}

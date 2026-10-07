@@ -22,6 +22,7 @@ export function AdminHeader({
     { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products") },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
+    { href: "/admin/lots", label: a.nav.lots[lang], active: path.startsWith("/admin/lots") },
     { href: "/admin/reviews", label: a.nav.reviews[lang], active: path.startsWith("/admin/reviews"), badge: pendingReviews },
     { href: "/admin/alerts", label: a.nav.alerts[lang], active: path.startsWith("/admin/alerts"), badge: readyAlerts },
     { href: "/admin/codes", label: a.nav.codes[lang], active: path.startsWith("/admin/codes") },

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLang } from "@/components/LanguageProvider";
 import { t } from "@/lib/translations";
 
@@ -58,6 +59,9 @@ export function Footer() {
               </li>
             ))}
           </ul>
+          <Link href="/lot" className="mt-4 inline-block text-sm font-semibold text-honey-light hover:text-cream">
+            🔍 {t.lots.footerLink[lang]}
+          </Link>
         </div>
 
         <div>

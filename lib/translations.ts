@@ -403,6 +403,34 @@ export const t = {
     ratingLabel: { en: "Rated {a} out of 5 ({n} reviews)", ar: "التقييم {a} من 5 ({n} تقييم)" },
   },
 
+  lots: {
+    title: { en: "Traceability", ar: "التتبّع" },
+    intro: {
+      en: "Every jar carries a lot number: check where and when your honey was harvested.",
+      ar: "يحمل كل برطمان رقم دفعة: تحقّق من مكان وتاريخ قطاف عسلك.",
+    },
+    lot: { en: "Lot {c}", ar: "الدفعة {c}" },
+    harvest: { en: "Harvested", ar: "تاريخ القطاف" },
+    region: { en: "Origin", ar: "المصدر" },
+    analysis: { en: "Lab analysis (PDF)", ar: "تحليل المختبر (PDF)" },
+    checkTitle: { en: "Check your jar", ar: "تحقّق من برطمانك" },
+    checkIntro: {
+      en: "Type the lot number printed on your jar's label, or scan its QR code.",
+      ar: "اكتب رقم الدفعة المطبوع على ملصق البرطمان، أو امسح رمز QR.",
+    },
+    codeLabel: { en: "Lot number", ar: "رقم الدفعة" },
+    check: { en: "Check", ar: "تحقّق" },
+    notFound: {
+      en: "We couldn't find lot “{c}”. Check the number on the label, or contact us on WhatsApp.",
+      ar: "لم نجد الدفعة «{c}». تحقّق من الرقم على الملصق، أو تواصل معنا عبر واتساب.",
+    },
+    authentic: { en: "Authentic Nahel lot", ar: "دفعة أصلية من نحّال" },
+    product: { en: "Product", ar: "المنتج" },
+    viewProduct: { en: "See the product", ar: "عرض المنتج" },
+    another: { en: "Check another lot", ar: "تحقّق من دفعة أخرى" },
+    footerLink: { en: "Check a lot number", ar: "تحقّق من رقم الدفعة" },
+  },
+
   whatsappButton: {
     label: { en: "Chat on WhatsApp", ar: "تواصل عبر واتساب" },
     hello: { en: "Hello Nahel! I have a question.", ar: "مرحباً نحّال! لدي سؤال." },
