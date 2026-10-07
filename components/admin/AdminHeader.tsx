@@ -6,7 +6,7 @@ import { useLang } from "@/components/LanguageProvider";
 import { logoutAction } from "@/app/admin/actions";
 import { a } from "@/lib/admin-i18n";
 
-export function AdminHeader({ newOrders = 0 }: { newOrders?: number }) {
+export function AdminHeader({ newOrders = 0, readyAlerts = 0 }: { newOrders?: number; readyAlerts?: number }) {
   const { lang, toggle } = useLang();
   const path = usePathname();
   const tabs = [
@@ -14,6 +14,7 @@ export function AdminHeader({ newOrders = 0 }: { newOrders?: number }) {
     { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products") },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
+    { href: "/admin/alerts", label: a.nav.alerts[lang], active: path.startsWith("/admin/alerts"), badge: readyAlerts },
     { href: "/admin/codes", label: a.nav.codes[lang], active: path.startsWith("/admin/codes") },
     { href: "/admin/delivery", label: a.nav.delivery[lang], active: path.startsWith("/admin/delivery") },
   ];

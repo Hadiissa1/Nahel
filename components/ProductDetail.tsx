@@ -7,6 +7,7 @@ import { useCart } from "@/components/CartProvider";
 import { Bag } from "@/components/icons";
 import { OptionPicker, ProductMedia, defaultOption } from "@/components/ProductMedia";
 import { StockAndPrice } from "@/components/StockAndPrice";
+import { NotifyMe } from "@/components/NotifyMe";
 import { ShareButtons } from "@/components/ShareButtons";
 import { SaleBadge } from "@/components/SaleBadge";
 import { ProductCard } from "@/components/ProductCard";
@@ -72,6 +73,7 @@ export function ProductDetail({
               <div>
                 <p className="mb-2 text-sm font-semibold text-bark">{s.weight[lang]}</p>
                 <OptionPicker
+                  outLabel={t.shop.outOfStock[lang]}
                   variants={product.variants}
                   value={optionId}
                   onChange={setOptionId}
@@ -93,6 +95,9 @@ export function ProductDetail({
                 {t.cart.add[lang]}
               </button>
             </div>
+            {soldOut && option && (
+              <NotifyMe key={option.id} productId={product.id} variantId={option.id} />
+            )}
 
             <div className="border-t border-bark/10 pt-4">
               <ShareButtons product={product} />

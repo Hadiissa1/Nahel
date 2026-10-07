@@ -101,6 +101,25 @@ export const a = {
     promotions: L("Promotions", "العروض"),
     codes: L("Promo codes", "أكواد الخصم"),
     delivery: L("Delivery", "التوصيل"),
+    alerts: L("Stock alerts", "تنبيهات المخزون"),
+  },
+
+  alerts: {
+    title: L("Back-in-stock alerts", "تنبيهات العودة إلى المخزون"),
+    intro: L(
+      "Customers can ask to be told when a sold-out size is back. Emails go out by themselves as soon as you add stock; WhatsApp messages are sent by you, from here.",
+      "يمكن للزبائن طلب إعلامهم عند عودة حجم نفد. تُرسل رسائل البريد تلقائياً فور إضافة المخزون، أما رسائل واتساب فترسلها أنت من هنا.",
+    ),
+    readyTitle: L("Back in stock: to send now", "عاد إلى المخزون: للإرسال الآن"),
+    readyNone: L("Nothing to send.", "لا شيء للإرسال."),
+    open: L("Open WhatsApp", "فتح واتساب"),
+    done: L("Done", "تم"),
+    emailNotSetUp: L("email (not set up on the server)", "بريد (غير مُعدّ على الخادم)"),
+    waitingTitle: L("Waiting for stock", "بانتظار المخزون"),
+    waitingNone: L("Nobody is waiting.", "لا أحد بالانتظار."),
+    waitingHint: L("Demand for sizes that are out of stock: useful to plan your next harvest or order.", "الطلب على الأحجام النافدة: مفيد لتخطيط القطاف أو الطلبية القادمة."),
+    people: L("{e} by email · {w} by WhatsApp", "{e} عبر البريد · {w} عبر واتساب"),
+    failed: L("Something went wrong. Please try again.", "حدث خطأ. حاول مجدداً."),
   },
 
   zones: {

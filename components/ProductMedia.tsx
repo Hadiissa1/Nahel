@@ -58,18 +58,24 @@ export function ProductMedia({
   );
 }
 
-/** Size options (e.g. 250g / 500g / 1kg). Sold-out options are disabled. */
+/**
+ * Size options (e.g. 250g / 500g / 1kg). Sold-out options are shown crossed
+ * out but stay selectable, so the customer can ask to be told when they're back.
+ */
 export function OptionPicker({
   variants,
   value,
   onChange,
   label,
+  outLabel,
   size = "sm",
 }: {
   variants: Variant[];
   value?: string;
   onChange: (id: string) => void;
   label: string;
+  /** Screen-reader note on sold-out options, e.g. "Out of stock". */
+  outLabel?: string;
   size?: "sm" | "md";
 }) {
   return (
@@ -82,10 +88,10 @@ export function OptionPicker({
             type="button"
             role="radio"
             aria-checked={value === v.id}
-            disabled={out}
             onClick={() => onChange(v.id)}
             className={cn(
-              "rounded-full border font-semibold transition-colors disabled:cursor-not-allowed disabled:line-through disabled:opacity-40",
+              "rounded-full border font-semibold transition-colors",
+              out && "line-through opacity-50",
               size === "md" ? "px-4 py-1.5 text-sm" : "px-3 py-1 text-xs",
               value === v.id
                 ? "border-amber bg-amber text-white"
@@ -93,6 +99,7 @@ export function OptionPicker({
             )}
           >
             {v.label}
+            {out && outLabel && <span className="sr-only"> ({outLabel})</span>}
           </button>
         );
       })}

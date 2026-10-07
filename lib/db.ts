@@ -106,6 +106,18 @@ CREATE TABLE IF NOT EXISTS delivery_zones (
   sort        INTEGER NOT NULL DEFAULT 0,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS stock_alerts (
+  id          TEXT PRIMARY KEY,
+  variant_id  TEXT NOT NULL REFERENCES variants(id) ON DELETE CASCADE,
+  email       TEXT,
+  whatsapp    TEXT,
+  lang        TEXT NOT NULL DEFAULT 'ar' CHECK (lang IN ('ar','en')),
+  sending_at  TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (variant_id, email),
+  UNIQUE (variant_id, whatsapp)
+);
+CREATE INDEX IF NOT EXISTS stock_alerts_variant ON stock_alerts(variant_id);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL

@@ -64,6 +64,16 @@
 | Remise supérieure au panier | Pourcentage limité à 90 % ; un montant fixe ne dépasse jamais le total. | `lib/promo-types.ts` |
 | Gestion des codes | Création, pause et suppression réservées à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
 
+### Alertes de retour en stock
+
+| Risque | Protection | Où |
+|---|---|---|
+| Inscrire l'adresse de quelqu'un d'autre | Un seul message, une seule fois, puis l'adresse est supprimée. 20 alertes au plus par adresse ; 10 demandes / heure par IP, 500 / heure au total (testé) ; champ piège anti-robots. | `app/alerts/actions.ts`, `lib/stock-alerts.ts` |
+| Alerte sur un produit masqué, en stock ou inventé | Refusée par le serveur (testé). | `lib/stock-alerts.ts` |
+| Savoir si quelqu'un a déjà demandé une alerte | Même réponse dans tous les cas. | `lib/stock-alerts.ts` |
+| E-mail envoyé deux fois | Chaque alerte est « réservée » avant l'envoi, même avec plusieurs processus ; supprimée après envoi (testé : pas de doublon). | `lib/stock-alerts.ts` |
+| Données personnelles | Liste visible seulement dans l'admin ; supprimées après le message, ou avec le produit. | `app/admin/alerts/` |
+
 ### Livraison par zone
 
 | Risque | Protection | Où |
@@ -106,6 +116,11 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Alertes de retour en stock : 28 vérifications, toutes réussies** (taille épuisée sélectionnable mais
+pas ajoutable, e-mail ou WhatsApp, contact invalide refusé, pas de doublon, page produit en arabe sur mobile,
+alerte refusée pour une taille en stock ou un autre produit, liste d'attente, e-mails envoyés tout seuls
+au réassort en anglais et en arabe, sans doublon, lien WhatsApp prêt, suppression avec le produit, limite anti-abus).
 
 **Livraison : 32 vérifications, toutes réussies** (zones de départ, frais invalides refusés, zone ajoutée,
 désactivée, supprimée, choix obligatoire, total avec frais, livraison gratuite à partir d'un montant,

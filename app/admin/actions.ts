@@ -2,6 +2,8 @@
 
 import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { deleteAlert, sendRestockEmails } from "@/lib/stock-alerts";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
@@ -47,6 +49,17 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 export async function logoutAction() {
   await logout();
   redirect("/admin/login");
+}
+
+/** After a change that can put sizes back in stock, email the people waiting. */
+function notifyRestocks() {
+  after(async () => {
+    try {
+      await sendRestockEmails();
+    } catch (e) {
+      console.error("restock emails failed", e);
+    }
+  });
 }
 
 // ---------- Validation ----------
@@ -170,6 +183,7 @@ export async function saveProductAction(_prev: SaveState, fd: FormData): Promise
   }
 
   updateTag(PRODUCTS_TAG);
+  notifyRestocks();
   redirect(`/admin?saved=${id ? "updated" : "created"}`);
 }
 
@@ -188,7 +202,10 @@ export async function setVisibleAction(id: string, visible: boolean): Promise<{ 
   await requireAdmin();
   if (typeof id !== "string" || typeof visible !== "boolean") return { ok: false };
   const ok = setVisible(id, visible);
-  if (ok) updateTag(PRODUCTS_TAG);
+  if (ok) {
+    updateTag(PRODUCTS_TAG);
+    if (visible) notifyRestocks();
+  }
   return { ok };
 }
 
@@ -198,7 +215,10 @@ export async function setStockAction(variantId: string, raw: string): Promise<{ 
   const stock = parseStock(raw.trim());
   if (stock === "invalid") return { ok: false };
   const ok = setStock(variantId, stock);
-  if (ok) updateTag(PRODUCTS_TAG);
+  if (ok) {
+    updateTag(PRODUCTS_TAG);
+    notifyRestocks();
+  }
   return { ok };
 }
 
@@ -273,7 +293,10 @@ export async function setOrderStatusAction(
     return { ok: false, error: "transition" };
   }
   const r = setOrderStatus(id, status);
-  if (r.ok && r.stockChanged) updateTag(PRODUCTS_TAG);
+  if (r.ok && r.stockChanged) {
+    updateTag(PRODUCTS_TAG);
+    notifyRestocks(); // a cancellation can put stock back
+  }
   return r;
 }
 
@@ -378,4 +401,12 @@ export async function deleteZoneAction(id: string): Promise<{ ok: boolean }> {
   const ok = deleteZone(id);
   if (ok) updateTag(ZONES_TAG);
   return { ok };
+}
+
+// ---------- Stock alerts ----------
+
+export async function deleteAlertAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  return { ok: deleteAlert(id) };
 }

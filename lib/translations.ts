@@ -165,6 +165,26 @@ export const t = {
     onlyLeft: { en: "Only {n} left", ar: "بقي {n} فقط" },
     wasPrice: { en: "Was", ar: "كان" },
     saleBadge: { en: "{n}% off", ar: "خصم {n}%" },
+    notifyMe: { en: "Notify me when it's back", ar: "أعلمني عند توفره" },
+    notifyContact: { en: "Email or WhatsApp number", ar: "البريد الإلكتروني أو رقم واتساب" },
+    notifySubmit: { en: "Notify me", ar: "أعلمني" },
+    notifyPrivacy: {
+      en: "Used only for this one message, then deleted.",
+      ar: "يُستخدم فقط لهذه الرسالة الواحدة ثم يُحذف.",
+    },
+    notifyDone_email: { en: "Done! We'll email you as soon as it's back.", ar: "تم! سنراسلك بالبريد فور توفره." },
+    notifyDone_whatsapp: {
+      en: "Done! We'll message you on WhatsApp as soon as it's back.",
+      ar: "تم! سنراسلك عبر واتساب فور توفره.",
+    },
+    notifyErr_contact: {
+      en: "Enter a valid email, or a phone number with country code.",
+      ar: "أدخل بريداً إلكترونياً صالحاً أو رقم هاتف مع رمز البلد.",
+    },
+    notifyErr_in_stock: { en: "Good news: it's in stock now, you can order it.", ar: "خبر سار: المنتج متوفر الآن ويمكنك طلبه." },
+    notifyErr_unavailable: { en: "This product is no longer available.", ar: "هذا المنتج لم يعد متاحاً." },
+    notifyErr_too_many: { en: "You already have many alerts waiting.", ar: "لديك تنبيهات كثيرة بالانتظار." },
+    notifyErr_rate: { en: "Too many requests. Please try again later.", ar: "طلبات كثيرة. حاول لاحقاً." },
   },
 
   trust: [

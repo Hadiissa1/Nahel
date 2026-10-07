@@ -8,6 +8,7 @@ import { Bag } from "@/components/icons";
 import { OptionPicker, ProductMedia, defaultOption } from "@/components/ProductMedia";
 import { ProductDialog } from "@/components/ProductDialog";
 import { StockAndPrice } from "@/components/StockAndPrice";
+import { NotifyMe } from "@/components/NotifyMe";
 import { SaleBadge } from "@/components/SaleBadge";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
@@ -53,6 +54,7 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
         {product.variants.length > 1 && (
           <div className="mt-1">
             <OptionPicker
+              outLabel={t.shop.outOfStock[lang]}
               variants={product.variants}
               value={optionId}
               onChange={setOptionId}
@@ -73,6 +75,9 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
             {t.cart.add[lang]}
           </button>
         </div>
+        {soldOut && option && (
+          <NotifyMe key={option.id} productId={product.id} variantId={option.id} />
+        )}
       </div>
 
       {viewing && (

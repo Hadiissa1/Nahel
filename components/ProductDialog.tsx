@@ -7,6 +7,7 @@ import { t } from "@/lib/translations";
 import { Bag, Close } from "@/components/icons";
 import { OptionPicker, ProductMedia } from "@/components/ProductMedia";
 import { StockAndPrice } from "@/components/StockAndPrice";
+import { NotifyMe } from "@/components/NotifyMe";
 import { ShareButtons } from "@/components/ShareButtons";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
@@ -99,6 +100,7 @@ export function ProductDialog({
                 {t.shop.weight[lang]}
               </p>
               <OptionPicker
+                outLabel={t.shop.outOfStock[lang]}
                 variants={variants}
                 value={optionId}
                 onChange={onOptionChange}
@@ -120,6 +122,9 @@ export function ProductDialog({
               {t.cart.add[lang]}
             </button>
           </div>
+          {soldOut && option && (
+            <NotifyMe key={option.id} productId={product.id} variantId={option.id} />
+          )}
 
           <div className="flex flex-col gap-3 border-t border-bark/10 pt-4">
             <ShareButtons product={product} />

@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **"Notify me when it's back"** on sold-out sizes: automatic email, or a
+  ready WhatsApp message for the owner, as soon as stock is added
 - **Delivery areas** (Beirut, Mount Lebanon…) with their fee, optionally free
   from a cart total, chosen by the customer at checkout
 - **A page per product** (`/product/<id>`) to share on WhatsApp, Facebook or
@@ -85,6 +87,21 @@ How an order works:
 | **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
 
 Placing an order never changes stock by itself: fake orders can't empty it.
+
+### Back-in-stock alerts
+
+On a sold-out size (crossed out, still selectable), customers tap **🔔 Notify
+me when it's back** and leave an email or a WhatsApp number.
+
+- **Email**: as soon as you add stock (stock box, product form, or a cancelled
+  order), the email goes out **by itself**, in the customer's language, with a
+  link to the product page. It's sent once, then the request is deleted.
+- **WhatsApp**: the **Stock alerts** tab shows a red badge; tap **Open
+  WhatsApp** (message ready), then **Done**.
+- The same tab lists **who is waiting** for each sold-out size: handy to plan
+  your next harvest or purchase.
+- Without email set up on the server, email requests are kept and appear in
+  the tab; they are sent automatically once email works.
 
 ### Delivery areas
 
