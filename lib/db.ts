@@ -57,6 +57,33 @@ CREATE TABLE IF NOT EXISTS campaigns (
   failed      INTEGER NOT NULL DEFAULT 0,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS orders (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  status         TEXT NOT NULL DEFAULT 'new'
+                 CHECK (status IN ('new','confirmed','delivered','cancelled')),
+  name           TEXT NOT NULL,
+  phone          TEXT NOT NULL,
+  address        TEXT NOT NULL DEFAULT '',
+  note           TEXT NOT NULL DEFAULT '',
+  lang           TEXT NOT NULL DEFAULT 'ar',
+  total          INTEGER,
+  stock_applied  INTEGER NOT NULL DEFAULT 0,
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS orders_status ON orders(status);
+CREATE TABLE IF NOT EXISTS order_items (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id    INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id  TEXT NOT NULL,
+  variant_id  TEXT NOT NULL,
+  name_ar     TEXT NOT NULL DEFAULT '',
+  name_en     TEXT NOT NULL DEFAULT '',
+  label       TEXT NOT NULL DEFAULT '',
+  unit_price  INTEGER,
+  qty         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS order_items_order ON order_items(order_id);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { mailConfigured } from "@/lib/mail";
 import { listCampaigns, listSubscribers } from "@/lib/subscribers";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminTop } from "@/components/admin/AdminTop";
 import { AdminLoading } from "@/components/admin/AdminLoading";
 import { PromotionComposer } from "@/components/admin/PromotionComposer";
 
@@ -19,7 +19,7 @@ async function Content() {
   const subs = listSubscribers();
   return (
     <>
-      <AdminHeader />
+      <AdminTop />
       <PromotionComposer
         canEmail={mailConfigured()}
         emailCount={subs.filter((s) => s.email && s.emailConfirmed).length}

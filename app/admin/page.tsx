@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { listAdminProducts } from "@/lib/products";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminTop } from "@/components/admin/AdminTop";
 import { ProductList } from "@/components/admin/ProductList";
 import { AdminLoading } from "@/components/admin/AdminLoading";
 
@@ -18,7 +18,7 @@ async function Products({ searchParams }: { searchParams: PageProps<"/admin">["s
   const { saved } = await searchParams;
   return (
     <>
-      <AdminHeader />
+      <AdminTop />
       {/* Keyed by the save result so the confirmation shows even when the
           router reuses this page after an in-app navigation. */}
       <ProductList

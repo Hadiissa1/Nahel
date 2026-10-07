@@ -94,9 +94,52 @@ export const a = {
   },
 
   nav: {
+    orders: L("Orders", "الطلبات"),
     products: L("Products", "المنتجات"),
     subscribers: L("Subscribers", "المشتركون"),
     promotions: L("Promotions", "العروض"),
+  },
+
+  orders: {
+    title: L("Orders", "الطلبات"),
+    all: L("All", "الكل"),
+    status: {
+      new: L("New", "جديد"),
+      confirmed: L("Confirmed", "مؤكَّد"),
+      delivered: L("Delivered", "تم التسليم"),
+      cancelled: L("Cancelled", "ملغى"),
+    },
+    actions: {
+      confirmed: L("Confirm (take from stock)", "تأكيد (خصم من المخزون)"),
+      delivered: L("Mark delivered", "تم التسليم"),
+      cancelled: L("Cancel", "إلغاء"),
+      new: L("Re-open", "إعادة فتح"),
+    },
+    confirmCancel: L(
+      "Cancel this order? If it was confirmed, its quantities go back into stock.",
+      "إلغاء هذا الطلب؟ إذا كان مؤكَّداً، تعود كمياته إلى المخزون.",
+    ),
+    delete: L("Delete", "حذف"),
+    confirmDelete: L("Delete this cancelled order for good?", "حذف هذا الطلب الملغى نهائياً؟"),
+    empty: L("No orders.", "لا توجد طلبات."),
+    search: L("Search name, phone or no.…", "ابحث بالاسم أو الهاتف أو الرقم…"),
+    total: L("Total", "الإجمالي"),
+    onRequest: L("price on request", "السعر عند الطلب"),
+    address: L("Address", "العنوان"),
+    note: L("Note", "ملاحظة"),
+    call: L("Call", "اتصال"),
+    whatsapp: L("WhatsApp", "واتساب"),
+    shortage: L(
+      "Not enough stock to confirm. Update the stock or the order first:",
+      "المخزون غير كافٍ للتأكيد. حدّث المخزون أو الطلب أولاً:",
+    ),
+    available: L("available {n}", "المتوفر {n}"),
+    stockNote: L(
+      "Stock is taken out when you confirm an order, and put back if you cancel it after confirming.",
+      "يُخصم المخزون عند تأكيد الطلب، ويُعاد إذا ألغيته بعد التأكيد.",
+    ),
+    revenue: L("Delivered this month", "المُسلَّم هذا الشهر"),
+    failed: L("Something went wrong. Please try again.", "حدث خطأ. حاول مجدداً."),
   },
 
   subs: {

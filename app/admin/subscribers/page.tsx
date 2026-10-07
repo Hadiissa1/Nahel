@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { mailConfigured } from "@/lib/mail";
 import { listSubscribers } from "@/lib/subscribers";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminTop } from "@/components/admin/AdminTop";
 import { AdminLoading } from "@/components/admin/AdminLoading";
 import { SubscriberList } from "@/components/admin/SubscriberList";
 
@@ -27,7 +27,7 @@ async function Content() {
   }));
   return (
     <>
-      <AdminHeader />
+      <AdminTop />
       <SubscriberList subscribers={subs} canEmail={mailConfigured()} />
     </>
   );

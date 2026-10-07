@@ -7,9 +7,10 @@ Tailwind CSS v4 and SQLite.
 - Searchable catalog with category filters (Arabic-aware search)
 - Sizes (e.g. 250 g / 500 g / 1 kg) with their own price and stock
 - Cart saved in the browser, checked against the live catalog and stock
-- Orders and contact messages sent through WhatsApp
-- **Store management at `/admin`**: add, edit, hide or delete products; set
-  prices and stock; add photos from the phone camera or gallery
+- Orders recorded on the site (order number, customer details), then sent through WhatsApp
+- **Store management at `/admin`**: orders with automatic stock; add, edit,
+  hide or delete products; set prices and stock; photos from the phone camera
+  or gallery
 - **Offers & sales subscription**: customers leave an email and/or WhatsApp
   number (with consent); the owner sends promotions from `/admin/promotions`
 
@@ -58,6 +59,26 @@ minute.
 
 The first start fills the database once with the starter catalog from
 `lib/data.ts`; after that, products live only in the database.
+
+### Orders
+
+How an order works:
+1. The customer fills the cart, taps **Continue to order**, enters name, phone,
+   and optionally address and note, then **Place order**.
+2. The order is **recorded** (status **New**) and gets a number; the customer then
+   sends it to you on WhatsApp with one tap (the message includes the number).
+3. In **Orders**, a red badge shows new orders. Call or WhatsApp the customer,
+   then:
+
+| Button | Effect |
+|---|---|
+| **Confirm (take from stock)** | Status **Confirmed**; the quantities are **taken out of stock** (refused, with details, if there isn't enough) |
+| **Mark delivered** | Status **Delivered**; counted in "Delivered this month" |
+| **Cancel** | Status **Cancelled**; if it was confirmed, the quantities **go back into stock** |
+| **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
+
+Placing an order never changes stock by itself: fake orders can't empty it.
+Prices in an order are those of the site at the time of ordering.
 
 ### Promotions
 

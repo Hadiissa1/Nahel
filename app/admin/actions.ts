@@ -7,6 +7,13 @@ import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
 import { mailConfigured } from "@/lib/mail";
 import {
+  ORDER_STATUSES,
+  deleteOrder,
+  setOrderStatus,
+  type OrderStatus,
+  type StatusResult,
+} from "@/lib/orders";
+import {
   deleteSubscriber,
   normalizeEmail,
   resendConfirmations,
@@ -242,4 +249,25 @@ export async function sendPromotionAction(_prev: PromoState, fd: FormData): Prom
   const result = await sendCampaign({ subject, body });
   refresh(); // show the new entry in "Sent promotions"
   return { result };
+}
+
+// ---------- Orders ----------
+
+export async function setOrderStatusAction(
+  id: number,
+  status: OrderStatus,
+): Promise<StatusResult> {
+  await requireAdmin();
+  if (!Number.isInteger(id) || !ORDER_STATUSES.includes(status)) {
+    return { ok: false, error: "transition" };
+  }
+  const r = setOrderStatus(id, status);
+  if (r.ok && r.stockChanged) updateTag(PRODUCTS_TAG);
+  return r;
+}
+
+export async function deleteOrderAction(id: number): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (!Number.isInteger(id)) return { ok: false };
+  return { ok: deleteOrder(id) };
 }

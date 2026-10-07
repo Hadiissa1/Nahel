@@ -6,7 +6,7 @@
 
 | Risque | Protection | Où |
 |---|---|---|
-| Vol de données clients | Aucun compte client ni paiement en ligne : aucune donnée client stockée. La commande part par WhatsApp. | architecture |
+| Vol de données clients | Aucun compte client ni paiement en ligne. Les seules données clients (commandes, abonnés) sont réservées à l'admin. | architecture |
 | Injection de script (XSS) | React échappe tout le texte affiché. En-tête **Content-Security-Policy** : seuls nos propres scripts s'exécutent, et les images ne viennent que du site lui-même. | `next.config.ts` |
 | Panier falsifié | Le panier ne stocke que `{produit, taille, quantité}`. Chaque ligne est vérifiée contre le catalogue **et le stock** en direct : produit ou taille inconnus, rupture de stock ou donnée corrompue, la ligne est supprimée. La quantité ne dépasse jamais le stock (ni 99). Noms et prix viennent **toujours** du catalogue. | `components/CartProvider.tsx` |
 | Site affiché dans une iframe pirate (clickjacking) | `X-Frame-Options: DENY` + `frame-ancestors 'none'` | `next.config.ts` |
@@ -27,6 +27,17 @@
 | Fuite de la position GPS de vos photos | Le ré-encodage **supprime toutes les métadonnées** (EXIF, GPS, modèle du téléphone). | `lib/photo-store.ts` |
 | Lecture de fichiers du serveur via l'adresse des photos | Seuls les noms au format exact `<uuid>-800.webp` / `-1600.webp` sont servis ; tout le reste répond 404. | `app/media/[file]/route.ts` |
 | Pages admin dans Google ou en cache | `noindex`, et `Cache-Control: private, no-store`. | `app/admin/layout.tsx` |
+
+### Commandes
+
+| Risque | Protection | Où |
+|---|---|---|
+| Prix modifié par le client | Le navigateur n'envoie que `{produit, taille, quantité}`. Noms et **prix viennent de la base**, au moment de la commande (testé : un faux prix est ignoré). | `lib/orders.ts` |
+| Commander plus que le stock / un produit masqué | Chaque ligne est revérifiée côté serveur : produit visible, taille existante, quantité ≤ stock (sinon refus détaillé). | `lib/orders.ts` |
+| Fausses commandes pour vider le stock | Passer commande **ne touche pas au stock** : il baisse seulement quand **vous confirmez**. 10 commandes / heure par IP, 300 / heure au total ; champ piège anti-robots. | `app/orders/actions.ts` |
+| Stock décompté deux fois | Confirmer / annuler se fait dans une transaction, avec un indicateur « stock déjà appliqué » : le stock ne bouge qu'une fois par commande (testé). Confirmation « tout ou rien » si un produit manque. | `lib/orders.ts` |
+| Code injecté dans un nom ou une adresse | Affiché comme du texte (testé avec `<img onerror=…>`). Longueurs limitées, caractères de contrôle supprimés. | `app/orders/actions.ts` |
+| Données clients (nom, téléphone, adresse) | Visibles **uniquement** dans l'admin (page et actions vérifiées côté serveur ; testé après déconnexion). | `app/admin/orders/` |
 
 ### Abonnements aux offres (e-mail / WhatsApp)
 
@@ -57,6 +68,10 @@
 - **une vraie requête d'administration rejouée après déconnexion ne change rien** dans la base ;
 - l'ancien cookie ne fonctionne plus après déconnexion ;
 - blocage après plusieurs mauvais mots de passe, y compris pour le bon mot de passe pendant le blocage.
+
+**Commandes : 29 vérifications, toutes réussies** (passage de commande, validation, prix falsifié ignoré, quantité au-delà du stock refusée, confirmation qui retire le stock, refus si stock insuffisant, double confirmation sans effet, annulation qui remet le stock, livraison, accès admin seulement, limite anti-abus).
+
+**Promotions : 40 vérifications, toutes réussies.**
 
 **Boutique : 14 + 16 vérifications, toutes réussies** (catalogue, filtres, recherche anglais/arabe,
 tailles, panier, WhatsApp, panier falsifié, vue produit, arabe RTL, mobile). Aucune erreur console

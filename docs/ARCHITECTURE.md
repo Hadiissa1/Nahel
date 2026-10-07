@@ -56,7 +56,7 @@ Visiteur ──▶ (CDN, cache 60 s) ──▶ Boutique Next.js : page pré-gén
                                       │  catalogue + filtres + recherche (dans le navigateur)
                                       │  panier (localStorage, vérifié contre catalogue et stock)
                                       ▼
-                                 Commande envoyée par WhatsApp (message pré-rempli)
+                                 Commande enregistrée (n°, client) puis envoyée par WhatsApp
                                  Paiement : espèces / carte / Whish Money, réglé avec le vendeur
 
 Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLite (DATA_DIR/nahel.db)
@@ -70,7 +70,8 @@ Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLi
   par taille ; photo par appareil photo ou galerie. Détails de sécurité : `docs/SECURITY.md`.
 - **Boutique pré-générée** : tous les visiteurs reçoivent la même page déjà prête, gardée en cache
   (60 s par un CDN). Une modification dans l'admin vide le cache aussitôt.
-- **Aucune donnée client** n'est stockée : les commandes partent par WhatsApp.
+- **Commandes** : enregistrées dans la base (statut nouveau → confirmé → livré, ou annulé) ;
+  le stock baisse à la confirmation et revient en cas d'annulation. Données clients visibles dans l'admin seulement.
 - **Contenu** : produits dans la base (gérés dans `/admin`), textes dans `lib/translations.ts`.
   `lib/data.ts` ne sert qu'au premier démarrage, pour remplir la base.
 
@@ -88,6 +89,6 @@ Pour accepter le paiement par carte directement sur le site, il faudra ajouter :
 
 1. Un **prestataire de paiement** (ex. Stripe, ou celui de votre banque au Liban / Whish Money Business) avec une page de paiement hébergée chez lui.
 2. Une **API de commande** (route serveur Next.js) qui recalcule toujours le total côté serveur à partir des prix du catalogue. Ne jamais faire confiance au prix envoyé par le navigateur.
-3. Une table des **commandes** dans la base (le stock et le back-office existent déjà).
+3. Relier le paiement aux **commandes** déjà enregistrées (le stock et le back-office existent déjà).
 
 Tant que la commande passe par WhatsApp, rien de cela n'est nécessaire, et le site reste très simple et très robuste.

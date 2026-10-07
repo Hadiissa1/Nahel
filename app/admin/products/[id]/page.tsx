@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminProduct } from "@/lib/products";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminTop } from "@/components/admin/AdminTop";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { AdminLoading } from "@/components/admin/AdminLoading";
 
@@ -21,7 +21,7 @@ async function EditProduct({ params }: { params: PageProps<"/admin/products/[id]
   if (!product) notFound();
   return (
     <>
-      <AdminHeader />
+      <AdminTop />
       <ProductForm product={product} />
     </>
   );

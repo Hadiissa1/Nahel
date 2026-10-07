@@ -1,23 +1,24 @@
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
+import { listOrders } from "@/lib/orders";
 import { AdminTop } from "@/components/admin/AdminTop";
-import { ProductForm } from "@/components/admin/ProductForm";
 import { AdminLoading } from "@/components/admin/AdminLoading";
+import { OrderList } from "@/components/admin/OrderList";
 
-export default function NewProductPage() {
+export default function OrdersPage() {
   return (
     <Suspense fallback={<AdminLoading />}>
-      <NewProduct />
+      <Content />
     </Suspense>
   );
 }
 
-async function NewProduct() {
+async function Content() {
   await requireAdmin();
   return (
     <>
       <AdminTop />
-      <ProductForm />
+      <OrderList orders={listOrders()} />
     </>
   );
 }

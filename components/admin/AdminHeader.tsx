@@ -6,10 +6,11 @@ import { useLang } from "@/components/LanguageProvider";
 import { logoutAction } from "@/app/admin/actions";
 import { a } from "@/lib/admin-i18n";
 
-export function AdminHeader() {
+export function AdminHeader({ newOrders = 0 }: { newOrders?: number }) {
   const { lang, toggle } = useLang();
   const path = usePathname();
   const tabs = [
+    { href: "/admin/orders", label: a.nav.orders[lang], active: path.startsWith("/admin/orders"), badge: newOrders },
     { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products") },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
@@ -55,6 +56,11 @@ export function AdminHeader() {
             }`}
           >
             {tab.label}
+            {"badge" in tab && !!tab.badge && (
+              <span className="ms-1.5 rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-bold text-white">
+                {tab.badge}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
