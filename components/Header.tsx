@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { useCart } from "@/components/CartProvider";
@@ -36,7 +37,7 @@ export function Header() {
       }`}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a href="#home" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-honey to-amber text-white shadow">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" strokeWidth={1.7}>
               <path
@@ -49,13 +50,13 @@ export function Header() {
           <span className="font-display text-xl font-bold text-bark-deep">
             {t.brand[lang]}
           </span>
-        </a>
+        </Link>
 
         <ul className="hidden items-center gap-6 lg:flex">
           {links.map((l) => (
             <li key={l.id}>
               <a
-                href={`#${l.id}`}
+                href={`/#${l.id}`}
                 className="text-sm font-medium text-bark/80 transition-colors hover:text-amber"
               >
                 {t.nav[l.key][lang]}
@@ -109,7 +110,7 @@ export function Header() {
             {links.map((l) => (
               <li key={l.id}>
                 <a
-                  href={`#${l.id}`}
+                  href={`/#${l.id}`}
                   onClick={() => setOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm font-medium text-bark/80 hover:bg-honey/10 hover:text-amber"
                 >

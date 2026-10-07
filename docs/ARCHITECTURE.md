@@ -72,6 +72,8 @@ Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLi
   (60 s par un CDN). Une modification dans l'admin vide le cache aussitôt.
 - **Commandes** : enregistrées dans la base (statut nouveau → confirmé → livré, ou annulé) ;
   le stock baisse à la confirmation et revient en cas d'annulation. Données clients visibles dans l'admin seulement.
+- **Pages produit** (`/product/<id>`) : une adresse par produit, à partager (WhatsApp, Facebook,
+  Instagram) avec un aperçu photo, et des données produit (prix, stock) lisibles par Google + sitemap.
 - **Contenu** : produits dans la base (gérés dans `/admin`), textes dans `lib/translations.ts`.
   `lib/data.ts` ne sert qu'au premier démarrage, pour remplir la base.
 

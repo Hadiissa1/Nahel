@@ -8,6 +8,8 @@ Tailwind CSS v4 and SQLite.
 - Sizes (e.g. 250 g / 500 g / 1 kg) with their own price and stock
 - Cart saved in the browser, checked against the live catalog and stock
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
+- **A page per product** (`/product/<id>`) to share on WhatsApp, Facebook or
+  Instagram, with a photo preview, and found by Google (product data, sitemap)
 - **Store management at `/admin`**: orders with automatic stock; add, edit,
   hide or delete products; set prices and stock; photos from the phone camera
   or gallery
@@ -30,7 +32,7 @@ npm run lint
 |---|---|---|
 | `ADMIN_PASSWORD` | yes, for `/admin` | Password for the store management. **At least 12 characters.** Without it, admin sign-in is disabled. |
 | `DATA_DIR` | no | Folder for the database (`nahel.db`) and uploaded photos. Default: `./data`. **Must be on persistent storage** and backed up. |
-| `SITE_URL` | for emails | Public address of the site, e.g. `https://nahel.com`. Used in email links (confirm, unsubscribe). |
+| `SITE_URL` | **yes, in production** | Public address of the site, e.g. `https://nahel.com`. Used in email links (confirm, unsubscribe), share previews and the Google sitemap. **Set it before `npm run build`** too: share previews are built with it. |
 | `BREVO_API_KEY` | for emails | API key from [Brevo](https://www.brevo.com) (free plan: 300 emails/day). |
 | `MAIL_FROM_EMAIL` | for emails | Sender address, verified in Brevo (e.g. `offers@nahel.com`). |
 | `MAIL_FROM_NAME` | no | Sender name. Default: `Nahel`. |
@@ -90,6 +92,24 @@ Prices in an order are those of the site at the time of ordering.
 
 Emails only go to people who **confirmed** their address (a link sent when they
 sign up). Each email has an unsubscribe link; unsubscribing deletes the person.
+
+### Product pages and sharing
+
+Every visible product has its own page, e.g. `https://nahel.com/product/oak`
+(the address uses the product's id). Open it from the **Open product page**
+link in the quick view, or share it:
+
+- **Share** / **WhatsApp** / **Facebook** / **Copy link** buttons on the page
+  (on phones, **Share** opens the phone's share menu, including Instagram).
+- When the link is pasted in WhatsApp or Facebook, a preview appears with the
+  product photo, name and price. After you change the photo, new shares show
+  the new photo (apps may keep an old preview for links already sent).
+- Google: each page carries the product's prices and stock in Google's format,
+  and `/sitemap.xml` lists all visible products. Submit
+  `https://<your-site>/sitemap.xml` in
+  [Google Search Console](https://search.google.com/search-console) once the
+  site is online. Hidden products disappear from the sitemap and their page
+  shows "not found".
 
 ## Edit site text
 

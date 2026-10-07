@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -94,16 +95,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [restored, setRestored] = useState(false);
 
-  // Restore the cart on mount.
+  // Restore the cart on mount. As a transition, so that streamed parts of the
+  // page still hydrating against the server HTML are not re-rendered early
+  // (which React reports as a hydration mismatch).
   useEffect(() => {
+    let saved: StoredLine[] = [];
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (raw) setStored(sanitize(JSON.parse(raw), byId));
+      if (raw) saved = sanitize(JSON.parse(raw), byId);
     } catch {
       /* unavailable or corrupt storage: start empty */
     }
-    setRestored(true);
+    startTransition(() => {
+      setStored(saved);
+      setRestored(true);
+    });
     // Restore once; later catalog changes are applied in `lines` below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

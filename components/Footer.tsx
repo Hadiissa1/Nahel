@@ -50,7 +50,7 @@ export function Footer() {
             {nav.map((l) => (
               <li key={l.id}>
                 <a
-                  href={`#${l.id}`}
+                  href={`/#${l.id}`}
                   className="text-cream/70 transition-colors hover:text-honey-light"
                 >
                   {t.nav[l.key][lang]}

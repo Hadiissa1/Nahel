@@ -215,3 +215,8 @@ export function setStock(variantId: string, stock: number | null): boolean {
   }
   return Number(r.changes) > 0;
 }
+
+/** One visible product from the cached catalog (undefined if hidden/unknown). */
+export async function getProduct(id: string): Promise<CatalogProduct | undefined> {
+  return (await getCatalog()).find((p) => p.id === id);
+}

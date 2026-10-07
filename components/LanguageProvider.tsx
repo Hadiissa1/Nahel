@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -31,8 +32,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (saved === "en" || saved === "ar") {
       // Restoring a persisted preference after mount is a valid effect use;
       // SSR always renders the default ("ar") to keep hydration consistent.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLangState(saved);
+      // A transition lets streamed sections finish hydrating in Arabic first
+      // instead of failing to match the server HTML.
+      startTransition(() => setLangState(saved));
     }
   }, []);
 

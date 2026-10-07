@@ -2,6 +2,7 @@ import "server-only";
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
 import { DATA_DIR, db } from "@/lib/db";
+import { siteUrl } from "@/lib/site";
 
 /**
  * Outgoing email.
@@ -13,10 +14,7 @@ import { DATA_DIR, db } from "@/lib/db";
  * built from the request's Host header, which a client can forge.
  */
 
-export function siteUrl(): string | null {
-  const url = process.env.SITE_URL?.trim().replace(/\/+$/, "");
-  return url && /^https?:\/\/[^\s/]+$/.test(url) ? url : null;
-}
+export { siteUrl };
 
 type Driver = "log" | "brevo" | null;
 function driver(): Driver {

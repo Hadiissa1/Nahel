@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { t } from "@/lib/translations";
 import { Bag, Close } from "@/components/icons";
 import { OptionPicker, ProductMedia } from "@/components/ProductMedia";
 import { StockAndPrice } from "@/components/StockAndPrice";
+import { ShareButtons } from "@/components/ShareButtons";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
 /**
@@ -117,6 +119,16 @@ export function ProductDialog({
               <Bag className="h-5 w-5" stroke="currentColor" />
               {t.cart.add[lang]}
             </button>
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-bark/10 pt-4">
+            <ShareButtons product={product} />
+            <Link
+              href={`/product/${encodeURIComponent(product.id)}`}
+              className="text-sm font-semibold text-amber hover:text-bark"
+            >
+              {t.shop.fullPage[lang]} →
+            </Link>
           </div>
         </div>
       </div>

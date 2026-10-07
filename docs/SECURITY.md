@@ -53,6 +53,16 @@
 | Formule piégée dans l'export Excel | Les cellules commençant par `=`, `+`, `-`, `@` sont neutralisées. | `app/admin/subscribers/export/route.ts` |
 | Données personnelles exposées | Liste, export et envoi réservés à l'administrateur (vérifié côté serveur, testé : export refusé sans connexion). | `app/admin/` |
 
+### Pages produit et partage
+
+| Risque | Protection | Où |
+|---|---|---|
+| Code injecté via un nom de produit dans les données Google (JSON-LD) | Les `<` sont échappés : un nom contenant `</script><script>…` reste du texte (testé). | `app/(shop)/product/[id]/page.tsx` |
+| Produit masqué encore visible | Sa page répond « introuvable » et il sort du sitemap (testé). | `lib/products.ts` |
+| Pages privées indexées par Google | `robots.txt` exclut `/admin`, `/offers/` et `/og/` ; l'admin n'est jamais dans le sitemap. | `app/robots.ts` |
+| Liens de partage falsifiés | Adresses des aperçus et du sitemap construites avec `SITE_URL`, jamais avec l'en-tête `Host`. | `lib/site.ts` |
+| Image de partage abusée | Générée seulement pour un produit visible, à partir de la photo déjà nettoyée (sans GPS), mise en cache 24 h. | `app/og/[id]/route.ts` |
+
 **Dépendances :** `npm audit --omit=dev` = **0 vulnérabilité** dans ce qui tourne en production
 (les alertes restantes concernent seulement l'outil ESLint du développeur).
 
@@ -72,6 +82,10 @@
 **Commandes : 29 vérifications, toutes réussies** (passage de commande, validation, prix falsifié ignoré, quantité au-delà du stock refusée, confirmation qui retire le stock, refus si stock insuffisant, double confirmation sans effet, annulation qui remet le stock, livraison, accès admin seulement, limite anti-abus).
 
 **Promotions : 40 vérifications, toutes réussies.**
+
+**Pages produit : 29 vérifications, toutes réussies** (page en arabe puis en anglais, ajout au panier,
+copie du lien, WhatsApp, aperçu de partage 1200×630 qui change avec la photo, prix et stock dans
+les données Google, nom piégé échappé, sitemap, robots.txt, produit masqué → 404, mobile).
 
 **Boutique : 14 + 16 vérifications, toutes réussies** (catalogue, filtres, recherche anglais/arabe,
 tailles, panier, WhatsApp, panier falsifié, vue produit, arabe RTL, mobile). Aucune erreur console
@@ -112,7 +126,8 @@ perdre les produits et les photos.
 
 Dans tous les cas :
 1. Mettre **Cloudflare** (gratuit) devant le site : HTTPS automatique et cache des pages de la boutique.
-2. Définir `ADMIN_PASSWORD` (long, unique) et `DATA_DIR` dans les réglages de l'hébergeur.
+2. Définir `ADMIN_PASSWORD` (long, unique), `DATA_DIR` et `SITE_URL` (adresse publique, en HTTPS)
+   dans les réglages de l'hébergeur. `SITE_URL` doit aussi être présent **au moment du build**.
 3. **Sauvegarder `DATA_DIR`** régulièrement (base + photos), par exemple une copie chaque nuit.
 4. Toujours servir le site en **HTTPS** : le cookie d'administration ne fonctionne qu'en HTTPS
    (sauf en test sur `localhost`).

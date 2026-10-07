@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Tajawal } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { siteUrl } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-sans-latin",
@@ -22,7 +23,11 @@ const tajawal = Tajawal({
   display: "swap",
 });
 
+const SITE = siteUrl();
+
 export const metadata: Metadata = {
+  // Makes share-preview and canonical URLs absolute (set SITE_URL at build time).
+  ...(SITE && { metadataBase: new URL(SITE) }),
   title: "Nahel — Artisanal Honey & Beekeeping | نحّال — عسل ومعدات نحل",
   description:
     "Authentic Lebanese and Egyptian honey and professional beekeeping supplies. عسل لبناني ومصري أصيل ومعدات نحل احترافية.",
