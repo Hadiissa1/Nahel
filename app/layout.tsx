@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Tajawal } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
-import { CartProvider } from "@/components/CartProvider";
-import { Cart } from "@/components/Cart";
 
 const inter = Inter({
   variable: "--font-sans-latin",
@@ -42,12 +40,7 @@ export default function RootLayout({
       className={`${inter.variable} ${playfair.variable} ${tajawal.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <LanguageProvider>
-          <CartProvider>
-            {children}
-            <Cart />
-          </CartProvider>
-        </LanguageProvider>
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

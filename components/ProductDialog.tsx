@@ -1,35 +1,35 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CURRENCY } from "@/lib/data";
-import type { CatalogEntry } from "@/lib/catalog";
 import { useLang } from "@/components/LanguageProvider";
 import { t } from "@/lib/translations";
-import { Bag, Close, type IconName } from "@/components/icons";
-import { ProductMedia, WeightPicker } from "@/components/ProductMedia";
+import { Bag, Close } from "@/components/icons";
+import { OptionPicker, ProductMedia } from "@/components/ProductMedia";
+import { StockAndPrice } from "@/components/StockAndPrice";
+import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
 /**
  * Large product view. Uses the native <dialog> in modal mode, which traps
  * focus, closes on Escape and restores focus to the opener on close.
  */
 export function ProductDialog({
-  entry,
-  icon,
-  variant,
-  onVariantChange,
+  product,
+  optionId,
+  onOptionChange,
   onAdd,
   onClose,
 }: {
-  entry: CatalogEntry;
-  icon: IconName;
-  variant?: string;
-  onVariantChange: (v: string) => void;
+  product: CatalogProduct;
+  optionId?: string;
+  onOptionChange: (id: string) => void;
   onAdd: () => void;
   onClose: () => void;
 }) {
   const { lang } = useLang();
   const ref = useRef<HTMLDialogElement>(null);
-  const { product, variants, category } = entry;
+  const { variants, category } = product;
+  const option = variants.find((v) => v.id === optionId);
+  const soldOut = !option || isOutOfStock(option);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -65,7 +65,7 @@ export function ProductDialog({
       <div className="grid max-h-[90dvh] overflow-y-auto md:grid-cols-2">
         <ProductMedia
           product={product}
-          icon={icon}
+          size="lg"
           fit="contain"
           className="aspect-square w-full md:aspect-auto md:min-h-[28rem]"
         />
@@ -75,29 +75,31 @@ export function ProductDialog({
             <span className="rounded-full bg-honey/15 px-3 py-1 text-amber">
               {t.nav[category][lang]}
             </span>
-            <span className="rounded-full bg-bark/10 px-3 py-1 text-bark/80">
-              {product.origin[lang]}
-            </span>
+            {pickText(product.origin, lang) && (
+              <span className="rounded-full bg-bark/10 px-3 py-1 text-bark/80">
+                {pickText(product.origin, lang)}
+              </span>
+            )}
           </div>
 
           <h2
             id={`pd-${product.id}`}
             className="font-display text-2xl font-bold text-bark-deep sm:text-3xl"
           >
-            {product.name[lang]}
+            {pickText(product.name, lang)}
           </h2>
 
-          <p className="leading-relaxed text-bark/75">{product.desc[lang]}</p>
+          <p className="whitespace-pre-line leading-relaxed text-bark/75">{pickText(product.desc, lang)}</p>
 
-          {variants && (
+          {variants.length > 1 && (
             <div>
               <p className="mb-2 text-sm font-semibold text-bark">
                 {t.shop.weight[lang]}
               </p>
-              <WeightPicker
+              <OptionPicker
                 variants={variants}
-                value={variant}
-                onChange={onVariantChange}
+                value={optionId}
+                onChange={onOptionChange}
                 label={t.shop.weight[lang]}
                 size="md"
               />
@@ -105,15 +107,12 @@ export function ProductDialog({
           )}
 
           <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-bark/10 pt-5">
-            <span className="whitespace-nowrap text-lg font-semibold text-amber">
-              {typeof product.price === "number"
-                ? `${CURRENCY[lang]}${product.price}`
-                : t.cart.priceOnRequest[lang]}
-            </span>
+            <StockAndPrice option={option} large />
             <button
               type="button"
               onClick={onAdd}
-              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-br from-honey to-amber px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-honey/30 transition-transform hover:scale-105 active:scale-95"
+              disabled={soldOut}
+              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-br from-honey to-amber px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-honey/30 transition-transform hover:scale-105 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
             >
               <Bag className="h-5 w-5" stroke="currentColor" />
               {t.cart.add[lang]}

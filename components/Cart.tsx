@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { useCart } from "@/components/CartProvider";
 import { t } from "@/lib/translations";
-import { CURRENCY } from "@/lib/data";
+import { formatPrice, pickText } from "@/lib/catalog-types";
 import { CONTACT } from "@/lib/config";
 import { Bag, Plus, Minus, Trash, Close, Whatsapp } from "@/components/icons";
 
@@ -14,9 +14,9 @@ export function Cart() {
     useCart();
 
   const label = (l: (typeof lines)[number]) =>
-    l.variant
-      ? `${l.entry.product.name[lang]} (${l.variant})`
-      : l.entry.product.name[lang];
+    l.option.label
+      ? `${pickText(l.product.name, lang)} (${l.option.label})`
+      : pickText(l.product.name, lang);
 
   // Lock body scroll while the drawer is open.
   useEffect(() => {
@@ -31,13 +31,13 @@ export function Cart() {
 
   const buildWhatsappLink = () => {
     const rows = lines.map((l) => {
-      const p = l.entry.product.price;
-      const price = typeof p === "number" ? ` — ${CURRENCY[lang]}${p * l.qty}` : "";
+      const p = l.option.price;
+      const price = p !== null ? ` — ${formatPrice(p * l.qty)}` : "";
       return `• ${label(l)} ×${l.qty}${price}`;
     });
     let msg = `${t.cart.orderIntro[lang]}\n\n${rows.join("\n")}`;
     if (hasPrices) {
-      msg += `\n\n${t.cart.total[lang]}: ${CURRENCY[lang]}${total}`;
+      msg += `\n\n${t.cart.total[lang]}: ${formatPrice(total)}`;
     }
     return `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(msg)}`;
   };
@@ -119,11 +119,11 @@ export function Cart() {
                       {label(i)}
                     </p>
                     <p className="truncate text-xs text-bark/55">
-                      {t.nav[i.entry.category][lang]}
+                      {t.nav[i.product.category][lang]}
                     </p>
                     <p className="mt-0.5 text-xs font-semibold text-amber">
-                      {typeof i.entry.product.price === "number"
-                        ? `${CURRENCY[lang]}${i.entry.product.price}`
+                      {i.option.price !== null
+                        ? formatPrice(i.option.price)
                         : t.cart.priceOnRequest[lang]}
                     </p>
                   </div>
@@ -142,7 +142,8 @@ export function Cart() {
                     </span>
                     <button
                       onClick={() => setQty(i.key, i.qty + 1)}
-                      className="grid h-7 w-7 place-items-center rounded-full text-bark transition-colors hover:bg-honey/15 hover:text-amber"
+                      disabled={i.qty >= i.max}
+                      className="grid h-7 w-7 place-items-center rounded-full text-bark transition-colors hover:bg-honey/15 hover:text-amber disabled:opacity-30"
                       aria-label="Increase"
                     >
                       <Plus className="h-4 w-4" stroke="currentColor" />
@@ -171,8 +172,7 @@ export function Cart() {
                   {t.cart.total[lang]}
                 </span>
                 <span className="font-display text-xl font-bold text-bark-deep">
-                  {CURRENCY[lang]}
-                  {total}
+                  {formatPrice(total)}
                 </span>
               </div>
             )}

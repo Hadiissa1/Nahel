@@ -1,24 +1,18 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { t } from "@/lib/translations";
 import { SafeImage } from "@/components/SafeImage";
 import { Bee, Honeycomb, Icon } from "@/components/icons";
-import { HERO_PHOTOS, type Photo } from "@/lib/photos";
+import { useCatalog } from "@/components/CatalogProvider";
 import type { IconName } from "@/components/icons";
+import { photoUrl, pickText } from "@/lib/catalog-types";
 
-type Tile = { id: number; photo?: Photo; icon: IconName };
+type Tile = { id: string; src?: string; alt?: string; icon: IconName };
 
 const ICON_CYCLE: IconName[] = ["HoneyJar", "Bee", "Honeycomb", "Drop", "Hive"];
-
-/** Verified photos first, then honey-themed icon tiles to fill the 4×4 grid. */
-const tiles: Tile[] = Array.from({ length: 16 }, (_, i) => ({
-  id: i,
-  photo: HERO_PHOTOS[i],
-  icon: ICON_CYCLE[i % ICON_CYCLE.length],
-}));
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -30,6 +24,22 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function ShuffleGrid() {
+  const { lang } = useLang();
+  const { products } = useCatalog();
+  // Product photos uploaded in the admin first, then icon tiles to fill 4×4.
+  const tiles = useMemo<Tile[]>(() => {
+    const photos = products.filter((p) => p.photo).slice(0, 16);
+    return Array.from({ length: 16 }, (_, i) =>
+      photos[i]
+        ? {
+            id: photos[i].id,
+            src: photoUrl(photos[i].photo!, "sm"),
+            alt: pickText(photos[i].name, lang),
+            icon: ICON_CYCLE[i % ICON_CYCLE.length],
+          }
+        : { id: `icon-${i}`, icon: ICON_CYCLE[i % ICON_CYCLE.length] },
+    );
+  }, [products, lang]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [order, setOrder] = useState<Tile[]>(tiles);
 
@@ -42,7 +52,7 @@ function ShuffleGrid() {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, []);
+  }, [tiles]);
 
   return (
     <div className="grid grid-cols-4 grid-rows-4 gap-2 h-[340px] sm:h-[440px] lg:h-[500px]">
@@ -53,10 +63,10 @@ function ShuffleGrid() {
           transition={{ duration: 1.4, type: "spring" }}
           className="h-full w-full"
         >
-          {tile.photo ? (
+          {tile.src ? (
             <SafeImage
-              src={tile.photo.src}
-              alt={tile.photo.alt}
+              src={tile.src}
+              alt={tile.alt ?? ""}
               icon={tile.icon}
               className="h-full w-full rounded-lg shadow-sm"
             />

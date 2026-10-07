@@ -1,3 +1,9 @@
+/**
+ * Starter catalog. It is copied into the database once, the first time the
+ * site starts; after that, products are managed in the admin (/admin) and
+ * editing this file changes nothing.
+ */
+
 export type Lang = "en" | "ar";
 
 export type LocalizedText = Record<Lang, string>;
@@ -7,10 +13,7 @@ export interface Product {
   name: LocalizedText;
   origin: LocalizedText;
   desc: LocalizedText;
-  price?: number; // optional — set a number to show prices & cart totals
 }
-
-export const CURRENCY: LocalizedText = { en: "$", ar: "$" };
 
 /* ------------------------------------------------------------------ */
 /*  Honey Collection                                                   */

@@ -52,22 +52,32 @@ Le schéma est presque toujours le même :
 ## 2. Comment Nahel fonctionne aujourd'hui
 
 ```
-Navigateur ──▶ Site 100 % statique (Next.js, pré-rendu au build)
-                 │  catalogue + filtres + recherche (côté navigateur)
-                 │  panier (localStorage, validé contre le catalogue)
-                 ▼
-            Commande envoyée par WhatsApp (message pré-rempli)
-            Paiement : espèces / carte / Whish Money, réglé avec le vendeur
+Visiteur ──▶ (CDN, cache 60 s) ──▶ Boutique Next.js : page pré-générée, rafraîchie chaque minute
+                                      │  catalogue + filtres + recherche (dans le navigateur)
+                                      │  panier (localStorage, vérifié contre catalogue et stock)
+                                      ▼
+                                 Commande envoyée par WhatsApp (message pré-rempli)
+                                 Paiement : espèces / carte / Whish Money, réglé avec le vendeur
+
+Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLite (DATA_DIR/nahel.db)
+                                          │                photos (DATA_DIR/uploads, WebP)
+                                          └──▶ invalide le cache : la boutique se met à jour
 ```
 
-- **Pas de serveur ni de base de données** : rien à pirater côté serveur, aucune donnée client stockée chez nous.
-- **Pré-rendu statique** : chaque visiteur reçoit le même fichier HTML déjà prêt, servi depuis un CDN. C'est ce qui permet de tenir des milliers de visiteurs simultanés (voir `docs/SECURITY.md`).
-- **Contenu** : `lib/data.ts` (produits, prix optionnels) et `lib/translations.ts` (textes anglais/arabe).
+- **Base de données SQLite** (intégrée à Node, rien à installer) : produits, tailles (prix, stock), sessions
+  d'administration. Les photos sont des fichiers WebP à côté de la base.
+- **Espace de gestion** (`/admin`) : ajouter, modifier, masquer, supprimer des produits ; prix et stock
+  par taille ; photo par appareil photo ou galerie. Détails de sécurité : `docs/SECURITY.md`.
+- **Boutique pré-générée** : tous les visiteurs reçoivent la même page déjà prête, gardée en cache
+  (60 s par un CDN). Une modification dans l'admin vide le cache aussitôt.
+- **Aucune donnée client** n'est stockée : les commandes partent par WhatsApp.
+- **Contenu** : produits dans la base (gérés dans `/admin`), textes dans `lib/translations.ts`.
+  `lib/data.ts` ne sert qu'au premier démarrage, pour remplir la base.
 
 ### Ce qui a été appliqué à partir de la recherche
 
 1. **Recherche + filtres** par catégorie sur tout le catalogue.
-2. **Variantes de poids** (250 g / 500 g / 1 kg) pour le miel, transmises dans le panier et le message WhatsApp.
+2. **Tailles** (250 g / 500 g / 1 kg…) avec leur propre prix et stock, transmises dans le panier et le message WhatsApp.
 3. **Bandeau de confiance** : origine directe apiculteur, miel cru, paiement flexible, commande WhatsApp.
 4. **FAQ** : cristallisation, conservation, commande et livraison.
 5. **Formulaire de contact réel** : il ouvre WhatsApp avec le message (avant, il affichait « merci » sans rien envoyer).
@@ -78,7 +88,6 @@ Pour accepter le paiement par carte directement sur le site, il faudra ajouter :
 
 1. Un **prestataire de paiement** (ex. Stripe, ou celui de votre banque au Liban / Whish Money Business) avec une page de paiement hébergée chez lui.
 2. Une **API de commande** (route serveur Next.js) qui recalcule toujours le total côté serveur à partir des prix du catalogue. Ne jamais faire confiance au prix envoyé par le navigateur.
-3. Une **base de données** (commandes, stock) et un **back-office**.
-4. Les **prix** dans `lib/data.ts` (champ `price`).
+3. Une table des **commandes** dans la base (le stock et le back-office existent déjà).
 
 Tant que la commande passe par WhatsApp, rien de cela n'est nécessaire, et le site reste très simple et très robuste.

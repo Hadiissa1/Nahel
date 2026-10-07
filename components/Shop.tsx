@@ -4,39 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { SectionHeading } from "@/components/SectionHeading";
 import { ProductCard } from "@/components/ProductCard";
-import { CATALOG, CATEGORIES, type CategoryId } from "@/lib/catalog";
+import { useCatalog } from "@/components/CatalogProvider";
+import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { t } from "@/lib/translations";
-import type { IconName } from "@/components/icons";
 
-const ICONS: Record<string, IconName> = {
-  oak: "HoneyJar",
-  lemon: "Drop",
-  eucalyptus: "Leaf",
-  jardi: "Honeycomb",
-  baraka: "Drop",
-  "sidr-egy": "HoneyJar",
-  "sidr-kashmir": "HoneyJar",
-  clover: "Leaf",
-  thyme: "Leaf",
-  comb: "Honeycomb",
-  pollen: "Sparkle",
-  "royal-jelly": "Drop",
-  ginseng: "Leaf",
-  "propolis-local": "Shield",
-  "propolis-import": "Shield",
-  "palm-pollen": "Sparkle",
-  "foundation-wax": "Honeycomb",
-  "drawn-wax": "Honeycomb",
-  hives: "Hive",
-  frames: "Hive",
-  supers: "Hive",
-  barrels: "HoneyJar",
-  "pollen-traps": "Sparkle",
-  extractors: "Drop",
-  suits: "Shield",
-  candy: "Drop",
-  bees: "Bee",
-};
 
 type Filter = "all" | CategoryId;
 
@@ -51,25 +22,13 @@ function normalize(s: string) {
     .trim();
 }
 
-// Pre-compute a search index once: both languages, name + origin + description.
-const INDEX = CATALOG.map((entry) => ({
-  entry,
-  text: normalize(
-    (["en", "ar"] as const)
-      .flatMap((l) => [
-        entry.product.name[l],
-        entry.product.origin[l],
-        entry.product.desc[l],
-      ])
-      .join(" "),
-  ),
-}));
 
 const isCategory = (s: string): s is CategoryId =>
   (CATEGORIES as string[]).includes(s);
 
 export function Shop() {
   const { lang } = useLang();
+  const { products } = useCatalog();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
 
@@ -87,14 +46,26 @@ export function Shop() {
     return () => window.removeEventListener("hashchange", sync);
   }, []);
 
+  // Search index: both languages, name + origin + description.
+  const index = useMemo(
+    () =>
+      products.map((p) => ({
+        p,
+        text: normalize(
+          (["en", "ar"] as const)
+            .flatMap((l) => [p.name[l], p.origin[l], p.desc[l]])
+            .join(" "),
+        ),
+      })),
+    [products],
+  );
+
   const results = useMemo(() => {
     const q = normalize(query.slice(0, 60));
-    return INDEX.filter(
-      ({ entry, text }) =>
-        (filter === "all" || entry.category === filter) &&
-        (!q || text.includes(q)),
-    ).map(({ entry }) => entry);
-  }, [filter, query]);
+    return index
+      .filter(({ p, text }) => (filter === "all" || p.category === filter) && (!q || text.includes(q)))
+      .map(({ p }) => p);
+  }, [index, filter, query]);
 
   const tabs: { id: Filter; label: string }[] = [
     { id: "all", label: t.shop.all[lang] },
@@ -164,12 +135,8 @@ export function Shop() {
           <p className="mt-10 text-center text-bark/60">{t.shop.noResults[lang]}</p>
         ) : (
           <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((entry) => (
-              <ProductCard
-                key={entry.product.id}
-                entry={entry}
-                icon={ICONS[entry.product.id] ?? "Drop"}
-              />
+            {results.map((p) => (
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         )}

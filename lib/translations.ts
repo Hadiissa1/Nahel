@@ -152,6 +152,8 @@ export const t = {
     weight: { en: "Size", ar: "الحجم" },
     view: { en: "View product", ar: "عرض المنتج" },
     close: { en: "Close", ar: "إغلاق" },
+    outOfStock: { en: "Out of stock", ar: "نفد من المخزون" },
+    onlyLeft: { en: "Only {n} left", ar: "بقي {n} فقط" },
   },
 
   trust: [
@@ -298,7 +300,6 @@ export const t = {
     products: { en: "Products", ar: "المنتجات" },
     follow: { en: "Follow Us", ar: "تابعنا" },
     rights: { en: "All rights reserved.", ar: "جميع الحقوق محفوظة." },
-    credits: { en: "Photo credits", ar: "حقوق الصور" },
   },
 
   common: {

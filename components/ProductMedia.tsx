@@ -1,33 +1,35 @@
 "use client";
 
-import type { Product } from "@/lib/data";
-import { PRODUCT_PHOTOS } from "@/lib/photos";
 import { SafeImage } from "@/components/SafeImage";
-import { Icon, type IconName } from "@/components/icons";
+import { useLang } from "@/components/LanguageProvider";
+import { Icon } from "@/components/icons";
+import { productIcon } from "@/components/product-icons";
+import { isOutOfStock, photoUrl, pickText, type CatalogProduct, type Variant } from "@/lib/catalog-types";
 import { cn } from "@/lib/utils";
 
 /**
- * The product's photo, or a honey-gradient icon tile when no verified photo
- * exists yet. `fit="contain"` shows the whole photo (used in the product view).
+ * The product's photo, or a honey-gradient icon tile when it has none yet.
+ * `size="lg"` + `fit="contain"` show the whole photo (product view).
  */
 export function ProductMedia({
   product,
-  icon,
+  size = "sm",
   fit = "cover",
   className,
 }: {
-  product: Product;
-  icon: IconName;
+  product: CatalogProduct;
+  size?: "sm" | "lg";
   fit?: "cover" | "contain";
   className?: string;
 }) {
-  const photo = PRODUCT_PHOTOS[product.id];
+  const { lang } = useLang();
+  const icon = productIcon(product.id, product.category);
 
-  if (photo) {
+  if (product.photo) {
     return (
       <SafeImage
-        src={photo.src}
-        alt={photo.alt}
+        src={photoUrl(product.photo, size)}
+        alt={pickText(product.name, lang)}
         icon={icon}
         className={cn(fit === "contain" && "bg-cream-deep", className)}
         imgClassName={cn(
@@ -56,40 +58,49 @@ export function ProductMedia({
   );
 }
 
-/** Weight options for honey (250g / 500g / 1kg). */
-export function WeightPicker({
+/** Size options (e.g. 250g / 500g / 1kg). Sold-out options are disabled. */
+export function OptionPicker({
   variants,
   value,
   onChange,
   label,
   size = "sm",
 }: {
-  variants: readonly string[];
+  variants: Variant[];
   value?: string;
-  onChange: (v: string) => void;
+  onChange: (id: string) => void;
   label: string;
   size?: "sm" | "md";
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex gap-1.5">
-      {variants.map((v) => (
-        <button
-          key={v}
-          type="button"
-          role="radio"
-          aria-checked={value === v}
-          onClick={() => onChange(v)}
-          className={cn(
-            "rounded-full border font-semibold transition-colors",
-            size === "md" ? "px-4 py-1.5 text-sm" : "px-3 py-1 text-xs",
-            value === v
-              ? "border-amber bg-amber text-white"
-              : "border-bark/15 bg-white text-bark/70 hover:border-honey hover:text-amber",
-          )}
-        >
-          {v}
-        </button>
-      ))}
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5">
+      {variants.map((v) => {
+        const out = isOutOfStock(v);
+        return (
+          <button
+            key={v.id}
+            type="button"
+            role="radio"
+            aria-checked={value === v.id}
+            disabled={out}
+            onClick={() => onChange(v.id)}
+            className={cn(
+              "rounded-full border font-semibold transition-colors disabled:cursor-not-allowed disabled:line-through disabled:opacity-40",
+              size === "md" ? "px-4 py-1.5 text-sm" : "px-3 py-1 text-xs",
+              value === v.id
+                ? "border-amber bg-amber text-white"
+                : "border-bark/15 bg-white text-bark/70 hover:border-honey hover:text-amber",
+            )}
+          >
+            {v.label}
+          </button>
+        );
+      })}
     </div>
   );
+}
+
+/** Default option: the first one still in stock. */
+export function defaultOption(variants: Variant[]) {
+  return (variants.find((v) => !isOutOfStock(v)) ?? variants[0])?.id;
 }
