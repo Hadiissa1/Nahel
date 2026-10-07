@@ -10,16 +10,18 @@ export function AdminHeader({
   newOrders = 0,
   readyAlerts = 0,
   pendingReviews = 0,
+  lowStock = 0,
 }: {
   newOrders?: number;
   readyAlerts?: number;
   pendingReviews?: number;
+  lowStock?: number;
 }) {
   const { lang, toggle } = useLang();
   const path = usePathname();
   const tabs = [
     { href: "/admin/orders", label: a.nav.orders[lang], active: path.startsWith("/admin/orders"), badge: newOrders },
-    { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products") },
+    { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products"), badge: lowStock },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
     { href: "/admin/articles", label: a.nav.articles[lang], active: path.startsWith("/admin/articles") },

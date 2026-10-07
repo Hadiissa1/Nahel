@@ -4,6 +4,7 @@ import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { deleteAlert, sendRestockEmails } from "@/lib/stock-alerts";
+import { checkLowStock, saveStockSettings } from "@/lib/low-stock";
 import { REVIEWS_TAG, deleteReview, setReviewApproved } from "@/lib/reviews";
 import { LOTS_TAG, deleteLot, saveLot } from "@/lib/lots";
 import { ARTICLES_TAG, deleteArticle, saveArticle } from "@/lib/articles";
@@ -57,13 +58,21 @@ export async function logoutAction() {
   redirect("/admin/login");
 }
 
-/** After a change that can put sizes back in stock, email the people waiting. */
+/**
+ * After a stock change, once the response is sent: email customers waiting
+ * for sizes back in stock, and the owner about sizes running low.
+ */
 function notifyRestocks() {
   after(async () => {
     try {
       await sendRestockEmails();
     } catch (e) {
       console.error("restock emails failed", e);
+    }
+    try {
+      await checkLowStock();
+    } catch (e) {
+      console.error("low-stock check failed", e);
     }
   });
 }
@@ -558,4 +567,24 @@ export async function deleteArticleAction(id: string): Promise<{ ok: boolean }> 
   await deletePhoto(photo);
   updateTag(ARTICLES_TAG);
   return { ok: true };
+}
+
+// ---------- Low-stock alert settings ----------
+
+export type StockSettingsState = { errors?: FieldErrors; saved?: number };
+
+export async function saveStockSettingsAction(prev: StockSettingsState, fd: FormData): Promise<StockSettingsState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const raw = clean(fd.get("threshold"));
+  const threshold = /^\d{1,4}$/.test(raw) ? parseInt(raw, 10) : -1;
+  if (threshold < 0) errors.threshold = "stock_invalid";
+  const rawEmail = clean(fd.get("email")).slice(0, 300);
+  const email = rawEmail ? normalizeEmail(rawEmail) : null;
+  if (email === "invalid") errors.email = "email_invalid";
+  if (Object.keys(errors).length) return { errors };
+  saveStockSettings({ threshold, email: email as string | null });
+  notifyRestocks(); // a new threshold or address may need an alert now
+  refresh();
+  return { saved: (prev.saved ?? 0) + 1 };
 }

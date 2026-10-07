@@ -56,6 +56,24 @@ export const a = {
     failed: L("Something went wrong. Please try again.", "حدث خطأ. حاول مجدداً."),
   },
 
+  low: {
+    title: L("Low stock", "مخزون منخفض"),
+    none: L("No size is at or below {n}.", "لا يوجد حجم عند {n} أو أقل."),
+    left: L("{n} left", "متبقٍ {n}"),
+    soldOut: L("sold out", "نفد"),
+    edit: L("Update", "تحديث"),
+    settings: L("Alert settings", "إعدادات التنبيه"),
+    threshold: L("Alert at (units)", "التنبيه عند (وحدات)"),
+    email: L("Email for alerts", "البريد للتنبيهات"),
+    emailHint: L(
+      "You get one email when a size reaches this level, then another only after it has been restocked and drops again. Leave empty for no emails.",
+      "تصلك رسالة واحدة عندما يبلغ حجم هذا المستوى، ولا تصلك أخرى إلا بعد إعادة تعبئته ثم انخفاضه مجدداً. اتركه فارغاً لعدم إرسال رسائل.",
+    ),
+    noMail: L("Email sending isn't set up on the server: alerts show here only.", "إرسال البريد غير مُعدّ على الخادم: تظهر التنبيهات هنا فقط."),
+    save: L("Save", "حفظ"),
+    saved: L("Saved", "تم الحفظ"),
+  },
+
   form: {
     newTitle: L("New product", "منتج جديد"),
     editTitle: L("Edit product", "تعديل المنتج"),

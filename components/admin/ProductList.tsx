@@ -12,10 +12,11 @@ import {
   setVisibleAction,
 } from "@/app/admin/actions";
 import { a } from "@/lib/admin-i18n";
+import { LowStockPanel } from "@/components/admin/LowStockPanel";
+import type { LowStockItem, StockSettings } from "@/lib/low-stock";
 import { t } from "@/lib/translations";
 import {
   CATEGORIES,
-  LOW_STOCK,
   formatPrice,
   isOutOfStock,
   photoUrl,
@@ -31,10 +32,17 @@ type Flash = { kind: "ok" | "error"; key: FlashKey } | null;
 export function ProductList({
   products,
   saved,
+  settings,
+  low,
+  canEmail,
 }: {
   products: AdminProduct[];
   saved?: string;
+  settings: StockSettings;
+  low: LowStockItem[];
+  canEmail: boolean;
 }) {
+  const threshold = settings.threshold;
   const { lang } = useLang();
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -51,10 +59,10 @@ export function ProductList({
       total: products.length,
       hidden: products.filter((p) => !p.visible).length,
       out: variants.filter(isOutOfStock).length,
-      low: variants.filter((v) => v.stock !== null && v.stock > 0 && v.stock <= LOW_STOCK)
+      low: variants.filter((v) => v.stock !== null && v.stock > 0 && v.stock <= threshold)
         .length,
     };
-  }, [products]);
+  }, [products, threshold]);
 
   const shown = products.filter((p) => {
     if (cat !== "all" && p.category !== cat) return false;
@@ -71,6 +79,7 @@ export function ProductList({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
+      <LowStockPanel settings={settings} low={low} canEmail={canEmail} />
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
           [
@@ -180,6 +189,7 @@ export function ProductList({
                           </td>
                           <td className="py-1.5">
                             <StockEditor
+                              threshold={threshold}
                               variant={v}
                               onSave={(raw) => run(() => setStockAction(v.id, raw), "stockSaved")}
                             />
@@ -225,13 +235,21 @@ export function ProductList({
   );
 }
 
-function StockEditor({ variant, onSave }: { variant: Variant; onSave: (raw: string) => void }) {
+function StockEditor({
+  variant,
+  threshold,
+  onSave,
+}: {
+  variant: Variant;
+  threshold: number;
+  onSave: (raw: string) => void;
+}) {
   const { lang } = useLang();
   const initial = variant.stock === null ? "" : String(variant.stock);
   const [value, setValue] = useState(initial);
   const dirty = value.trim() !== initial;
   const out = isOutOfStock(variant);
-  const low = variant.stock !== null && variant.stock > 0 && variant.stock <= LOW_STOCK;
+  const low = variant.stock !== null && variant.stock > 0 && variant.stock <= threshold;
 
   return (
     <form

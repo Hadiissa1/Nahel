@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { listAdminProducts } from "@/lib/products";
+import { getStockSettings, listLowStock } from "@/lib/low-stock";
+import { mailConfigured } from "@/lib/mail";
 import { AdminTop } from "@/components/admin/AdminTop";
 import { ProductList } from "@/components/admin/ProductList";
 import { AdminLoading } from "@/components/admin/AdminLoading";
@@ -16,6 +18,7 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
 async function Products({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
   await requireAdmin();
   const { saved } = await searchParams;
+  const settings = getStockSettings();
   return (
     <>
       <AdminTop />
@@ -25,6 +28,9 @@ async function Products({ searchParams }: { searchParams: PageProps<"/admin">["s
         key={typeof saved === "string" ? saved : "list"}
         products={listAdminProducts()}
         saved={typeof saved === "string" ? saved : undefined}
+        settings={settings}
+        low={listLowStock(settings.threshold)}
+        canEmail={mailConfigured()}
       />
     </>
   );

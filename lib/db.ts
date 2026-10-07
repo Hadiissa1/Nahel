@@ -177,6 +177,7 @@ const ADDED_COLUMNS: [table: string, column: string, type: string][] = [
   ["orders", "zone_ar", "TEXT"],
   ["orders", "zone_en", "TEXT"],
   ["orders", "delivery_fee", "INTEGER"],
+  ["variants", "low_alerted", "INTEGER NOT NULL DEFAULT 0"],
 ];
 
 /** Starter delivery zones (fees left empty for the owner to fill in). */
