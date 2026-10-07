@@ -225,6 +225,46 @@ Avec la base de données (version actuelle, 1 processus) :
   et le serveur ne la refabrique qu'environ une fois par minute, quel que soit le nombre de visiteurs.
 - Les tests précédents (sans base de données) montraient que 3 processus multiplient la capacité par 2,5.
 
+### Nouveau test (site complet : 11 étapes, base de données, 1 processus, sans CDN)
+
+Visite réaliste : accueil, pages produit, conseils, vérification de lot, plan du site.
+Chaque « personne » enchaîne les pages **sans aucune pause** (un vrai visiteur lit entre deux pages),
+donc 100 connexions ici représentent bien plus de 100 vrais visiteurs.
+
+| Scénario | Pages servies | Réussies | Erreurs | Temps médian | 99 % sous |
+|---|---|---|---|---|---|
+| **100 personnes en même temps, 30 s** | 22 255 (742 / s) | **100 %** | 0 | 0,12 s | 0,22 s |
+| 500 personnes en même temps, 30 s | 25 527 (851 / s) | **100 %** | 0 | 0,52 s | 1,1 s |
+| 1 000 personnes en même temps, 30 s | 23 247 | 96,6 % | 825 (dont 701 attentes > 20 s) | — | — |
+| **100 commandes passées dans la même seconde** | 100 / 100 enregistrées en 0,55 s | **100 %** | 0 | 0,52 s | — |
+
+- **Commandes simultanées** : 100 commandes → 100 numéros différents, 200 lignes de panier, base de données intacte
+  (`PRAGMA integrity_check` = ok). SQLite en mode WAL + transactions : pas de commande perdue ni en double.
+- **Anti-spam** : 15 commandes depuis la même adresse → 10 acceptées, 5 bloquées.
+- **Un vrai visiteur pendant 500 connexions** : tout fonctionne (pages, panier, aucune erreur), mais lentement sur cette
+  machine partagée avec l'outil de charge (accueil complet en ~15 s, page produit ~5 s).
+- **Le site n'est jamais tombé** : après chaque test, il répond normalement.
+- **Limite d'un seul processus** : environ 800 pages par seconde. Au-delà (1 000 connexions sans pause), une partie
+  des demandes attend trop. Remèdes, dans l'ordre : **Cloudflare devant le site** (les pages portent
+  `s-maxage=60`, le CDN répond à la place du serveur), puis plusieurs processus (voir §3).
+
+### Test de sécurité (attaques simulées) : 23 vérifications, toutes réussies
+
+En-têtes de protection (CSP, anti-iframe, HSTS, nosniff…), 13 pages d'admin sans connexion → page de connexion
+sans aucune donnée, faux cookie de session refusé, 14 tentatives de lire des fichiers du serveur (`nahel.db`, `.env`,
+`.git`, astuces `../`) → rien, 7 injections SQL / script dans les adresses → sans effet, base intacte,
+envoi de 12 Mo refusé (limite 5 Mo) sans faire tomber le site, 5 mauvais mots de passe → connexion bloquée
+(et chaque essai ralenti à ~0,4 s), même le bon mot de passe refusé pendant le blocage.
+
+### Refaire ces tests vous-même (après la mise en ligne)
+
+```bash
+BASE_URL=https://votre-site.com npm run check:security   # lecture seule, ne change rien
+BASE_URL=https://votre-site.com npm run check:load -- 100 30   # 100 personnes pendant 30 s
+```
+
+Lancez le test de charge depuis un autre ordinateur que le serveur, et plutôt la nuit.
+
 ## 3. Mise en ligne recommandée
 
 La base de données (`nahel.db`) et les photos sont des **fichiers sur le disque** (`DATA_DIR`).

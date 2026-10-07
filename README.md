@@ -42,6 +42,8 @@ ADMIN_PASSWORD='a-long-password-here' npm run dev   # http://localhost:3000
 npm run build    # production build
 npm run start    # serve the production build
 npm run lint
+npm run check:security   # security check of a running site (BASE_URL=…, read-only)
+npm run check:load -- 100 30   # 100 visitors at once for 30 s (BASE_URL=…)
 ```
 
 ## Server settings (environment variables)
