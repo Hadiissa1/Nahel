@@ -238,8 +238,8 @@ export const a = {
   team: {
     title: L("Team (staff accounts)", "الفريق (حسابات الموظفين)"),
     intro: L(
-      "Staff sign in with their username and password. They can handle orders, update stock and send stock alerts — nothing else (no prices, products, customers, promotions or settings).",
-      "يدخل الموظفون باسم المستخدم وكلمة المرور. يمكنهم إدارة الطلبات وتحديث المخزون وإرسال تنبيهات المخزون فقط (لا أسعار ولا منتجات ولا زبائن ولا عروض ولا إعدادات).",
+      "Staff sign in with their username and password. They can handle orders, sell at the till, update stock and send stock alerts — nothing else (no prices, products, finance, customers, promotions or settings).",
+      "يدخل الموظفون باسم المستخدم وكلمة المرور. يمكنهم إدارة الطلبات والبيع في الصندوق وتحديث المخزون وإرسال تنبيهات المخزون فقط (لا أسعار ولا منتجات ولا مالية ولا زبائن ولا عروض ولا إعدادات).",
     ),
     signedInAs: L("Signed in as {n}", "مسجّل الدخول: {n}"),
     owner: L("Owner", "المالك"),

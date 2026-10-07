@@ -76,7 +76,7 @@ export function AdminHeader({
           </form>
         </div>
       </div>
-      <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2">
+      <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2 sm:flex-wrap sm:overflow-visible">
         {tabs.map((tab) => (
           <Link
             key={tab.href}
