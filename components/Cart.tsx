@@ -7,11 +7,12 @@ import { checkPromoAction, placeOrderAction, type OrderState } from "@/app/order
 import { t } from "@/lib/translations";
 import { formatPrice, pickText } from "@/lib/catalog-types";
 import { computeDiscount, type PromoError, type PromoRule } from "@/lib/promo-types";
+import { deliveryFee, type DeliveryZone } from "@/lib/delivery-types";
 import { Bag, Plus, Minus, Trash, Close, Whatsapp } from "@/components/icons";
 
 type Step = "cart" | "details" | "done";
 
-export function Cart() {
+export function Cart({ zones }: { zones: DeliveryZone[] }) {
   const { lang } = useLang();
   const { lines, count, total, hasPrices, open, setOpen, setQty, remove, clear } = useCart();
   const [step, setStep] = useState<Step>("cart");
@@ -21,6 +22,7 @@ export function Cart() {
   const [promoInput, setPromoInput] = useState("");
   const [promoMsg, setPromoMsg] = useState<PromoError | "rate" | null>(null);
   const [checking, startChecking] = useTransition();
+  const [zoneId, setZoneId] = useState("");
   const c = t.cart;
 
   // The discount follows the cart; the server checks it again on ordering.
@@ -32,6 +34,18 @@ export function Cart() {
         ? "min_total"
         : null;
   const discount = promo && !promoBlock ? computeDiscount(promo, total) : 0;
+  const goods = total - discount;
+
+  // Delivery is chosen in the details step; the server recomputes the fee.
+  const zone = step === "details" ? zones.find((z) => z.id === zoneId) : undefined;
+  const fee = zone ? deliveryFee(zone, hasPrices ? goods : null) : null;
+  const feeText = (f: number | null) =>
+    f === null ? c.deliveryToConfirm[lang] : f === 0 ? c.deliveryFree[lang] : formatPrice(f);
+  const zoneOption = (z: DeliveryZone) => {
+    const parts = [feeText(z.fee)];
+    if (z.freeFrom !== null && z.fee !== 0) parts.push(c.deliveryFreeFrom[lang].replace("{p}", formatPrice(z.freeFrom)));
+    return `${pickText(z.name, lang)} — ${parts.join(" · ")}`;
+  };
 
   const promoText = (e: PromoError | "rate", minTotal?: number | null) =>
     c[`promo_${e}`][lang].replace("{p}", formatPrice(minTotal ?? promo?.minTotal ?? 0));
@@ -88,6 +102,7 @@ export function Cart() {
     fd.set("lines", JSON.stringify(lines.map((l) => ({ id: l.id, variant: l.variant, qty: l.qty }))));
     fd.set("lang", lang);
     if (promo && discount > 0) fd.set("promo", promo.code);
+    if (zoneId) fd.set("zone", zoneId);
     startTransition(async () => {
       const r = await placeOrderAction({}, fd);
       setResult(r);
@@ -107,6 +122,7 @@ export function Cart() {
     unavailable: c.err_unavailable,
     rate: c.err_rate,
     promo: c.err_promo,
+    zone: c.err_zone,
   };
   const errorText = result.error ? errors[result.error][lang] : null;
   const field =
@@ -117,23 +133,39 @@ export function Cart() {
       {promoBlock && (
         <p className="mb-2 text-xs font-medium text-amber">{promoText(promoBlock)}</p>
       )}
-      {hasPrices && discount > 0 && (
+      {hasPrices && (discount > 0 || zone) && (
         <dl className="mb-1 space-y-1 text-sm text-bark/70">
           <div className="flex justify-between">
             <dt>{c.subtotal[lang]}</dt>
             <dd>{formatPrice(total)}</dd>
           </div>
-          <div className="flex justify-between text-leaf">
-            <dt>{c.promoApplied[lang].replace("{c}", promo!.code)}</dt>
-            <dd dir="ltr">-{formatPrice(discount)}</dd>
-          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-leaf">
+              <dt>{c.promoApplied[lang].replace("{c}", promo!.code)}</dt>
+              <dd dir="ltr">-{formatPrice(discount)}</dd>
+            </div>
+          )}
+          {zone && (
+            <div className="flex justify-between gap-3">
+              <dt>{c.delivery[lang]} ({pickText(zone.name, lang)})</dt>
+              <dd className={fee === 0 ? "text-leaf" : undefined}>{feeText(fee)}</dd>
+            </div>
+          )}
         </dl>
+      )}
+      {zone && hasPrices && zone.freeFrom !== null && fee !== 0 && goods < zone.freeFrom && (
+        <p className="mb-1 text-xs text-leaf">
+          {c.deliveryAddMore[lang].replace("{p}", formatPrice(zone.freeFrom - goods))}
+        </p>
       )}
       {hasPrices && (
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-medium text-bark/70">{c.total[lang]}</span>
-          <span className="font-display text-xl font-bold text-bark-deep">{formatPrice(total - discount)}</span>
+          <span className="font-display text-xl font-bold text-bark-deep">{formatPrice(goods + (fee ?? 0))}</span>
         </div>
+      )}
+      {step === "cart" && zones.length > 0 && (
+        <p className="-mt-2 mb-3 text-xs text-bark/55">{c.deliveryNext[lang]}</p>
       )}
     </>
   );
@@ -230,6 +262,30 @@ export function Cart() {
                 />
                 <span className="mt-1 block text-xs font-normal text-bark/55">{c.phoneHint[lang]}</span>
               </label>
+              {zones.length > 0 && (
+                <label className="block text-sm font-medium text-bark">
+                  {c.zone[lang]}
+                  <select
+                    name="zone_choice"
+                    required
+                    value={zoneId}
+                    onChange={(e) => {
+                      setZoneId(e.target.value);
+                      if (result.error === "zone") setResult({});
+                    }}
+                    className={field}
+                  >
+                    <option value="" disabled>
+                      {c.zoneChoose[lang]}
+                    </option>
+                    {zones.map((z) => (
+                      <option key={z.id} value={z.id}>
+                        {zoneOption(z)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="block text-sm font-medium text-bark">
                 {c.address[lang]}
                 <textarea name="address" rows={2} maxLength={300} autoComplete="street-address" className={`${field} resize-none`} />

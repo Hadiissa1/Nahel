@@ -1,6 +1,7 @@
 import "server-only";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { equipmentProducts, healthProducts, honeyProducts } from "@/lib/data";
 
@@ -95,6 +96,16 @@ CREATE TABLE IF NOT EXISTS promo_codes (
   active      INTEGER NOT NULL DEFAULT 1,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS delivery_zones (
+  id          TEXT PRIMARY KEY,
+  name_ar     TEXT NOT NULL DEFAULT '',
+  name_en     TEXT NOT NULL DEFAULT '',
+  fee         INTEGER,
+  free_from   INTEGER,
+  active      INTEGER NOT NULL DEFAULT 1,
+  sort        INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL
@@ -108,6 +119,18 @@ const ADDED_COLUMNS: [table: string, column: string, type: string][] = [
   ["orders", "promo_code", "TEXT"],
   ["orders", "discount", "INTEGER NOT NULL DEFAULT 0"],
   ["orders", "promo_counted", "INTEGER NOT NULL DEFAULT 0"],
+  ["orders", "zone_ar", "TEXT"],
+  ["orders", "zone_en", "TEXT"],
+  ["orders", "delivery_fee", "INTEGER"],
+];
+
+/** Starter delivery zones (fees left empty for the owner to fill in). */
+const STARTER_ZONES: [ar: string, en: string][] = [
+  ["بيروت", "Beirut"],
+  ["جبل لبنان", "Mount Lebanon"],
+  ["الشمال", "North Lebanon"],
+  ["الجنوب", "South Lebanon"],
+  ["البقاع", "Bekaa"],
 ];
 
 function migrate(db: DatabaseSync) {
@@ -161,6 +184,12 @@ function open() {
     if (!db.prepare("SELECT 1 FROM meta WHERE key = 'seeded'").get()) {
       seed(db);
       db.prepare("INSERT INTO meta (key, value) VALUES ('seeded', datetime('now'))").run();
+    }
+    // Separate marker: also runs once on databases created before zones existed.
+    if (!db.prepare("SELECT 1 FROM meta WHERE key = 'zones_seeded'").get()) {
+      const ins = db.prepare("INSERT INTO delivery_zones (id, name_ar, name_en, sort) VALUES (?, ?, ?, ?)");
+      STARTER_ZONES.forEach(([ar, en], i) => ins.run(randomUUID(), ar, en, i));
+      db.prepare("INSERT INTO meta (key, value) VALUES ('zones_seeded', datetime('now'))").run();
     }
     db.exec("COMMIT");
   } catch (e) {

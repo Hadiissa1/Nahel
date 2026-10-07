@@ -20,6 +20,7 @@ import {
   sendCampaign,
   sendTestCampaign,
 } from "@/lib/subscribers";
+import { ZONES_TAG, deleteZone, saveZone } from "@/lib/delivery";
 import { createPromoCode, deletePromoCode, setPromoActive, shopToday } from "@/lib/promo";
 import { MAX_PERCENT, normalizeCode } from "@/lib/promo-types";
 import {
@@ -339,4 +340,42 @@ export async function deletePromoCodeAction(code: string): Promise<{ ok: boolean
   await requireAdmin();
   if (typeof code !== "string" || code.length > 40) return { ok: false };
   return { ok: deletePromoCode(code) };
+}
+
+// ---------- Delivery zones ----------
+
+export type ZoneState = { errors?: FieldErrors; saved?: number };
+
+export async function saveZoneAction(prev: ZoneState, fd: FormData): Promise<ZoneState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const name = { ar: clean(fd.get("name_ar")).slice(0, 61), en: clean(fd.get("name_en")).slice(0, 61) };
+  if (!name.ar && !name.en) errors.name_ar = "zone_name_required";
+  if (name.ar.length > 60) errors.name_ar = "too_long";
+  if (name.en.length > 60) errors.name_en = "too_long";
+  const fee = parsePrice(clean(fd.get("fee")));
+  if (fee === "invalid") errors.fee = "price_invalid";
+  const freeFrom = parsePrice(clean(fd.get("free_from")));
+  if (freeFrom === "invalid") errors.free_from = "price_invalid";
+  if (Object.keys(errors).length) return { errors };
+
+  const id = clean(fd.get("id")).slice(0, 100) || null;
+  const ok = saveZone(id, {
+    name,
+    fee: fee as number | null,
+    freeFrom: freeFrom as number | null,
+    active: fd.get("active") === "on",
+  });
+  if (!ok) return { errors: { form: "not_found" } };
+  updateTag(ZONES_TAG);
+  refresh();
+  return { saved: (prev.saved ?? 0) + 1 };
+}
+
+export async function deleteZoneAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  const ok = deleteZone(id);
+  if (ok) updateTag(ZONES_TAG);
+  return { ok };
 }

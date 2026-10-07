@@ -7,6 +7,7 @@ import { MAX_CART_QTY } from "@/lib/catalog-types";
 import { MAX_ORDER_LINES, placeOrder, type OrderRequest, type Shortage } from "@/lib/orders";
 import { PRODUCTS_TAG } from "@/lib/products";
 import { findUsablePromo } from "@/lib/promo";
+import { ZONES_TAG } from "@/lib/delivery";
 import { normalizeCode, type PromoError, type PromoRule } from "@/lib/promo-types";
 
 const perIp = rateLimiter(10, 60 * 60 * 1000);
@@ -17,7 +18,7 @@ const promoSiteWide = rateLimiter(3000, 10 * 60 * 1000);
 
 export type OrderState = {
   done?: { orderId: number; whatsappUrl: string };
-  error?: "name" | "phone" | "too_long" | "empty" | "unavailable" | "rate" | "promo";
+  error?: "name" | "phone" | "too_long" | "empty" | "unavailable" | "rate" | "promo" | "zone";
   shortages?: Shortage[];
   promoError?: PromoError;
   minTotal?: number;
@@ -77,13 +78,15 @@ export async function placeOrderAction(_prev: OrderState, fd: FormData): Promise
     note,
     lang: fd.get("lang") === "en" ? "en" : "ar",
     promo,
+    zone: String(fd.get("zone") ?? "").slice(0, 100) || undefined,
   });
   if (!result.ok) {
     if (result.error === "promo") {
       return { error: "promo", promoError: result.promoError, minTotal: result.minTotal };
     }
-    // Stock or availability changed since the page loaded: refresh the shop.
+    // Stock, availability or zones changed since the page loaded: refresh the shop.
     if (result.error === "unavailable") updateTag(PRODUCTS_TAG);
+    if (result.error === "zone") updateTag(ZONES_TAG);
     return { error: result.error, shortages: result.shortages };
   }
   return { done: { orderId: result.orderId, whatsappUrl: result.whatsappUrl } };

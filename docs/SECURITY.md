@@ -64,6 +64,14 @@
 | Remise supérieure au panier | Pourcentage limité à 90 % ; un montant fixe ne dépasse jamais le total. | `lib/promo-types.ts` |
 | Gestion des codes | Création, pause et suppression réservées à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
 
+### Livraison par zone
+
+| Risque | Protection | Où |
+|---|---|---|
+| Frais de livraison modifiés par le client | Le navigateur n'envoie que l'**identifiant de la zone** ; le serveur relit la zone dans la base et calcule les frais lui-même (testé : des frais envoyés à la main sont ignorés). | `lib/orders.ts` |
+| Zone désactivée ou inventée | Refusée à la commande (testé). | `lib/orders.ts` |
+| Gestion des zones | Réservée à l'administrateur (vérifié côté serveur). Supprimer une zone ne change pas les anciennes commandes (nom gardé dans la commande). | `app/admin/actions.ts` |
+
 ### Pages produit et partage
 
 | Risque | Protection | Où |
@@ -98,6 +106,11 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Livraison : 32 vérifications, toutes réussies** (zones de départ, frais invalides refusés, zone ajoutée,
+désactivée, supprimée, choix obligatoire, total avec frais, livraison gratuite à partir d'un montant,
+message WhatsApp, zone inactive ou inventée refusée, frais falsifiés ignorés, sans zone = pas de question,
+mobile en arabe).
 
 **Pages produit : 29 vérifications, toutes réussies** (page en arabe puis en anglais, ajout au panier,
 copie du lien, WhatsApp, aperçu de partage 1200×630 qui change avec la photo, prix et stock dans

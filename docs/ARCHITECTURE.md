@@ -72,6 +72,8 @@ Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLi
   (60 s par un CDN). Une modification dans l'admin vide le cache aussitôt.
 - **Commandes** : enregistrées dans la base (statut nouveau → confirmé → livré, ou annulé) ;
   le stock baisse à la confirmation et revient en cas d'annulation. Données clients visibles dans l'admin seulement.
+- **Livraison par zone** : frais par région (gratuite à partir d'un montant), choisie par le client
+  et recalculée par le serveur.
 - **Soldes et codes promo** : prix soldé par taille (prix barré, badge « -20 % ») et codes de réduction
   vérifiés par le serveur à chaque commande, comptés à la confirmation.
 - **Pages produit** (`/product/<id>`) : une adresse par produit, à partager (WhatsApp, Facebook,

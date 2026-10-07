@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Delivery areas** (Beirut, Mount Lebanon…) with their fee, optionally free
+  from a cart total, chosen by the customer at checkout
 - **A page per product** (`/product/<id>`) to share on WhatsApp, Facebook or
   Instagram, with a photo preview, and found by Google (product data, sitemap)
 - **Store management at `/admin`**: orders with automatic stock; add, edit,
@@ -83,6 +85,20 @@ How an order works:
 | **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
 
 Placing an order never changes stock by itself: fake orders can't empty it.
+
+### Delivery areas
+
+**Delivery** tab: one line per area, with its name (Arabic/English), its
+**fee** and optionally **Free from** (free delivery from that order total,
+after any promo code). Five starter areas are created the first time (Beirut,
+Mount Lebanon, North, South, Bekaa) **without a fee**: fill in yours.
+
+- Empty fee = "fee confirmed on WhatsApp": the customer can still order.
+- Untick **Offered** to stop offering an area without deleting it.
+- At checkout the customer must choose an area; the fee is added to the total
+  (with a hint like "Add $20 more for free delivery"). The server computes the
+  fee itself, and the order and WhatsApp message show the area and fee.
+- With **no** offered area, customers aren't asked (as before).
 
 ### Sales and promo codes
 

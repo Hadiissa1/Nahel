@@ -189,6 +189,19 @@ export function OrderList({ orders }: { orders: Order[] }) {
                         </td>
                       </tr>
                     ))}
+                    {x.zone && (
+                      <tr className="border-t border-bark/15 text-bark/70">
+                        <td className="py-1.5">🚚 {o.delivery[lang].replace("{z}", pickText(x.zone, lang))}</td>
+                        <td />
+                        <td className="py-1.5 text-end">
+                          {x.deliveryFee === null
+                            ? o.deliveryToConfirm[lang]
+                            : x.deliveryFee === 0
+                              ? o.deliveryFree[lang]
+                              : formatPrice(x.deliveryFee)}
+                        </td>
+                      </tr>
+                    )}
                     {x.promoCode && (
                       <>
                         <tr className="border-t border-bark/15 text-bark/70">

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { CONTACT } from "@/lib/config";
 import { MAX_CART_QTY, formatPrice } from "@/lib/catalog-types";
 import { findUsablePromo } from "@/lib/promo";
+import { activeZones } from "@/lib/delivery";
+import { deliveryFee } from "@/lib/delivery-types";
 import { computeDiscount, type PromoError } from "@/lib/promo-types";
 
 export type OrderStatus = "new" | "confirmed" | "delivered" | "cancelled";
@@ -30,6 +32,10 @@ export interface Order {
   subtotal: number | null;
   promoCode: string | null;
   discount: number;
+  /** Delivery area name at the time of the order, or null. */
+  zone: { ar: string; en: string } | null;
+  /** Delivery fee in cents; null = to confirm (or no zone). */
+  deliveryFee: number | null;
   total: number | null;
   createdAt: string;
   updatedAt: string;
@@ -45,13 +51,15 @@ export interface OrderRequest {
   lang: "ar" | "en";
   /** Normalized promo code, if the customer entered one. */
   promo?: string;
+  /** Chosen delivery zone id (required while zones are set up). */
+  zone?: string;
 }
 
 export type Shortage = { name: { ar: string; en: string }; label: string; available: number };
 
 export type PlaceResult =
   | { ok: true; orderId: number; whatsappUrl: string }
-  | { ok: false; error: "empty" | "unavailable"; shortages?: Shortage[] }
+  | { ok: false; error: "empty" | "unavailable" | "zone"; shortages?: Shortage[] }
   | { ok: false; error: "promo"; promoError: PromoError; minTotal?: number };
 
 interface VariantRow {
@@ -85,6 +93,9 @@ const MSG = {
   intro: { ar: "مرحباً نحّال! طلب رقم", en: "Hello Nahel! Order no." },
   subtotal: { ar: "المجموع", en: "Subtotal" },
   code: { ar: "كود الخصم", en: "Promo code" },
+  delivery: { ar: "التوصيل", en: "Delivery" },
+  free: { ar: "مجاني", en: "free" },
+  toConfirm: { ar: "يُحدَّد معكم", en: "to be confirmed" },
   total: { ar: "الإجمالي", en: "Total" },
   onRequest: { ar: "السعر عند الطلب", en: "price on request" },
   name: { ar: "الاسم", en: "Name" },
@@ -100,6 +111,7 @@ function whatsappMessage(
   items: OrderItem[],
   total: number | null,
   promo: { code: string; subtotal: number; discount: number } | null,
+  delivery: { name: { ar: string; en: string }; fee: number | null } | null,
 ) {
   const L = req.lang;
   const rows = items.map((i) => {
@@ -114,6 +126,11 @@ function whatsappMessage(
     "",
     promo ? `${MSG.subtotal[L]}: ${formatPrice(promo.subtotal)}` : null,
     promo ? `${MSG.code[L]} ${promo.code}: -${formatPrice(promo.discount)}` : null,
+    delivery
+      ? `${MSG.delivery[L]} (${pick(delivery.name, L)}): ${
+          delivery.fee === null ? MSG.toConfirm[L] : delivery.fee === 0 ? MSG.free[L] : formatPrice(delivery.fee)
+        }`
+      : null,
     total !== null ? `${MSG.total[L]}: ${formatPrice(total)}` : null,
     `${MSG.name[L]}: ${req.name}`,
     `${MSG.phone[L]}: +${req.phone}`,
@@ -138,6 +155,11 @@ export function placeOrder(req: OrderRequest): PlaceResult {
     merged.set(k, { ...l, qty: Math.min(MAX_CART_QTY, (prev?.qty ?? 0) + l.qty) });
   }
   if (merged.size === 0) return { ok: false, error: "empty" };
+
+  // While delivery zones are set up, the customer must pick an active one.
+  const zones = activeZones();
+  const zone = zones.find((z) => z.id === req.zone);
+  if (zones.length > 0 && !zone) return { ok: false, error: "zone" };
 
   return tx(() => {
     const d = db();
@@ -186,14 +208,21 @@ export function placeOrder(req: OrderRequest): PlaceResult {
       }
       promo = { code: found.rule.code, subtotal, discount: computeDiscount(found.rule, subtotal) };
     }
-    const total = subtotal === null ? null : subtotal - (promo?.discount ?? 0);
+    const goods = subtotal === null ? null : subtotal - (promo?.discount ?? 0);
+    const fee = zone ? deliveryFee(zone, goods) : null;
+    // An unknown fee ("to be confirmed") isn't added; the message says so.
+    const total = goods === null ? null : goods + (fee ?? 0);
 
     const r = d
       .prepare(
-        `INSERT INTO orders (name, phone, address, note, lang, subtotal, promo_code, discount, total)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO orders (name, phone, address, note, lang, subtotal, promo_code, discount,
+           zone_ar, zone_en, delivery_fee, total)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(req.name, req.phone, req.address, req.note, req.lang, subtotal, promo?.code ?? null, promo?.discount ?? 0, total);
+      .run(
+        req.name, req.phone, req.address, req.note, req.lang, subtotal, promo?.code ?? null,
+        promo?.discount ?? 0, zone?.name.ar ?? null, zone?.name.en ?? null, fee, total,
+      );
     const orderId = Number(r.lastInsertRowid);
     const insItem = d.prepare(
       `INSERT INTO order_items (order_id, product_id, variant_id, name_ar, name_en, label, unit_price, qty)
@@ -202,7 +231,7 @@ export function placeOrder(req: OrderRequest): PlaceResult {
     for (const i of items) {
       insItem.run(orderId, i.productId, i.variantId, i.name.ar, i.name.en, i.label, i.unitPrice, i.qty);
     }
-    const text = whatsappMessage(orderId, req, items, total, promo);
+    const text = whatsappMessage(orderId, req, items, total, promo, zone ? { name: zone.name, fee } : null);
     return {
       ok: true as const,
       orderId,
@@ -225,6 +254,9 @@ interface OrderRow {
   promo_code: string | null;
   discount: number;
   promo_counted: number;
+  zone_ar: string | null;
+  zone_en: string | null;
+  delivery_fee: number | null;
   total: number | null;
   stock_applied: number;
   created_at: string;
@@ -276,6 +308,8 @@ export function listOrders(limit = 300): Order[] {
     subtotal: r.subtotal,
     promoCode: r.promo_code,
     discount: r.discount,
+    zone: r.zone_ar !== null || r.zone_en !== null ? { ar: r.zone_ar ?? "", en: r.zone_en ?? "" } : null,
+    deliveryFee: r.delivery_fee,
     total: r.total,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
