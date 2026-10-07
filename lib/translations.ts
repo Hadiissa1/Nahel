@@ -296,6 +296,7 @@ export const t = {
     products: { en: "Products", ar: "المنتجات" },
     follow: { en: "Follow Us", ar: "تابعنا" },
     rights: { en: "All rights reserved.", ar: "جميع الحقوق محفوظة." },
+    credits: { en: "Photo credits", ar: "حقوق الصور" },
   },
 
   common: {

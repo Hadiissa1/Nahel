@@ -4,12 +4,12 @@ const isDev = process.env.NODE_ENV === "development";
 
 // The site is fully static (no nonces), so inline scripts are allowed per the
 // Next.js "CSP without nonces" guide. Everything else is locked to our own
-// origin, except product photos from Unsplash.
+// origin; product photos are self-hosted under public/images.
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.unsplash.com",
+  "img-src 'self' data: blob:",
   "font-src 'self'",
   `connect-src 'self'${isDev ? " ws:" : ""}`,
   "object-src 'none'",

@@ -2,6 +2,7 @@
 
 import { useLang } from "@/components/LanguageProvider";
 import { t } from "@/lib/translations";
+import { ALL_PHOTOS } from "@/lib/photos";
 
 const YEAR = new Date().getFullYear();
 
@@ -78,6 +79,29 @@ export function Footer() {
           <p className="mt-5 text-sm text-cream/60">{t.contact.address[lang]}</p>
         </div>
       </div>
+
+      {ALL_PHOTOS.length > 0 && (
+        <details className="mx-auto max-w-7xl px-4 pb-6 text-xs text-cream/50 sm:px-6 lg:px-8">
+          <summary className="cursor-pointer hover:text-honey-light">
+            {t.footer.credits[lang]}
+          </summary>
+          <ul className="mt-2 space-y-1" dir="ltr">
+            {ALL_PHOTOS.map((p) => (
+              <li key={p.src}>
+                <a
+                  href={p.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-honey-light"
+                >
+                  {p.alt}
+                </a>{" "}
+                — {p.author}, {p.license}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       <div className="border-t border-cream/10">
         <div className="mx-auto max-w-7xl px-4 py-5 text-center text-xs text-cream/50 sm:px-6 lg:px-8">

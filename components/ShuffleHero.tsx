@@ -5,33 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { t } from "@/lib/translations";
 import { SafeImage } from "@/components/SafeImage";
-import { Bee, Honeycomb } from "@/components/icons";
+import { Bee, Honeycomb, Icon } from "@/components/icons";
+import { HERO_PHOTOS, type Photo } from "@/lib/photos";
 import type { IconName } from "@/components/icons";
 
-type Tile = { id: number; src: string; alt: string; icon: IconName };
+type Tile = { id: number; photo?: Photo; icon: IconName };
 
-const U = (id: string) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&q=70`;
+const ICON_CYCLE: IconName[] = ["HoneyJar", "Bee", "Honeycomb", "Drop", "Hive"];
 
-/** Honey, queen bee, bees and beekeeping-equipment photos. */
-const tiles: Tile[] = [
-  { id: 1, src: U("1587049352846-4a222e784d38"), alt: "Honey jars", icon: "HoneyJar" },
-  { id: 2, src: U("1558642452-9d2a7deb7f62"), alt: "Honey drizzle", icon: "Drop" },
-  { id: 3, src: U("1473973266408-ed4e27abdd47"), alt: "Honeycomb", icon: "Honeycomb" },
-  { id: 4, src: U("1568526381923-caf3fd520382"), alt: "Bees on comb", icon: "Bee" },
-  { id: 5, src: U("1607344645866-009c320b63e0"), alt: "Beekeeper", icon: "Hive" },
-  { id: 6, src: U("1471943311424-646960669fbc"), alt: "Honey dipper", icon: "Drop" },
-  { id: 7, src: U("1602523961854-9c6c9f7f0f6a"), alt: "Queen bee", icon: "Bee" },
-  { id: 8, src: U("1550482491-9a9d4c3f3f5b"), alt: "Beehives", icon: "Hive" },
-  { id: 9, src: U("1559827260-dc66d52bef19"), alt: "Bees flying", icon: "Bee" },
-  { id: 10, src: U("1516824711718-9c1e683412ac"), alt: "Honey pot", icon: "HoneyJar" },
-  { id: 11, src: U("1444858345149-8d9f08e7f3a4"), alt: "Honeycomb frame", icon: "Honeycomb" },
-  { id: 12, src: U("1599639668273-01f5c4f0a6d2"), alt: "Beekeeping tools", icon: "Hive" },
-  { id: 13, src: U("1606923829579-0cb981a83e2e"), alt: "Honey spoon", icon: "Drop" },
-  { id: 14, src: U("1551649001-7a2482d98d05"), alt: "Honeycomb close", icon: "Honeycomb" },
-  { id: 15, src: U("1498936178812-4b2e558d2937"), alt: "Bee on flower", icon: "Bee" },
-  { id: 16, src: U("1473496169904-658ba7c44d8a"), alt: "Honey harvest", icon: "HoneyJar" },
-];
+/** Verified photos first, then honey-themed icon tiles to fill the 4×4 grid. */
+const tiles: Tile[] = Array.from({ length: 16 }, (_, i) => ({
+  id: i,
+  photo: HERO_PHOTOS[i],
+  icon: ICON_CYCLE[i % ICON_CYCLE.length],
+}));
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -66,12 +53,23 @@ function ShuffleGrid() {
           transition={{ duration: 1.4, type: "spring" }}
           className="h-full w-full"
         >
-          <SafeImage
-            src={tile.src}
-            alt={tile.alt}
-            icon={tile.icon}
-            className="h-full w-full rounded-lg shadow-sm"
-          />
+          {tile.photo ? (
+            <SafeImage
+              src={tile.photo.src}
+              alt={tile.photo.alt}
+              icon={tile.icon}
+              className="h-full w-full rounded-lg shadow-sm"
+            />
+          ) : (
+            <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-honey-light via-honey to-amber shadow-sm">
+              <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle,rgba(255,255,255,.9)_1px,transparent_1.4px)] [background-size:16px_16px]" />
+              <Icon
+                name={tile.icon}
+                className="relative h-1/3 w-1/3 text-white/95"
+                stroke="currentColor"
+              />
+            </div>
+          )}
         </motion.div>
       ))}
     </div>

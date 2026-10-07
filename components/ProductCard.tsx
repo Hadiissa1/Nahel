@@ -7,6 +7,8 @@ import { useLang } from "@/components/LanguageProvider";
 import { useCart } from "@/components/CartProvider";
 import { t } from "@/lib/translations";
 import { Icon, Bag, type IconName } from "@/components/icons";
+import { SafeImage } from "@/components/SafeImage";
+import { PRODUCT_PHOTOS } from "@/lib/photos";
 
 export function ProductCard({
   entry,
@@ -16,19 +18,32 @@ export function ProductCard({
   icon: IconName;
 }) {
   const { product, variants } = entry;
+  const photo = PRODUCT_PHOTOS[product.id];
   const { lang } = useLang();
   const { add } = useCart();
   const [variant, setVariant] = useState(variants?.[1] ?? variants?.[0]);
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-bark/10 bg-white/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-honey/40">
-      <div className="relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br from-honey-light via-honey to-amber">
-        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle,rgba(255,255,255,.9)_1px,transparent_1.4px)] [background-size:16px_16px]" />
-        <Icon
-          name={icon}
-          className="relative h-16 w-16 text-white drop-shadow transition-transform duration-300 group-hover:scale-110"
-          stroke="currentColor"
-        />
+      <div className="relative h-44 overflow-hidden">
+        {photo ? (
+          <SafeImage
+            src={photo.src}
+            alt={photo.alt}
+            icon={icon}
+            className="h-full w-full"
+            imgClassName="transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="relative flex h-full items-center justify-center bg-gradient-to-br from-honey-light via-honey to-amber">
+            <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle,rgba(255,255,255,.9)_1px,transparent_1.4px)] [background-size:16px_16px]" />
+            <Icon
+              name={icon}
+              className="relative h-16 w-16 text-white drop-shadow transition-transform duration-300 group-hover:scale-110"
+              stroke="currentColor"
+            />
+          </div>
+        )}
         <span className="absolute bottom-3 start-3 rounded-full bg-bark-deep/70 px-2.5 py-0.5 text-[11px] font-medium text-cream backdrop-blur">
           {product.origin[lang]}
         </span>
