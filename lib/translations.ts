@@ -150,6 +150,8 @@ export const t = {
     noResults: { en: "No products match your search.", ar: "لا توجد منتجات مطابقة لبحثك." },
     results: { en: "products", ar: "منتج" },
     weight: { en: "Size", ar: "الحجم" },
+    view: { en: "View product", ar: "عرض المنتج" },
+    close: { en: "Close", ar: "إغلاق" },
   },
 
   trust: [
