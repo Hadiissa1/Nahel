@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Low-stock alerts**: an email to you when a size runs low, plus a banner
+  and a badge in the admin
 - **Tips** (`/blog`): articles in Arabic and English (3 starter articles),
   shown on the home page and listed for Google
 - **Traceability**: lot numbers with harvest date, origin and lab analysis
@@ -70,6 +72,14 @@ Open `https://<your-site>/admin`, sign in with `ADMIN_PASSWORD`, then:
 | Remove a product for good | **Delete** (asks for confirmation) |
 
 Empty price = "price on request". Empty stock = not tracked (always available).
+
+**Low stock**: the banner at the top of **Products** lists sizes at or below
+your alert level (sold out first; click one to update it), and the **Products**
+tab shows how many. Under **⚙️ Alert settings**, choose the level (default 5)
+and the email address for alerts. You get **one** email when a size reaches
+that level (after an order confirmation or a stock change), and another only
+after it has been restocked above the level and drops again. Leave the address
+empty for no emails. Customers still see "Only N left" from 5 units.
 Stock `0` = "out of stock": customers can't add that size to their cart.
 Changes appear in the shop immediately for you, and for all visitors within a
 minute.

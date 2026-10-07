@@ -144,6 +144,11 @@ prix barré et badge, données Google au prix soldé, codes invalides refusés, 
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
 
+**Alerte stock bas : 19 vérifications, toutes réussies** (réglages invalides refusés, adresse normalisée, pas d'e-mail
+au-dessus du seuil, un seul e-mail au passage du seuil en arabe et en anglais avec le lien vers l'admin, pas de
+répétition, nouvel e-mail après réassort, déclenché par la confirmation d'une commande et pas par la commande
+elle-même, épuisé en premier, produit masqué ignoré, sans adresse : bandeau seulement, arabe sur mobile).
+
 **Conseils : 26 vérifications, toutes réussies** (bloc sur l'accueil, lien du menu, page article avec intertitres
 et listes, produits liés, données Google, adresse canonique, plan du site, article en arabe de droite à gauche
 sur mobile, titre obligatoire, adresse créée depuis le titre anglais et nettoyée, adresse en double refusée,
