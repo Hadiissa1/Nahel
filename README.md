@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Tips** (`/blog`): articles in Arabic and English (3 starter articles),
+  shown on the home page and listed for Google
 - **Traceability**: lot numbers with harvest date, origin and lab analysis
   (PDF), a QR code per lot for the jar label, and a "check your jar" page
 - **Customer reviews** (1–5 stars) that you approve before they appear;
@@ -93,6 +95,21 @@ How an order works:
 | **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
 
 Placing an order never changes stock by itself: fake orders can't empty it.
+
+### Tips (articles)
+
+**Tips** tab → **Write an article**: titles, short summaries and texts in
+Arabic and/or English, a photo, up to 6 related products, published or draft.
+
+Writing the text: leave an **empty line** between paragraphs, start a line
+with `## ` for a heading and with `- ` for a list item. That's all; no HTML.
+
+- The web address (e.g. `/blog/how-to-store-honey`) is made from the English
+  title; you can change it.
+- Published articles appear on `/blog` (menu **Tips**), the latest three on
+  the home page, and in the sitemap for Google. Drafts are visible only here.
+- Three starter articles are created the first time (crystallization,
+  storage, choosing real honey): edit or delete them as you like.
 
 ### Lots & traceability
 

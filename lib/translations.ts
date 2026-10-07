@@ -19,6 +19,7 @@ export const t = {
     faq: { en: "FAQ", ar: "أسئلة" },
     offers: { en: "Offers", ar: "العروض" },
     contact: { en: "Contact", ar: "تواصل" },
+    tips: { en: "Tips", ar: "نصائح" },
   },
 
   hero: {
@@ -401,6 +402,20 @@ export const t = {
     err_rate: { en: "Too many reviews sent. Please try again later.", ar: "تقييمات كثيرة. حاول لاحقاً." },
     count: { en: "{n} reviews", ar: "{n} تقييم" },
     ratingLabel: { en: "Rated {a} out of 5 ({n} reviews)", ar: "التقييم {a} من 5 ({n} تقييم)" },
+  },
+
+  blog: {
+    eyebrow: { en: "Tips & guides", ar: "نصائح وإرشادات" },
+    title: { en: "Honey know-how", ar: "كل ما تريد معرفته عن العسل" },
+    subtitle: {
+      en: "Practical advice from the apiary: storing, choosing and enjoying honey.",
+      ar: "نصائح عملية من المنحل: حفظ العسل واختياره والاستمتاع به.",
+    },
+    read: { en: "Read", ar: "اقرأ" },
+    all: { en: "All tips", ar: "كل النصائح" },
+    back: { en: "All tips", ar: "كل النصائح" },
+    related: { en: "Products mentioned", ar: "منتجات ذات صلة" },
+    empty: { en: "No articles yet.", ar: "لا توجد مقالات بعد." },
   },
 
   lots: {

@@ -4,6 +4,7 @@ import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { equipmentProducts, healthProducts, honeyProducts } from "@/lib/data";
+import { STARTER_ARTICLES } from "@/lib/starter-articles";
 
 /** Where the database and uploaded photos live. Must be persistent storage. */
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
@@ -144,6 +145,22 @@ CREATE TABLE IF NOT EXISTS lots (
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS lots_product ON lots(product_id);
+CREATE TABLE IF NOT EXISTS articles (
+  id            TEXT PRIMARY KEY,
+  slug          TEXT NOT NULL UNIQUE,
+  title_ar      TEXT NOT NULL DEFAULT '',
+  title_en      TEXT NOT NULL DEFAULT '',
+  summary_ar    TEXT NOT NULL DEFAULT '',
+  summary_en    TEXT NOT NULL DEFAULT '',
+  body_ar       TEXT NOT NULL DEFAULT '',
+  body_en       TEXT NOT NULL DEFAULT '',
+  photo         TEXT,
+  products      TEXT NOT NULL DEFAULT '',
+  published     INTEGER NOT NULL DEFAULT 0,
+  published_on  TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL
@@ -223,6 +240,16 @@ function open() {
     if (!db.prepare("SELECT 1 FROM meta WHERE key = 'seeded'").get()) {
       seed(db);
       db.prepare("INSERT INTO meta (key, value) VALUES ('seeded', datetime('now'))").run();
+    }
+    if (!db.prepare("SELECT 1 FROM meta WHERE key = 'articles_seeded'").get()) {
+      const ins = db.prepare(
+        `INSERT OR IGNORE INTO articles (id, slug, title_ar, title_en, summary_ar, summary_en, body_ar, body_en, products, published, published_on)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, date('now'))`,
+      );
+      for (const a of STARTER_ARTICLES) {
+        ins.run(randomUUID(), a.slug, a.title.ar, a.title.en, a.summary.ar, a.summary.en, a.body.ar, a.body.en, a.products.join(","));
+      }
+      db.prepare("INSERT INTO meta (key, value) VALUES ('articles_seeded', datetime('now'))").run();
     }
     // Separate marker: also runs once on databases created before zones existed.
     if (!db.prepare("SELECT 1 FROM meta WHERE key = 'zones_seeded'").get()) {

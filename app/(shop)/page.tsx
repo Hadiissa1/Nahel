@@ -9,8 +9,12 @@ import { Payments } from "@/components/Payments";
 import { Testimonials } from "@/components/Testimonials";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
+import { LatestTips } from "@/components/BlogViews";
+import { getPublishedArticles } from "@/lib/articles";
 
-export default function Home() {
+export default async function Home() {
+  // Cached and shared by all visitors; expired when an article is saved.
+  const articles = await getPublishedArticles();
   return (
     <>
       <Header />
@@ -23,6 +27,7 @@ export default function Home() {
         <WhyOurHoney />
         <Payments />
         <Testimonials />
+        <LatestTips articles={articles} />
         <Faq />
         <Subscribe />
         <Contact />

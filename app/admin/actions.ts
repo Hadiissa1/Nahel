@@ -6,6 +6,8 @@ import { after } from "next/server";
 import { deleteAlert, sendRestockEmails } from "@/lib/stock-alerts";
 import { REVIEWS_TAG, deleteReview, setReviewApproved } from "@/lib/reviews";
 import { LOTS_TAG, deleteLot, saveLot } from "@/lib/lots";
+import { ARTICLES_TAG, deleteArticle, saveArticle } from "@/lib/articles";
+import { ARTICLE_LIMITS, SLUG_RE, slugify } from "@/lib/article-types";
 import { normalizeLotCode } from "@/lib/lot-types";
 import { DocError, deleteDoc, saveDoc } from "@/lib/doc-store";
 import { login, logout, requireAdmin } from "@/lib/auth";
@@ -498,5 +500,62 @@ export async function deleteLotAction(id: string): Promise<{ ok: boolean }> {
   await deleteDoc(doc);
   updateTag(LOTS_TAG);
   updateTag(PRODUCTS_TAG);
+  return { ok: true };
+}
+
+// ---------- Articles (tips) ----------
+
+export async function saveArticleAction(_prev: SaveState, fd: FormData): Promise<SaveState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const text = (key: string, max: number, multiline = false) => {
+    let v = String(fd.get(key) ?? "").replace(/\r\n/g, "\n");
+    v = multiline ? v.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "") : v.replace(/[\u0000-\u001F\u007F]/g, " ");
+    v = v.trim();
+    if (v.length > max) errors[key] = "too_long";
+    return v.slice(0, max);
+  };
+  const title = { ar: text("title_ar", ARTICLE_LIMITS.title), en: text("title_en", ARTICLE_LIMITS.title) };
+  const summary = { ar: text("summary_ar", ARTICLE_LIMITS.summary), en: text("summary_en", ARTICLE_LIMITS.summary) };
+  const body = { ar: text("body_ar", ARTICLE_LIMITS.body, true), en: text("body_en", ARTICLE_LIMITS.body, true) };
+  if (!title.ar && !title.en) errors.title_ar = "title_required";
+  if (!body.ar && !body.en) errors.body_ar = "body_required";
+  // Slug: as typed, or made from the English title.
+  const slug = slugify(clean(fd.get("slug")) || title.en) || `tip-${Date.now().toString(36)}`;
+  if (!SLUG_RE.test(slug) || slug.length > ARTICLE_LIMITS.slug) errors.slug = "slug_invalid";
+  const products = fd.getAll("products").map((v) => clean(v).slice(0, 100)).filter(Boolean).slice(0, ARTICLE_LIMITS.products);
+  if (Object.keys(errors).length) return { errors };
+
+  const file = fd.get("photo");
+  let newPhoto: string | null = null;
+  if (file instanceof File && file.size > 0) {
+    try {
+      newPhoto = await savePhoto(file);
+    } catch (e) {
+      return { errors: { photo: e instanceof PhotoError ? `photo_${e.message}` : "photo_unreadable" } };
+    }
+  }
+  const id = clean(fd.get("id")).slice(0, 100) || null;
+  const r = saveArticle(
+    id,
+    { slug, title, summary, body, products, published: fd.get("published") === "on" },
+    newPhoto ?? (fd.get("remove_photo") === "1" ? null : undefined),
+  );
+  if (!r.ok) {
+    await deletePhoto(newPhoto);
+    return { errors: r.error === "slug_taken" ? { slug: "slug_taken" } : { form: "not_found" } };
+  }
+  await deletePhoto(r.oldPhoto);
+  updateTag(ARTICLES_TAG);
+  redirect(`/admin/articles?saved=${id ? "updated" : "created"}`);
+}
+
+export async function deleteArticleAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  const photo = deleteArticle(id);
+  if (photo === false) return { ok: false };
+  await deletePhoto(photo);
+  updateTag(ARTICLES_TAG);
   return { ok: true };
 }

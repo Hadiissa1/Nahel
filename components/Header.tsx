@@ -63,6 +63,11 @@ export function Header() {
               </a>
             </li>
           ))}
+          <li>
+            <Link href="/blog" className="text-sm font-medium text-bark/80 transition-colors hover:text-amber">
+              {t.nav.tips[lang]}
+            </Link>
+          </li>
         </ul>
 
         <div className="flex items-center gap-2">
@@ -118,6 +123,15 @@ export function Header() {
                 </a>
               </li>
             ))}
+            <li>
+              <Link
+                href="/blog"
+                onClick={() => setOpen(false)}
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-bark/80 hover:bg-honey/10 hover:text-amber"
+              >
+                {t.nav.tips[lang]}
+              </Link>
+            </li>
           </ul>
         </div>
       )}

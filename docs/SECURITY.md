@@ -64,6 +64,15 @@
 | Remise supérieure au panier | Pourcentage limité à 90 % ; un montant fixe ne dépasse jamais le total. | `lib/promo-types.ts` |
 | Gestion des codes | Création, pause et suppression réservées à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
 
+### Conseils (articles)
+
+| Risque | Protection | Où |
+|---|---|---|
+| Code injecté dans un article | Le texte n'est jamais interprété comme du HTML : seuls les intertitres (`## `) et les listes (`- `) sont reconnus (testé avec `<script>` et `<img onerror>`) ; échappé dans les données Google. | `lib/article-types.ts`, `components/BlogViews.tsx` |
+| Brouillon visible | Un brouillon n'est ni affiché, ni listé, ni dans le plan du site (testé). | `lib/articles.ts` |
+| Photos | Même traitement que les photos produit (réencodage, sans GPS) ; supprimées avec l'article (testé). | `lib/photo-store.ts` |
+| Gestion des articles | Réservée à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
+
 ### Traçabilité (lots et PDF)
 
 | Risque | Protection | Où |
@@ -134,6 +143,12 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Conseils : 26 vérifications, toutes réussies** (bloc sur l'accueil, lien du menu, page article avec intertitres
+et listes, produits liés, données Google, adresse canonique, plan du site, article en arabe de droite à gauche
+sur mobile, titre obligatoire, adresse créée depuis le titre anglais et nettoyée, adresse en double refusée,
+photo, code injecté affiché comme du texte, article le plus récent en premier, brouillon invisible partout,
+suppression avec les fichiers photo).
 
 **Traçabilité : 27 vérifications, toutes réussies** (n° de lot invalide ou en double refusé, faux PDF refusé,
 PDF stocké sous un nom aléatoire, QR code pointant vers la bonne page, lot actuel sur la page produit

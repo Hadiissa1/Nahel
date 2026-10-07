@@ -59,7 +59,10 @@ export function Footer() {
               </li>
             ))}
           </ul>
-          <Link href="/lot" className="mt-4 inline-block text-sm font-semibold text-honey-light hover:text-cream">
+          <Link href="/blog" className="mt-4 block text-sm font-semibold text-honey-light hover:text-cream">
+            📖 {t.nav.tips[lang]}
+          </Link>
+          <Link href="/lot" className="mt-2 inline-block text-sm font-semibold text-honey-light hover:text-cream">
             🔍 {t.lots.footerLink[lang]}
           </Link>
         </div>
