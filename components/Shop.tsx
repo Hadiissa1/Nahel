@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { SectionHeading } from "@/components/SectionHeading";
-import { ProductCard } from "@/components/ProductCard";
+import { ProductRow } from "@/components/ProductRow";
 import { useCatalog } from "@/components/CatalogProvider";
-import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
+import { CATEGORIES, type CatalogProduct, type CategoryId } from "@/lib/catalog-types";
 import { t } from "@/lib/translations";
 
 
@@ -22,6 +22,10 @@ function normalize(s: string) {
     .trim();
 }
 
+
+/** Products per swipeable row. */
+const ROW_SIZE = 4;
+const CATEGORY_ICON: Record<CategoryId, string> = { honey: "🍯", health: "🐝", equipment: "🧰" };
 
 const isCategory = (s: string): s is CategoryId =>
   (CATEGORIES as string[]).includes(s);
@@ -134,10 +138,35 @@ export function Shop() {
         {results.length === 0 ? (
           <p className="mt-10 text-center text-bark/60">{t.shop.noResults[lang]}</p>
         ) : (
-          <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+          // One block per category; each block in rows ("carousels") of up to 4.
+          <div className="mt-4 space-y-10">
+            {CATEGORIES.map((c) => {
+              const items = results.filter((p) => p.category === c);
+              if (items.length === 0) return null;
+              const rows: CatalogProduct[][] = [];
+              for (let i = 0; i < items.length; i += ROW_SIZE) rows.push(items.slice(i, i + ROW_SIZE));
+              return (
+                <div key={c}>
+                  <h3 className="mb-3 flex items-baseline gap-2 font-display text-xl font-bold text-bark-deep">
+                    {CATEGORY_ICON[c]} {t.nav[c][lang]}
+                    <span className="text-sm font-normal text-bark/50">({items.length})</span>
+                    <span className="ms-auto text-xs font-normal text-bark/45 sm:hidden">{t.shop.swipe[lang]} ↔</span>
+                  </h3>
+                  <div className="space-y-4">
+                    {rows.map((row, i) => (
+                      <ProductRow
+                        key={i}
+                        products={row}
+                        label={t.shop.rowOf[lang]
+                          .replace("{c}", t.nav[c][lang])
+                          .replace("{i}", String(i + 1))
+                          .replace("{n}", String(rows.length))}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
