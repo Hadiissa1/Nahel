@@ -170,6 +170,26 @@ CREATE TABLE IF NOT EXISTS staff (
   last_login  TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS expenses (
+  id          TEXT PRIMARY KEY,
+  day         TEXT NOT NULL,
+  label       TEXT NOT NULL,
+  category    TEXT NOT NULL DEFAULT 'other',
+  amount      INTEGER NOT NULL,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS expenses_day ON expenses(day);
+CREATE TABLE IF NOT EXISTS visit_days (
+  day       TEXT NOT NULL,
+  visitor   TEXT NOT NULL,
+  PRIMARY KEY (day, visitor)
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS page_views (
+  day    TEXT NOT NULL,
+  path   TEXT NOT NULL,
+  views  INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, path)
+) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL
@@ -189,6 +209,10 @@ const ADDED_COLUMNS: [table: string, column: string, type: string][] = [
   ["variants", "low_alerted", "INTEGER NOT NULL DEFAULT 0"],
   ["sessions", "user_id", "TEXT"],
   ["orders", "handled_by", "TEXT"],
+  ["orders", "source", "TEXT NOT NULL DEFAULT 'web'"],
+  ["orders", "payment", "TEXT"],
+  ["orders", "confirmed_at", "TEXT"],
+  ["orders", "delivered_at", "TEXT"],
 ];
 
 /** Starter delivery zones (fees left empty for the owner to fill in). */
@@ -249,6 +273,8 @@ function open() {
   db.exec("BEGIN IMMEDIATE");
   try {
     migrate(db);
+    db.exec(`UPDATE orders SET delivered_at = updated_at WHERE status = 'delivered' AND delivered_at IS NULL;
+             UPDATE orders SET confirmed_at = updated_at WHERE status IN ('confirmed','delivered') AND confirmed_at IS NULL;`);
     if (!db.prepare("SELECT 1 FROM meta WHERE key = 'seeded'").get()) {
       seed(db);
       db.prepare("INSERT INTO meta (key, value) VALUES ('seeded', datetime('now'))").run();

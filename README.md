@@ -10,6 +10,10 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Till** for in-person sales (shop, market): stock and totals update by themselves
+- **Finance**: sales today / this week / this month / any dates, best sellers,
+  payments, expenses and profit, CSV export — plus **visitor numbers**
+  (counted without cookies)
 - **Staff accounts**: colleagues sign in with their own username and can
   handle orders, stock and stock alerts only
 - **Low-stock alerts**: an email to you when a size runs low, plus a banner
@@ -92,6 +96,33 @@ minute.
 The first start fills the database once with the starter catalog from
 `lib/data.ts`; after that, products live only in the database.
 
+### Till (sales in person)
+
+**Till** tab (owner and staff): tap the sizes sold (tap again for more), add a
+discount in % or $ if needed, choose **Cash / Card / Whish Money**, then
+**Charge**. The sale is saved as a delivered order, the stock goes down at once
+(refused if there isn't enough), and a receipt appears (**Print receipt**).
+Till sales show in **Orders** with a 🧾 badge and count in **Finance**.
+
+### Finance (owner only)
+
+**Finance** tab: choose **Today, Yesterday, This week, This month, Last month,
+This year**, or any two dates.
+
+- **Sales** (website + till), number of sales, average sale, items sold,
+  **expenses** and **profit** (sales − expenses).
+- A website sale counts on the day it is **delivered**; a till sale when it is
+  rung up. Orders confirmed but not delivered yet are shown apart.
+- Sales per day (chart, also as a table), split by website / till and by
+  payment, best sellers, discounts and delivery fees.
+- **Expenses**: add what you spend (honey bought, jars, transport, ads, rent,
+  salaries…) to see the real profit.
+- **Visitors**: people per day and pages viewed, the most viewed pages, and the
+  share of visitors who ordered. Counted **without cookies and without storing
+  IP addresses** (one visitor per day); robots and people who refuse tracking
+  are not counted, so no cookie banner is needed.
+- **Export sales (CSV)** opens in Excel, for your accountant.
+
 ### Staff accounts
 
 **Team** tab (owner only): create an account per colleague (name, username,
@@ -100,6 +131,7 @@ password of 10+ characters). They sign in at `/admin` with that username.
 | Staff can | Staff can't |
 |---|---|
 | See and handle orders (confirm, deliver, cancel) | Delete orders, add/edit/hide/delete products, change prices |
+| Sell at the **Till** | See **Finance** or download the sales export |
 | Update stock (stock boxes on Products) | See subscribers, send promotions, manage codes, delivery, lots, tips, reviews, team |
 | Send back-in-stock WhatsApp messages | Change low-stock settings |
 

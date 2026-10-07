@@ -138,6 +138,11 @@ export function OrderList({ orders, isOwner = true }: { orders: Order[]; isOwner
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE[x.status]}`}>
                     {o.status[x.status][lang]}
                   </span>
+                  {x.source === "counter" && (
+                    <span className="rounded-full bg-bark/10 px-2.5 py-0.5 text-xs font-semibold text-bark">
+                      🧾 {a.pos.badge[lang]}{x.payment ? ` · ${a.pos.pay[x.payment][lang]}` : ""}
+                    </span>
+                  )}
                 </div>
                 <span className="text-end text-xs text-bark/55">
                   <span dir="ltr">{x.createdAt.slice(0, 16)}</span>

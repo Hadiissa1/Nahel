@@ -28,6 +28,16 @@
 | Lecture de fichiers du serveur via l'adresse des photos | Seuls les noms au format exact `<uuid>-800.webp` / `-1600.webp` sont servis ; tout le reste répond 404. | `app/media/[file]/route.ts` |
 | Pages admin dans Google ou en cache | `noindex`, et `Cache-Control: private, no-store`. | `app/admin/layout.tsx` |
 
+### Caisse, finances et visiteurs
+
+| Risque | Protection | Où |
+|---|---|---|
+| Prix ou remise trafiqués à la caisse | Le navigateur n'envoie que produits, quantités et remise demandée ; prix (soldes compris) et total recalculés par le serveur, remise bornée (≤ 100 % et ≤ total). Stock vérifié tout ou rien (testé). | `lib/orders.ts` |
+| Employé qui consulte les finances | Onglet Finances et export CSV réservés au propriétaire (testé : redirection et 401). La caisse est ouverte aux employés, avec leur nom sur chaque vente. | `app/admin/finance/` |
+| Formule piégée dans l'export | Cellules commençant par `=`, `+`, `-`, `@` neutralisées. | `app/admin/finance/export/route.ts` |
+| Vie privée des visiteurs | Aucun cookie, aucune adresse IP enregistrée : empreinte hachée avec un secret du jour, effacé le lendemain ; numéros de lot non enregistrés ; robots, admin et « Do Not Track / GPC » ignorés (testé). | `lib/analytics.ts` |
+| Saturer la base avec le compteur | Comptes regroupés en mémoire et écrits toutes les 10 s ; 120 signaux / min par adresse au plus. | `lib/analytics.ts`, `app/api/visit/route.ts` |
+
 ### Comptes employés
 
 | Risque | Protection | Où |
@@ -153,6 +163,12 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Caisse, finances et visiteurs : 31 vérifications, toutes réussies** (commande du site livrée avec ses dates,
+ticket 2 × 18 $ + 8 $ − 10 % = 39,60 $, vente enregistrée et stock retiré, vente au-delà du stock refusée, badge Caisse
+dans les commandes, ventes du jour 59,60 $, panier moyen, répartition site / caisse et par paiement, meilleures ventes,
+remises, 2 visiteurs et 5 pages (robot, « Do Not Track » et admin ignorés), aucune IP enregistrée, dépenses et bénéfice,
+hier / ce mois / dates au choix (heure de Beyrouth), export CSV, employé : caisse oui, finances non, arabe sur mobile).
 
 **Comptes employés : 36 vérifications, toutes réussies** (création et validations, mot de passe haché, nom en double,
 mauvais mot de passe / nom inconnu, onglets limités, 7 pages interdites, export refusé, pas de boutons de gestion,

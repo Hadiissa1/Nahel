@@ -72,6 +72,8 @@ Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLi
   (60 s par un CDN). Une modification dans l'admin vide le cache aussitôt.
 - **Commandes** : enregistrées dans la base (statut nouveau → confirmé → livré, ou annulé) ;
   le stock baisse à la confirmation et revient en cas d'annulation. Données clients visibles dans l'admin seulement.
+- **Caisse et finances** : ventes au comptoir (stock et total automatiques), rapports par période
+  (ventes, paiements, meilleures ventes, dépenses, bénéfice, export CSV), visiteurs comptés sans cookie.
 - **Comptes employés** : propriétaire (tout) et employés (commandes, stock, alertes de stock), avec le nom sur chaque commande traitée.
 - **Alerte stock bas** : un e-mail au gérant quand une taille atteint le seuil (une seule fois jusqu'au réassort),
   bandeau et badge dans l'admin.

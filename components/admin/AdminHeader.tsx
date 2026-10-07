@@ -26,6 +26,8 @@ export function AdminHeader({
   const path = usePathname();
   const all = [
     { href: "/admin/orders", staff: true, label: a.nav.orders[lang], active: path.startsWith("/admin/orders"), badge: newOrders },
+    { href: "/admin/pos", staff: true, label: a.nav.pos[lang], active: path.startsWith("/admin/pos") },
+    { href: "/admin/finance", label: a.nav.finance[lang], active: path.startsWith("/admin/finance") },
     { href: "/admin", staff: true, label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products"), badge: lowStock },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
@@ -40,7 +42,7 @@ export function AdminHeader({
   // Staff only see what they may use (the server refuses the rest anyway).
   const tabs = all.filter((t) => isOwner || ("staff" in t && t.staff));
   return (
-    <header className="sticky top-0 z-40 border-b border-bark/10 bg-cream/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-bark/10 bg-cream/95 backdrop-blur print:hidden">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
         <Link href="/admin" className="font-display text-lg font-bold text-bark-deep">
           {a.title[lang]}

@@ -38,6 +38,9 @@ export interface Order {
   deliveryFee: number | null;
   /** Staff member who last changed the status (null = owner or nobody yet). */
   handledBy: string | null;
+  /** "web" = placed on the site, "counter" = sold in person (till). */
+  source: "web" | "counter";
+  payment: "cash" | "card" | "whish" | null;
   total: number | null;
   createdAt: string;
   updatedAt: string;
@@ -260,6 +263,8 @@ interface OrderRow {
   zone_en: string | null;
   delivery_fee: number | null;
   handled_by: string | null;
+  source: "web" | "counter";
+  payment: "cash" | "card" | "whish" | null;
   total: number | null;
   stock_applied: number;
   created_at: string;
@@ -314,6 +319,8 @@ export function listOrders(limit = 300): Order[] {
     zone: r.zone_ar !== null || r.zone_en !== null ? { ar: r.zone_ar ?? "", en: r.zone_en ?? "" } : null,
     deliveryFee: r.delivery_fee,
     handledBy: r.handled_by,
+    source: r.source,
+    payment: r.payment,
     total: r.total,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -391,7 +398,13 @@ export function setOrderStatus(id: number, next: OrderStatus, by: string | null 
       d.prepare("UPDATE orders SET promo_counted = 0 WHERE id = ?").run(id);
     }
 
-    d.prepare("UPDATE orders SET status = ?, handled_by = ?, updated_at = datetime('now') WHERE id = ?").run(next, by, id);
+    d.prepare(
+      `UPDATE orders SET status = ?, handled_by = ?, updated_at = datetime('now'),
+         -- Dates used by the finance reports (a sale counts on the day it was delivered).
+         confirmed_at = CASE WHEN ? = 'confirmed' THEN datetime('now') WHEN ? = 'new' THEN NULL ELSE confirmed_at END,
+         delivered_at = CASE WHEN ? = 'delivered' THEN datetime('now') ELSE NULL END
+       WHERE id = ?`,
+    ).run(next, by, next, next, next, id);
     return { ok: true as const, stockChanged };
   });
 }
@@ -400,4 +413,87 @@ export function setOrderStatus(id: number, next: OrderStatus, by: string | null 
 export function deleteOrder(id: number): boolean {
   const r = db().prepare("DELETE FROM orders WHERE id = ? AND status = 'cancelled'").run(id);
   return Number(r.changes) > 0;
+}
+
+// ---------- Counter sales (till) ----------
+
+export type Payment = "cash" | "card" | "whish";
+export const PAYMENTS: Payment[] = ["cash", "card", "whish"];
+
+export type CounterResult =
+  | { ok: true; orderId: number; subtotal: number; discount: number; total: number }
+  | { ok: false; error: "empty" | "unavailable" | "no_price" | "discount"; shortages?: Shortage[] };
+
+/**
+ * A sale made in person (shop, market): recorded as an order that is already
+ * delivered and paid, its stock taken at once (all or nothing). Prices come
+ * from the database (sale prices included), never from the browser.
+ */
+export function recordCounterSale(input: {
+  lines: { id: string; variant: string; qty: number }[];
+  /** Optional discount: a percent (0–100) or an amount in cents. */
+  discount: { kind: "percent" | "amount"; value: number } | null;
+  payment: Payment;
+  customer: string;
+  by: string | null;
+}): CounterResult {
+  const merged = new Map<string, { id: string; variant: string; qty: number }>();
+  for (const l of input.lines.slice(0, MAX_ORDER_LINES)) {
+    const k = `${l.id}:${l.variant}`;
+    merged.set(k, { ...l, qty: Math.min(9999, (merged.get(k)?.qty ?? 0) + l.qty) });
+  }
+  if (merged.size === 0) return { ok: false, error: "empty" };
+
+  return tx(() => {
+    const d = db();
+    const get = d.prepare(
+      `SELECT v.id AS variant_id, v.product_id, v.label,
+              CASE WHEN v.sale_price IS NOT NULL AND v.price IS NOT NULL AND v.sale_price < v.price
+                   THEN v.sale_price ELSE v.price END AS price,
+              v.stock, p.name_ar, p.name_en, p.visible
+       FROM variants v JOIN products p ON p.id = v.product_id
+       WHERE v.id = ? AND v.product_id = ?`,
+    );
+    const items: OrderItem[] = [];
+    const shortages: Shortage[] = [];
+    for (const l of merged.values()) {
+      const row = get.get(l.variant, l.id) as VariantRow | undefined;
+      if (!row) return { ok: false as const, error: "unavailable" as const };
+      if (row.price === null) return { ok: false as const, error: "no_price" as const };
+      const name = { ar: row.name_ar, en: row.name_en };
+      if (row.stock !== null && l.qty > row.stock) {
+        shortages.push({ name, label: row.label, available: Math.max(0, row.stock) });
+        continue;
+      }
+      items.push({ productId: row.product_id, variantId: row.variant_id, name, label: row.label, unitPrice: row.price, qty: l.qty });
+    }
+    if (shortages.length) return { ok: false as const, error: "unavailable" as const, shortages };
+
+    const subtotal = items.reduce((s, i) => s + i.unitPrice! * i.qty, 0);
+    const dsc = input.discount;
+    const discount = !dsc ? 0 : dsc.kind === "percent" ? Math.round((subtotal * dsc.value) / 100) : dsc.value;
+    if (dsc && (dsc.value < 0 || (dsc.kind === "percent" && dsc.value > 100) || discount > subtotal)) {
+      return { ok: false as const, error: "discount" as const };
+    }
+    const total = subtotal - discount;
+
+    const r = d
+      .prepare(
+        `INSERT INTO orders (status, name, phone, lang, subtotal, discount, total, stock_applied, source, payment,
+           handled_by, confirmed_at, delivered_at)
+         VALUES ('delivered', ?, '', 'ar', ?, ?, ?, 1, 'counter', ?, ?, datetime('now'), datetime('now'))`,
+      )
+      .run(input.customer, subtotal, discount, total, input.payment, input.by);
+    const orderId = Number(r.lastInsertRowid);
+    const insItem = d.prepare(
+      `INSERT INTO order_items (order_id, product_id, variant_id, name_ar, name_en, label, unit_price, qty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const dec = d.prepare("UPDATE variants SET stock = stock - ? WHERE id = ? AND stock IS NOT NULL");
+    for (const i of items) {
+      insItem.run(orderId, i.productId, i.variantId, i.name.ar, i.name.en, i.label, i.unitPrice, i.qty);
+      dec.run(i.qty, i.variantId);
+    }
+    return { ok: true as const, orderId, subtotal, discount, total };
+  });
 }

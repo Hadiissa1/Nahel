@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { deleteAlert, sendRestockEmails } from "@/lib/stock-alerts";
 import { checkLowStock, saveStockSettings } from "@/lib/low-stock";
+import { EXPENSE_CATEGORIES, addExpense, deleteExpense, type ExpenseCategory } from "@/lib/finance";
 import { REVIEWS_TAG, deleteReview, setReviewApproved } from "@/lib/reviews";
 import { LOTS_TAG, deleteLot, saveLot } from "@/lib/lots";
 import { ARTICLES_TAG, deleteArticle, saveArticle } from "@/lib/articles";
@@ -17,6 +18,10 @@ import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
 import { mailConfigured } from "@/lib/mail";
 import {
+  PAYMENTS,
+  recordCounterSale,
+  type CounterResult,
+  type Payment,
   ORDER_STATUSES,
   deleteOrder,
   setOrderStatus,
@@ -629,4 +634,75 @@ export async function deleteStaffAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
   return { ok: deleteStaff(id) };
+}
+
+// ---------- Till (counter sales) — owner and staff ----------
+
+export async function counterSaleAction(input: {
+  lines: { id: string; variant: string; qty: number }[];
+  discount: { kind: "percent" | "amount"; value: string } | null;
+  payment: string;
+  customer: string;
+}): Promise<CounterResult> {
+  const me = await requireStaff(); // staff run the till
+  if (!input || !Array.isArray(input.lines) || input.lines.length === 0 || input.lines.length > 50) return { ok: false, error: "empty" };
+  const lines: { id: string; variant: string; qty: number }[] = [];
+  for (const l of input.lines) {
+    if (!l || typeof l.id !== "string" || typeof l.variant !== "string" || l.id.length > 100 || l.variant.length > 100) return { ok: false, error: "empty" };
+    if (!Number.isInteger(l.qty) || l.qty < 1 || l.qty > 9999) return { ok: false, error: "empty" };
+    lines.push({ id: l.id, variant: l.variant, qty: l.qty });
+  }
+  if (!PAYMENTS.includes(input.payment as Payment)) return { ok: false, error: "empty" };
+  let discount: { kind: "percent" | "amount"; value: number } | null = null;
+  if (input.discount && String(input.discount.value ?? "").trim()) {
+    const raw = String(input.discount.value).trim();
+    if (input.discount.kind === "percent") {
+      if (!/^\d{1,3}$/.test(raw)) return { ok: false, error: "discount" };
+      discount = { kind: "percent", value: parseInt(raw, 10) };
+    } else {
+      const v = parsePrice(raw);
+      if (typeof v !== "number") return { ok: false, error: "discount" };
+      discount = { kind: "amount", value: v };
+    }
+  }
+  const r = recordCounterSale({
+    lines,
+    discount,
+    payment: input.payment as Payment,
+    customer: clean(String(input.customer ?? "")).slice(0, 80),
+    by: me.role === "owner" ? null : me.name,
+  });
+  if (r.ok) {
+    updateTag(PRODUCTS_TAG); // stock changed
+    notifyRestocks(); // low-stock check
+  }
+  return r;
+}
+
+// ---------- Expenses — owner only ----------
+
+export type ExpenseState = { errors?: FieldErrors; saved?: number };
+
+export async function addExpenseAction(prev: ExpenseState, fd: FormData): Promise<ExpenseState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const day = clean(fd.get("day"));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) errors.day = "date_invalid";
+  const label = clean(fd.get("label")).slice(0, 121);
+  if (!label) errors.label = "required";
+  else if (label.length > 120) errors.label = "too_long";
+  const category = clean(fd.get("category")) as ExpenseCategory;
+  if (!EXPENSE_CATEGORIES.includes(category)) errors.category = "required";
+  const amount = parsePrice(clean(fd.get("amount")));
+  if (typeof amount !== "number" || amount <= 0) errors.amount = "amount_invalid";
+  if (Object.keys(errors).length) return { errors };
+  addExpense({ day, label, category, amount: amount as number });
+  refresh();
+  return { saved: (prev.saved ?? 0) + 1 };
+}
+
+export async function deleteExpenseAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  return { ok: deleteExpense(id) };
 }
