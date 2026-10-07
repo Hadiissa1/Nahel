@@ -20,7 +20,7 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>("ar");
 
   // Restore saved preference on mount.
   useEffect(() => {
@@ -30,7 +30,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       null;
     if (saved === "en" || saved === "ar") {
       // Restoring a persisted preference after mount is a valid effect use;
-      // SSR always renders the default ("en") to keep hydration consistent.
+      // SSR always renders the default ("ar") to keep hydration consistent.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLangState(saved);
     }

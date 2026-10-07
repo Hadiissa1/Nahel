@@ -37,8 +37,8 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      dir="ltr"
+      lang="ar"
+      dir="rtl"
       className={`${inter.variable} ${playfair.variable} ${tajawal.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
