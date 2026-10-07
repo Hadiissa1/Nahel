@@ -14,6 +14,7 @@ export function Footer() {
     { id: "health", key: "health" as const },
     { id: "why", key: "why" as const },
     { id: "pay", key: "pay" as const },
+    { id: "faq", key: "faq" as const },
     { id: "contact", key: "contact" as const },
   ];
 

@@ -9,6 +9,27 @@ import { Phone, Mail, Pin } from "@/components/icons";
 export function Contact() {
   const { lang } = useLang();
   const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", message: "" });
+  const set =
+    (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = [
+      `${t.contact.name[lang]}: ${form.name.trim()}`,
+      `${t.contact.phone[lang]}: ${form.phone.trim()}`,
+      "",
+      form.message.trim(),
+    ].join("\n");
+    window.open(
+      `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setSent(true);
+  };
 
   const cards = [
     {
@@ -87,10 +108,7 @@ export function Contact() {
 
           {/* Form */}
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSent(true);
-            }}
+            onSubmit={onSubmit}
             className="rounded-3xl border border-bark/10 bg-white/80 p-6 shadow-lg sm:p-8"
           >
             <div className="space-y-4">
@@ -101,6 +119,10 @@ export function Contact() {
                 <input
                   type="text"
                   required
+                  maxLength={80}
+                  autoComplete="name"
+                  value={form.name}
+                  onChange={set("name")}
                   className="w-full rounded-xl border border-bark/15 bg-cream/40 px-4 py-2.5 text-sm text-bark outline-none transition-colors focus:border-honey focus:ring-2 focus:ring-honey/30"
                 />
               </div>
@@ -109,9 +131,14 @@ export function Contact() {
                   {t.contact.phone[lang]}
                 </label>
                 <input
-                  type="text"
+                  type="tel"
                   required
                   dir="ltr"
+                  maxLength={30}
+                  pattern="[0-9+\s\(\)\-]{6,30}"
+                  autoComplete="tel"
+                  value={form.phone}
+                  onChange={set("phone")}
                   className="w-full rounded-xl border border-bark/15 bg-cream/40 px-4 py-2.5 text-sm text-bark outline-none transition-colors focus:border-honey focus:ring-2 focus:ring-honey/30"
                 />
               </div>
@@ -122,6 +149,9 @@ export function Contact() {
                 <textarea
                   rows={4}
                   required
+                  maxLength={1000}
+                  value={form.message}
+                  onChange={set("message")}
                   className="w-full resize-none rounded-xl border border-bark/15 bg-cream/40 px-4 py-2.5 text-sm text-bark outline-none transition-colors focus:border-honey focus:ring-2 focus:ring-honey/30"
                 />
               </div>
@@ -133,9 +163,7 @@ export function Contact() {
               </button>
               {sent && (
                 <p className="rounded-xl bg-leaf/15 px-4 py-2.5 text-center text-sm font-medium text-leaf">
-                  {lang === "ar"
-                    ? "شكراً لك! سنتواصل معك قريباً."
-                    : "Thank you! We'll get back to you soon."}
+  {t.contact.sendNote[lang]}
                 </p>
               )}
             </div>

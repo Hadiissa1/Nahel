@@ -16,6 +16,7 @@ export const t = {
     health: { en: "Bee Products", ar: "منتجات النحل" },
     why: { en: "Why Us", ar: "لماذا نحن" },
     pay: { en: "Payment", ar: "الدفع" },
+    faq: { en: "FAQ", ar: "أسئلة" },
     contact: { en: "Contact", ar: "تواصل" },
   },
 
@@ -137,6 +138,81 @@ export const t = {
     },
   },
 
+  shop: {
+    eyebrow: { en: "Our Shop", ar: "متجرنا" },
+    title: { en: "Honey, Hive Products & Equipment", ar: "عسل ومنتجات الخلية والمعدات" },
+    subtitle: {
+      en: "Search the full catalog or filter by category, then add what you need to your cart.",
+      ar: "ابحث في الكتالوج الكامل أو صفِّ حسب الفئة، ثم أضف ما تحتاجه إلى السلة.",
+    },
+    all: { en: "All", ar: "الكل" },
+    search: { en: "Search products…", ar: "ابحث عن منتج…" },
+    noResults: { en: "No products match your search.", ar: "لا توجد منتجات مطابقة لبحثك." },
+    results: { en: "products", ar: "منتج" },
+    weight: { en: "Size", ar: "الحجم" },
+  },
+
+  trust: [
+    {
+      title: { en: "Direct from the beekeeper", ar: "مباشرة من النحّال" },
+      desc: { en: "No middlemen, known origins", ar: "بدون وسطاء ومصادر معروفة" },
+    },
+    {
+      title: { en: "Raw & unheated", ar: "خام وغير مسخّن" },
+      desc: { en: "Natural enzymes preserved", ar: "إنزيمات طبيعية محفوظة" },
+    },
+    {
+      title: { en: "Cash · Card · Whish Money", ar: "نقداً · بطاقة · ويش موني" },
+      desc: { en: "Pay the way you prefer", ar: "ادفع بالطريقة التي تفضّلها" },
+    },
+    {
+      title: { en: "Order on WhatsApp", ar: "اطلب عبر واتساب" },
+      desc: { en: "A real person replies", ar: "يرد عليك شخص حقيقي" },
+    },
+  ],
+
+  faq: {
+    eyebrow: { en: "FAQ", ar: "الأسئلة الشائعة" },
+    title: { en: "Questions About Our Honey", ar: "أسئلة حول عسلنا" },
+    items: [
+      {
+        q: { en: "My honey has crystallized. Is it still good?", ar: "تبلور العسل لديّ، هل ما زال صالحاً؟" },
+        a: {
+          en: "Yes. Crystallization is natural for raw honey and is a sign it hasn't been over-processed. To make it liquid again, warm the jar gently in a water bath below 40 °C.",
+          ar: "نعم. التبلور طبيعي في العسل الخام ودليل على أنه لم يُعالَج بشكل مفرط. لإعادته سائلاً، سخّن البرطمان بلطف في حمّام مائي دون 40 درجة مئوية.",
+        },
+      },
+      {
+        q: { en: "How should I store honey?", ar: "كيف أحفظ العسل؟" },
+        a: {
+          en: "Keep it in a closed jar at room temperature, away from sunlight and moisture. There's no need to refrigerate it.",
+          ar: "احفظه في برطمان مغلق بدرجة حرارة الغرفة، بعيداً عن الشمس والرطوبة. لا حاجة لوضعه في الثلاجة.",
+        },
+      },
+      {
+        q: { en: "How do I place an order?", ar: "كيف أطلب؟" },
+        a: {
+          en: "Add products to your cart and tap “Order via WhatsApp”. Your order is sent as a message and we confirm availability, price and delivery with you.",
+          ar: "أضف المنتجات إلى السلة واضغط «اطلب عبر واتساب». يُرسَل طلبك كرسالة ونؤكد معك التوفر والسعر والتوصيل.",
+        },
+      },
+      {
+        q: { en: "Do you deliver?", ar: "هل توصلون الطلبات؟" },
+        a: {
+          en: "Yes, contact us with your location and we'll confirm the delivery options and cost for your area.",
+          ar: "نعم، تواصل معنا مع موقعك وسنؤكد لك خيارات التوصيل وتكلفتها في منطقتك.",
+        },
+      },
+      {
+        q: { en: "Do you sell to beekeepers and shops in bulk?", ar: "هل تبيعون بالجملة للنحّالين والمحلات؟" },
+        a: {
+          en: "Yes. For hives, extractors, wax and honey barrels in larger quantities, send us your list on WhatsApp and we'll prepare a quote.",
+          ar: "نعم. للقفران والفرّازات والشمع وبراميل العسل بكميات كبيرة، أرسل لنا قائمتك عبر واتساب وسنجهّز لك عرض سعر.",
+        },
+      },
+    ],
+  },
+
   cart: {
     title: { en: "Your Cart", ar: "سلة المشتريات" },
     empty: { en: "Your cart is empty.", ar: "سلة المشتريات فارغة." },
@@ -200,7 +276,11 @@ export const t = {
     name: { en: "Your Name", ar: "اسمك" },
     phone: { en: "Phone / WhatsApp", ar: "الهاتف / واتساب" },
     message: { en: "Your Message", ar: "رسالتك" },
-    send: { en: "Send Message", ar: "إرسال الرسالة" },
+    send: { en: "Send via WhatsApp", ar: "أرسل عبر واتساب" },
+    sendNote: {
+      en: "Your message opens in WhatsApp, ready to send.",
+      ar: "تُفتح رسالتك في واتساب جاهزة للإرسال.",
+    },
     callUs: { en: "Call / WhatsApp", ar: "اتصل / واتساب" },
     emailUs: { en: "Email", ar: "البريد الإلكتروني" },
     visit: { en: "Find Us", ar: "موقعنا" },

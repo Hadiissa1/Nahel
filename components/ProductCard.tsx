@@ -1,23 +1,24 @@
 "use client";
 
-import type { Product, LocalizedText } from "@/lib/data";
+import { useState } from "react";
 import { CURRENCY } from "@/lib/data";
+import type { CatalogEntry } from "@/lib/catalog";
 import { useLang } from "@/components/LanguageProvider";
 import { useCart } from "@/components/CartProvider";
 import { t } from "@/lib/translations";
 import { Icon, Bag, type IconName } from "@/components/icons";
 
 export function ProductCard({
-  product,
-  category,
+  entry,
   icon,
 }: {
-  product: Product;
-  category: LocalizedText;
+  entry: CatalogEntry;
   icon: IconName;
 }) {
+  const { product, variants } = entry;
   const { lang } = useLang();
   const { add } = useCart();
+  const [variant, setVariant] = useState(variants?.[1] ?? variants?.[0]);
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-bark/10 bg-white/70 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-honey/40">
@@ -41,6 +42,30 @@ export function ProductCard({
           {product.desc[lang]}
         </p>
 
+        {variants && (
+          <div
+            role="radiogroup"
+            aria-label={t.shop.weight[lang]}
+            className="mt-1 flex gap-1.5"
+          >
+            {variants.map((v) => (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={variant === v}
+                onClick={() => setVariant(v)}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                  variant === v
+                    ? "border-amber bg-amber text-white"
+                    : "border-bark/15 bg-white text-bark/70 hover:border-honey hover:text-amber"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-amber">
             {typeof product.price === "number"
@@ -48,14 +73,7 @@ export function ProductCard({
               : t.cart.priceOnRequest[lang]}
           </span>
           <button
-            onClick={() =>
-              add({
-                id: product.id,
-                name: product.name,
-                category,
-                price: product.price,
-              })
-            }
+            onClick={() => add(product.id, variant)}
             className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-honey to-amber px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
           >
             <Bag className="h-4 w-4" stroke="currentColor" />

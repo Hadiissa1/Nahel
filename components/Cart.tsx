@@ -10,8 +10,13 @@ import { Bag, Plus, Minus, Trash, Close, Whatsapp } from "@/components/icons";
 
 export function Cart() {
   const { lang } = useLang();
-  const { items, count, total, hasPrices, open, setOpen, setQty, remove, clear } =
+  const { lines, count, total, hasPrices, open, setOpen, setQty, remove, clear } =
     useCart();
+
+  const label = (l: (typeof lines)[number]) =>
+    l.variant
+      ? `${l.entry.product.name[lang]} (${l.variant})`
+      : l.entry.product.name[lang];
 
   // Lock body scroll while the drawer is open.
   useEffect(() => {
@@ -25,12 +30,12 @@ export function Cart() {
   }, [open]);
 
   const buildWhatsappLink = () => {
-    const lines = items.map((i) => {
-      const price =
-        typeof i.price === "number" ? ` — ${CURRENCY[lang]}${i.price * i.qty}` : "";
-      return `• ${i.name[lang]} ×${i.qty}${price}`;
+    const rows = lines.map((l) => {
+      const p = l.entry.product.price;
+      const price = typeof p === "number" ? ` — ${CURRENCY[lang]}${p * l.qty}` : "";
+      return `• ${label(l)} ×${l.qty}${price}`;
     });
-    let msg = `${t.cart.orderIntro[lang]}\n\n${lines.join("\n")}`;
+    let msg = `${t.cart.orderIntro[lang]}\n\n${rows.join("\n")}`;
     if (hasPrices) {
       msg += `\n\n${t.cart.total[lang]}: ${CURRENCY[lang]}${total}`;
     }
@@ -86,7 +91,7 @@ export function Cart() {
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {items.length === 0 ? (
+          {lines.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <span className="grid h-16 w-16 place-items-center rounded-full bg-honey/10 text-amber">
                 <Bag className="h-8 w-8" stroke="currentColor" />
@@ -104,21 +109,21 @@ export function Cart() {
             </div>
           ) : (
             <ul className="space-y-3">
-              {items.map((i) => (
+              {lines.map((i) => (
                 <li
-                  key={i.id}
+                  key={i.key}
                   className="flex items-center gap-3 rounded-2xl border border-bark/10 bg-white/70 p-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-bark-deep">
-                      {i.name[lang]}
+                      {label(i)}
                     </p>
                     <p className="truncate text-xs text-bark/55">
-                      {i.category[lang]}
+                      {t.nav[i.entry.category][lang]}
                     </p>
                     <p className="mt-0.5 text-xs font-semibold text-amber">
-                      {typeof i.price === "number"
-                        ? `${CURRENCY[lang]}${i.price}`
+                      {typeof i.entry.product.price === "number"
+                        ? `${CURRENCY[lang]}${i.entry.product.price}`
                         : t.cart.priceOnRequest[lang]}
                     </p>
                   </div>
@@ -126,7 +131,7 @@ export function Cart() {
                   {/* Qty controls */}
                   <div className="flex items-center gap-1 rounded-full border border-bark/15 bg-cream/60 p-1">
                     <button
-                      onClick={() => setQty(i.id, i.qty - 1)}
+                      onClick={() => setQty(i.key, i.qty - 1)}
                       className="grid h-7 w-7 place-items-center rounded-full text-bark transition-colors hover:bg-honey/15 hover:text-amber"
                       aria-label="Decrease"
                     >
@@ -136,7 +141,7 @@ export function Cart() {
                       {i.qty}
                     </span>
                     <button
-                      onClick={() => setQty(i.id, i.qty + 1)}
+                      onClick={() => setQty(i.key, i.qty + 1)}
                       className="grid h-7 w-7 place-items-center rounded-full text-bark transition-colors hover:bg-honey/15 hover:text-amber"
                       aria-label="Increase"
                     >
@@ -145,7 +150,7 @@ export function Cart() {
                   </div>
 
                   <button
-                    onClick={() => remove(i.id)}
+                    onClick={() => remove(i.key)}
                     className="grid h-8 w-8 place-items-center rounded-full text-bark/50 transition-colors hover:bg-red-500/10 hover:text-red-600"
                     aria-label={t.cart.remove[lang]}
                   >
@@ -158,7 +163,7 @@ export function Cart() {
         </div>
 
         {/* Footer */}
-        {items.length > 0 && (
+        {lines.length > 0 && (
           <div className="border-t border-bark/10 bg-white/60 px-5 py-4">
             {hasPrices && (
               <div className="mb-3 flex items-center justify-between">

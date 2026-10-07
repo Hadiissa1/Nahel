@@ -12,6 +12,7 @@ const links = [
   { id: "health", key: "health" as const },
   { id: "why", key: "why" as const },
   { id: "pay", key: "pay" as const },
+  { id: "faq", key: "faq" as const },
   { id: "contact", key: "contact" as const },
 ];
 
@@ -50,7 +51,7 @@ export function Header() {
           </span>
         </a>
 
-        <ul className="hidden items-center gap-7 md:flex">
+        <ul className="hidden items-center gap-6 lg:flex">
           {links.map((l) => (
             <li key={l.id}>
               <a
@@ -88,7 +89,7 @@ export function Header() {
 
           <button
             onClick={() => setOpen((o) => !o)}
-            className="grid h-9 w-9 place-items-center rounded-full border border-bark/15 bg-white/60 text-bark md:hidden"
+            className="grid h-9 w-9 place-items-center rounded-full border border-bark/15 bg-white/60 text-bark lg:hidden"
             aria-label="Menu"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" strokeWidth={1.8}>
@@ -103,7 +104,7 @@ export function Header() {
       </nav>
 
       {open && (
-        <div className="border-t border-bark/10 bg-cream/95 backdrop-blur-md md:hidden">
+        <div className="border-t border-bark/10 bg-cream/95 backdrop-blur-md lg:hidden">
           <ul className="space-y-1 px-4 py-3">
             {links.map((l) => (
               <li key={l.id}>
