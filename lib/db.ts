@@ -161,6 +161,15 @@ CREATE TABLE IF NOT EXISTS articles (
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS staff (
+  id          TEXT PRIMARY KEY,
+  username    TEXT NOT NULL UNIQUE,
+  name        TEXT NOT NULL,
+  pw_hash     TEXT NOT NULL,
+  active      INTEGER NOT NULL DEFAULT 1,
+  last_login  TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL
@@ -178,6 +187,8 @@ const ADDED_COLUMNS: [table: string, column: string, type: string][] = [
   ["orders", "zone_en", "TEXT"],
   ["orders", "delivery_fee", "INTEGER"],
   ["variants", "low_alerted", "INTEGER NOT NULL DEFAULT 0"],
+  ["sessions", "user_id", "TEXT"],
+  ["orders", "handled_by", "TEXT"],
 ];
 
 /** Starter delivery zones (fees left empty for the owner to fill in). */

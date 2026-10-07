@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Staff accounts**: colleagues sign in with their own username and can
+  handle orders, stock and stock alerts only
 - **Low-stock alerts**: an email to you when a size runs low, plus a banner
   and a badge in the admin
 - **Tips** (`/blog`): articles in Arabic and English (3 starter articles),
@@ -60,7 +62,8 @@ Re-send confirmation emails** for people who signed up before.
 
 ## Managing the store
 
-Open `https://<your-site>/admin`, sign in with `ADMIN_PASSWORD`, then:
+Open `https://<your-site>/admin`, leave **Username** empty and sign in with
+`ADMIN_PASSWORD` (you are the owner), then:
 
 | Task | How |
 |---|---|
@@ -86,6 +89,21 @@ minute.
 
 The first start fills the database once with the starter catalog from
 `lib/data.ts`; after that, products live only in the database.
+
+### Staff accounts
+
+**Team** tab (owner only): create an account per colleague (name, username,
+password of 10+ characters). They sign in at `/admin` with that username.
+
+| Staff can | Staff can't |
+|---|---|
+| See and handle orders (confirm, deliver, cancel) | Delete orders, add/edit/hide/delete products, change prices |
+| Update stock (stock boxes on Products) | See subscribers, send promotions, manage codes, delivery, lots, tips, reviews, team |
+| Send back-in-stock WhatsApp messages | Change low-stock settings |
+
+Each order shows who handled it ("Confirmed by Rana"). **Disable**, **Change
+password** or **Delete** signs the person out immediately. Passwords are stored
+hashed (never readable, not even by you); if someone forgets theirs, set a new one.
 
 ### Orders
 

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { listAdminProducts } from "@/lib/products";
 import { getStockSettings, listLowStock } from "@/lib/low-stock";
 import { mailConfigured } from "@/lib/mail";
@@ -16,7 +16,7 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
 }
 
 async function Products({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
-  await requireAdmin();
+  const me = await requireStaff(); // open to staff
   const { saved } = await searchParams;
   const settings = getStockSettings();
   return (
@@ -31,6 +31,7 @@ async function Products({ searchParams }: { searchParams: PageProps<"/admin">["s
         settings={settings}
         low={listLowStock(settings.threshold)}
         canEmail={mailConfigured()}
+        isOwner={me.role === "owner"}
       />
     </>
   );

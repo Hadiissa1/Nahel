@@ -28,6 +28,16 @@
 | Lecture de fichiers du serveur via l'adresse des photos | Seuls les noms au format exact `<uuid>-800.webp` / `-1600.webp` sont servis ; tout le reste répond 404. | `app/media/[file]/route.ts` |
 | Pages admin dans Google ou en cache | `noindex`, et `Cache-Control: private, no-store`. | `app/admin/layout.tsx` |
 
+### Comptes employés
+
+| Risque | Protection | Où |
+|---|---|---|
+| Un employé accède à ce qui ne le concerne pas | **Tout est réservé au propriétaire par défaut** (`requireAdmin`) ; seuls commandes, stock et alertes de stock sont ouverts aux employés (`requireStaff`). Testé : 7 pages interdites, export des abonnés refusé (401), action du propriétaire rejouée avec une session employé sans effet. | `lib/auth.ts` |
+| Mot de passe volé dans la base | Mots de passe des employés hachés avec scrypt et un sel unique par compte ; jamais stockés en clair (testé). | `lib/auth.ts` |
+| Deviner un nom d'utilisateur | Même message et même durée de réponse que le nom existe ou non ; même limite d'essais que la connexion du propriétaire. | `lib/auth.ts` |
+| Ancien employé encore connecté | Désactiver, changer le mot de passe ou supprimer le compte ferme ses sessions immédiatement ; chaque requête revérifie que le compte est actif (testé). | `lib/staff.ts`, `lib/auth.ts` |
+| Qui a fait quoi | Le nom de l'employé est enregistré sur chaque changement de statut de commande. | `lib/orders.ts` |
+
 ### Commandes
 
 | Risque | Protection | Où |
@@ -143,6 +153,11 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Comptes employés : 36 vérifications, toutes réussies** (création et validations, mot de passe haché, nom en double,
+mauvais mot de passe / nom inconnu, onglets limités, 7 pages interdites, export refusé, pas de boutons de gestion,
+stock modifiable, action rejouée sans effet, confirmation de commande avec le nom, suppression de commande interdite,
+désactivation / changement de mot de passe / suppression qui déconnectent, ancien mot de passe refusé, arabe sur mobile).
 
 **Alerte stock bas : 19 vérifications, toutes réussies** (réglages invalides refusés, adresse normalisée, pas d'e-mail
 au-dessus du seuil, un seul e-mail au passage du seuil en arabe et en anglais avec le lien vers l'admin, pas de

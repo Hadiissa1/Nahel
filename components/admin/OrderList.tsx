@@ -22,7 +22,7 @@ const BADGE: Record<OrderStatus, string> = {
   cancelled: "bg-bark/10 text-bark/60",
 };
 
-export function OrderList({ orders }: { orders: Order[] }) {
+export function OrderList({ orders, isOwner = true }: { orders: Order[]; isOwner?: boolean }) {
   const { lang } = useLang();
   const router = useRouter();
   const o = a.orders;
@@ -139,8 +139,13 @@ export function OrderList({ orders }: { orders: Order[] }) {
                     {o.status[x.status][lang]}
                   </span>
                 </div>
-                <span className="text-xs text-bark/55" dir="ltr">
-                  {x.createdAt.slice(0, 16)}
+                <span className="text-end text-xs text-bark/55">
+                  <span dir="ltr">{x.createdAt.slice(0, 16)}</span>
+                  {x.handledBy && x.status !== "new" && (
+                    <span className="block">
+                      {o.handledBy[lang].replace("{s}", o.status[x.status][lang]).replace("{n}", x.handledBy)}
+                    </span>
+                  )}
                 </span>
               </div>
 
@@ -262,7 +267,7 @@ export function OrderList({ orders }: { orders: Order[] }) {
                       {o.actions[next][lang]}
                     </button>
                   ))}
-                  {x.status === "cancelled" && (
+                  {x.status === "cancelled" && isOwner && (
                     <button
                       type="button"
                       disabled={pending}

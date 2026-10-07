@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { after } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { listReadyAlerts, listWaiting, sendRestockEmails } from "@/lib/stock-alerts";
 import { AdminTop } from "@/components/admin/AdminTop";
 import { AdminLoading } from "@/components/admin/AdminLoading";
@@ -15,7 +15,7 @@ export default function AlertsPage() {
 }
 
 async function Content() {
-  await requireAdmin();
+  await requireStaff(); // open to staff
   // Catch-up: emails that couldn't go out before (e.g. email set up later).
   after(() => sendRestockEmails().catch(() => 0));
   return (

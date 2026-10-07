@@ -25,7 +25,21 @@ export function LoginForm() {
             {lang === "en" ? "العربية" : "English"}
           </button>
         </div>
-        <label className="mt-6 block text-sm font-medium text-bark" htmlFor="password">
+        <label className="mt-6 block text-sm font-medium text-bark" htmlFor="username">
+          {a.login.username[lang]}
+        </label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          maxLength={60}
+          autoComplete="username"
+          autoCapitalize="none"
+          dir="ltr"
+          className="mt-1.5 w-full rounded-xl border border-bark/15 bg-cream/40 px-4 py-2.5 text-bark outline-none focus:border-honey focus:ring-2 focus:ring-honey/30"
+        />
+        <p className="mt-1 text-xs text-bark/55">{a.login.usernameHint[lang]}</p>
+        <label className="mt-4 block text-sm font-medium text-bark" htmlFor="password">
           {a.login.password[lang]}
         </label>
         <input

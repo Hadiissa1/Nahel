@@ -36,6 +36,8 @@ export interface Order {
   zone: { ar: string; en: string } | null;
   /** Delivery fee in cents; null = to confirm (or no zone). */
   deliveryFee: number | null;
+  /** Staff member who last changed the status (null = owner or nobody yet). */
+  handledBy: string | null;
   total: number | null;
   createdAt: string;
   updatedAt: string;
@@ -257,6 +259,7 @@ interface OrderRow {
   zone_ar: string | null;
   zone_en: string | null;
   delivery_fee: number | null;
+  handled_by: string | null;
   total: number | null;
   stock_applied: number;
   created_at: string;
@@ -310,6 +313,7 @@ export function listOrders(limit = 300): Order[] {
     discount: r.discount,
     zone: r.zone_ar !== null || r.zone_en !== null ? { ar: r.zone_ar ?? "", en: r.zone_en ?? "" } : null,
     deliveryFee: r.delivery_fee,
+    handledBy: r.handled_by,
     total: r.total,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -342,7 +346,8 @@ export type StatusResult =
  * A promo code's use is counted on confirmation too (and given back on
  * cancellation), so unconfirmed fake orders can't use up a code.
  */
-export function setOrderStatus(id: number, next: OrderStatus): StatusResult {
+/** `by`: staff member's name (null = the owner), recorded on the order. */
+export function setOrderStatus(id: number, next: OrderStatus, by: string | null = null): StatusResult {
   return tx(() => {
     const d = db();
     const order = d.prepare("SELECT * FROM orders WHERE id = ?").get(id) as OrderRow | undefined;
@@ -386,7 +391,7 @@ export function setOrderStatus(id: number, next: OrderStatus): StatusResult {
       d.prepare("UPDATE orders SET promo_counted = 0 WHERE id = ?").run(id);
     }
 
-    d.prepare("UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?").run(next, id);
+    d.prepare("UPDATE orders SET status = ?, handled_by = ?, updated_at = datetime('now') WHERE id = ?").run(next, by, id);
     return { ok: true as const, stockChanged };
   });
 }

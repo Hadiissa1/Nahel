@@ -7,11 +7,16 @@ import { logoutAction } from "@/app/admin/actions";
 import { a } from "@/lib/admin-i18n";
 
 export function AdminHeader({
+  isOwner = true,
+  userName = null,
   newOrders = 0,
   readyAlerts = 0,
   pendingReviews = 0,
   lowStock = 0,
 }: {
+  isOwner?: boolean;
+  /** Staff member's name (shown in the header); null for the owner. */
+  userName?: string | null;
   newOrders?: number;
   readyAlerts?: number;
   pendingReviews?: number;
@@ -19,18 +24,21 @@ export function AdminHeader({
 }) {
   const { lang, toggle } = useLang();
   const path = usePathname();
-  const tabs = [
-    { href: "/admin/orders", label: a.nav.orders[lang], active: path.startsWith("/admin/orders"), badge: newOrders },
-    { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products"), badge: lowStock },
+  const all = [
+    { href: "/admin/orders", staff: true, label: a.nav.orders[lang], active: path.startsWith("/admin/orders"), badge: newOrders },
+    { href: "/admin", staff: true, label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products"), badge: lowStock },
     { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
     { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
     { href: "/admin/articles", label: a.nav.articles[lang], active: path.startsWith("/admin/articles") },
     { href: "/admin/lots", label: a.nav.lots[lang], active: path.startsWith("/admin/lots") },
     { href: "/admin/reviews", label: a.nav.reviews[lang], active: path.startsWith("/admin/reviews"), badge: pendingReviews },
-    { href: "/admin/alerts", label: a.nav.alerts[lang], active: path.startsWith("/admin/alerts"), badge: readyAlerts },
+    { href: "/admin/alerts", staff: true, label: a.nav.alerts[lang], active: path.startsWith("/admin/alerts"), badge: readyAlerts },
     { href: "/admin/codes", label: a.nav.codes[lang], active: path.startsWith("/admin/codes") },
     { href: "/admin/delivery", label: a.nav.delivery[lang], active: path.startsWith("/admin/delivery") },
+    { href: "/admin/team", label: a.nav.team[lang], active: path.startsWith("/admin/team") },
   ];
+  // Staff only see what they may use (the server refuses the rest anyway).
+  const tabs = all.filter((t) => isOwner || ("staff" in t && t.staff));
   return (
     <header className="sticky top-0 z-40 border-b border-bark/10 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
@@ -38,6 +46,11 @@ export function AdminHeader({
           {a.title[lang]}
         </Link>
         <div className="flex items-center gap-2 text-sm">
+          {userName && (
+            <span className="hidden max-w-40 truncate rounded-full bg-honey/15 px-3 py-1.5 font-semibold text-bark sm:inline" title={userName}>
+              👤 {userName}
+            </span>
+          )}
           <button
             type="button"
             onClick={toggle}

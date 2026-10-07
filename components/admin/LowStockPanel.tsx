@@ -13,10 +13,12 @@ export function LowStockPanel({
   settings,
   low,
   canEmail,
+  canEditSettings = true,
 }: {
   settings: StockSettings;
   low: LowStockItem[];
   canEmail: boolean;
+  canEditSettings?: boolean;
 }) {
   const { lang } = useLang();
   const [open, setOpen] = useState(false);
@@ -40,6 +42,7 @@ export function LowStockPanel({
           {k.title[lang]}
           {low.length > 0 && <span className="ms-1 text-amber">({low.length})</span>}
         </h2>
+        {canEditSettings && (
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -48,6 +51,7 @@ export function LowStockPanel({
         >
           ⚙️ {k.settings[lang]}
         </button>
+        )}
       </div>
 
       {low.length === 0 ? (
@@ -56,24 +60,33 @@ export function LowStockPanel({
         <ul className="mt-2 flex flex-wrap gap-2">
           {low.map((i) => (
             <li key={i.variantId}>
-              <Link
-                href={`/admin/products/${encodeURIComponent(i.productId)}`}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                  i.stock <= 0 ? "border-red-300 bg-red-50 text-red-700" : "border-amber/40 bg-white text-bark"
-                } hover:border-honey`}
-              >
+              {(() => {
+                const content = (
+                  <>
                 {pickText(i.name, lang)}
                 {i.label ? ` (${i.label})` : ""}
                 <span className={i.stock <= 0 ? "" : "text-amber"}>
                   · {i.stock <= 0 ? k.soldOut[lang] : k.left[lang].replace("{n}", String(i.stock))}
                 </span>
-              </Link>
+                  </>
+                );
+                const chip = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                  i.stock <= 0 ? "border-red-300 bg-red-50 text-red-700" : "border-amber/40 bg-white text-bark"
+                }`;
+                return canEditSettings ? (
+                  <Link href={`/admin/products/${encodeURIComponent(i.productId)}`} className={`${chip} hover:border-honey`}>
+                    {content}
+                  </Link>
+                ) : (
+                  <span className={chip}>{content}</span>
+                );
+              })()}
             </li>
           ))}
         </ul>
       )}
 
-      {open && (
+      {open && canEditSettings && (
         <form
           // onSubmit (not action=) so React doesn't clear the fields on errors.
           onSubmit={(e) => {

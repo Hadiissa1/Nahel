@@ -11,7 +11,8 @@ import { ARTICLES_TAG, deleteArticle, saveArticle } from "@/lib/articles";
 import { ARTICLE_LIMITS, SLUG_RE, slugify } from "@/lib/article-types";
 import { normalizeLotCode } from "@/lib/lot-types";
 import { DocError, deleteDoc, saveDoc } from "@/lib/doc-store";
-import { login, logout, requireAdmin } from "@/lib/auth";
+import { MIN_STAFF_PASSWORD_LENGTH, login, logout, requireAdmin, requireStaff } from "@/lib/auth";
+import { USERNAME_RE, createStaff, deleteStaff, setStaffActive, setStaffPassword } from "@/lib/staff";
 import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
 import { mailConfigured } from "@/lib/mail";
@@ -47,10 +48,12 @@ import {
 export type LoginState = { error?: "invalid" | "blocked" | "not_configured" };
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const username = String(formData.get("username") ?? "").trim().slice(0, 60);
   const password = String(formData.get("password") ?? "").slice(0, 200);
-  const result = await login(password);
+  const result = await login(username, password);
   if (result !== "ok") return { error: result };
-  redirect("/admin");
+  // Staff start on the orders page (their main job).
+  redirect(username ? "/admin/orders" : "/admin");
 }
 
 export async function logoutAction() {
@@ -225,7 +228,7 @@ export async function setVisibleAction(id: string, visible: boolean): Promise<{ 
 }
 
 export async function setStockAction(variantId: string, raw: string): Promise<{ ok: boolean }> {
-  await requireAdmin();
+  await requireStaff(); // staff may update stock
   if (typeof variantId !== "string" || typeof raw !== "string") return { ok: false };
   const stock = parseStock(raw.trim());
   if (stock === "invalid") return { ok: false };
@@ -303,11 +306,11 @@ export async function setOrderStatusAction(
   id: number,
   status: OrderStatus,
 ): Promise<StatusResult> {
-  await requireAdmin();
+  const me = await requireStaff(); // staff handle orders
   if (!Number.isInteger(id) || !ORDER_STATUSES.includes(status)) {
     return { ok: false, error: "transition" };
   }
-  const r = setOrderStatus(id, status);
+  const r = setOrderStatus(id, status, me.role === "owner" ? null : me.name);
   if (r.ok && r.stockChanged) {
     updateTag(PRODUCTS_TAG);
     notifyRestocks(); // a cancellation can put stock back
@@ -421,7 +424,7 @@ export async function deleteZoneAction(id: string): Promise<{ ok: boolean }> {
 // ---------- Stock alerts ----------
 
 export async function deleteAlertAction(id: string): Promise<{ ok: boolean }> {
-  await requireAdmin();
+  await requireStaff(); // staff send the WhatsApp alerts
   if (typeof id !== "string" || id.length > 100) return { ok: false };
   return { ok: deleteAlert(id) };
 }
@@ -587,4 +590,43 @@ export async function saveStockSettingsAction(prev: StockSettingsState, fd: Form
   notifyRestocks(); // a new threshold or address may need an alert now
   refresh();
   return { saved: (prev.saved ?? 0) + 1 };
+}
+
+// ---------- Team (staff accounts) — owner only ----------
+
+export type StaffState = { errors?: FieldErrors; created?: string };
+
+export async function createStaffAction(_prev: StaffState, fd: FormData): Promise<StaffState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const name = clean(fd.get("name")).slice(0, 61);
+  if (!name) errors.name = "required";
+  else if (name.length > 60) errors.name = "too_long";
+  const username = clean(fd.get("username")).toLowerCase().slice(0, 40);
+  if (!USERNAME_RE.test(username)) errors.username = "username_invalid";
+  const password = String(fd.get("password") ?? "");
+  if (password.length < MIN_STAFF_PASSWORD_LENGTH || password.length > 200) errors.password = "password_short";
+  if (Object.keys(errors).length) return { errors };
+  if (createStaff({ username, name, password }) === "taken") return { errors: { username: "username_taken" } };
+  refresh();
+  return { created: username };
+}
+
+export async function setStaffActiveAction(id: string, active: boolean): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100 || typeof active !== "boolean") return { ok: false };
+  return { ok: setStaffActive(id, active) };
+}
+
+export async function setStaffPasswordAction(id: string, password: string): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100 || typeof password !== "string") return { ok: false };
+  if (password.length < MIN_STAFF_PASSWORD_LENGTH || password.length > 200) return { ok: false, error: "password_short" };
+  return { ok: setStaffPassword(id, password) };
+}
+
+export async function deleteStaffAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  return { ok: deleteStaff(id) };
 }

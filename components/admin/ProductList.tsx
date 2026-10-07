@@ -35,12 +35,15 @@ export function ProductList({
   settings,
   low,
   canEmail,
+  isOwner = true,
 }: {
   products: AdminProduct[];
   saved?: string;
   settings: StockSettings;
   low: LowStockItem[];
   canEmail: boolean;
+  /** Staff only update stock: other controls are hidden (and refused by the server). */
+  isOwner?: boolean;
 }) {
   const threshold = settings.threshold;
   const { lang } = useLang();
@@ -79,7 +82,7 @@ export function ProductList({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <LowStockPanel settings={settings} low={low} canEmail={canEmail} />
+      <LowStockPanel settings={settings} low={low} canEmail={canEmail} canEditSettings={isOwner} />
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
           [
@@ -133,12 +136,14 @@ export function ProductList({
             aria-label={a.list.search[lang]}
             className="w-full rounded-full border border-bark/15 bg-white px-4 py-2 text-sm outline-none focus:border-honey sm:w-56"
           />
-          <Link
-            href="/admin/products/new"
-            className="shrink-0 whitespace-nowrap rounded-full bg-gradient-to-br from-honey to-amber px-4 py-2 text-sm font-semibold text-white shadow"
-          >
-            + {a.list.add[lang]}
-          </Link>
+          {isOwner && (
+            <Link
+              href="/admin/products/new"
+              className="shrink-0 whitespace-nowrap rounded-full bg-gradient-to-br from-honey to-amber px-4 py-2 text-sm font-semibold text-white shadow"
+            >
+              + {a.list.add[lang]}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -201,6 +206,7 @@ export function ProductList({
                 </div>
               </div>
 
+              {isOwner && (
               <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-bark/5 pt-3 text-sm">
                 <button
                   type="button"
@@ -227,6 +233,7 @@ export function ProductList({
                   {a.list.delete[lang]}
                 </button>
               </div>
+              )}
             </li>
           ))}
         </ul>

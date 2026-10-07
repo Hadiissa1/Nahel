@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import { requireStaff } from "@/lib/auth";
-import { listOrders } from "@/lib/orders";
+import { requireAdmin } from "@/lib/auth";
+import { listStaff } from "@/lib/staff";
 import { AdminTop } from "@/components/admin/AdminTop";
 import { AdminLoading } from "@/components/admin/AdminLoading";
-import { OrderList } from "@/components/admin/OrderList";
+import { TeamManager } from "@/components/admin/TeamManager";
 
-export default function OrdersPage() {
+export default function TeamPage() {
   return (
     <Suspense fallback={<AdminLoading />}>
       <Content />
@@ -14,11 +14,11 @@ export default function OrdersPage() {
 }
 
 async function Content() {
-  const me = await requireStaff(); // open to staff
+  await requireAdmin();
   return (
     <>
       <AdminTop />
-      <OrderList orders={listOrders()} isOwner={me.role === "owner"} />
+      <TeamManager staff={listStaff()} />
     </>
   );
 }
