@@ -102,6 +102,24 @@ export const a = {
     codes: L("Promo codes", "أكواد الخصم"),
     delivery: L("Delivery", "التوصيل"),
     alerts: L("Stock alerts", "تنبيهات المخزون"),
+    reviews: L("Reviews", "التقييمات"),
+  },
+
+  reviews: {
+    title: L("Customer reviews", "آراء الزبائن"),
+    intro: L(
+      "New reviews wait here until you approve them; only approved reviews appear in the shop and on Google. Hide or delete one at any time.",
+      "تنتظر التقييمات الجديدة هنا حتى توافق عليها؛ لا يظهر في المتجر وفي Google إلا ما وافقت عليه. يمكنك إخفاء أي تقييم أو حذفه في أي وقت.",
+    ),
+    pending: L("Waiting for approval", "بانتظار الموافقة"),
+    published: L("Published", "منشورة"),
+    nonePending: L("No reviews waiting.", "لا توجد تقييمات بالانتظار."),
+    nonePublished: L("No published reviews yet.", "لا توجد تقييمات منشورة بعد."),
+    approve: L("Approve", "موافقة"),
+    hide: L("Hide", "إخفاء"),
+    delete: L("Delete", "حذف"),
+    confirmDelete: L("Delete this review for good?", "حذف هذا التقييم نهائياً؟"),
+    failed: L("Something went wrong. Please try again.", "حدث خطأ. حاول مجدداً."),
   },
 
   alerts: {

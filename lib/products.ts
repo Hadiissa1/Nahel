@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
+import { ratingSummaries } from "@/lib/reviews";
 import type {
   AdminProduct,
   CatalogProduct,
@@ -43,6 +44,7 @@ function load(where: string, ...params: string[]): AdminProduct[] {
       `SELECT * FROM variants WHERE product_id IN (${rows.map(() => "?").join(",")}) ORDER BY sort`,
     )
     .all(...rows.map((r) => r.id)) as unknown as VariantRow[];
+  const ratings = ratingSummaries();
   const byProduct = new Map<string, Variant[]>();
   for (const v of variants) {
     const list = byProduct.get(v.product_id) ?? [];
@@ -64,6 +66,7 @@ function load(where: string, ...params: string[]): AdminProduct[] {
     desc: { ar: r.desc_ar, en: r.desc_en },
     photo: r.photo,
     variants: byProduct.get(r.id) ?? [],
+    rating: ratings.get(r.id) ?? null,
     visible: r.visible === 1,
     updatedAt: r.updated_at,
   }));
@@ -88,6 +91,7 @@ export async function getCatalog(): Promise<CatalogProduct[]> {
       desc: p.desc,
       photo: p.photo,
       variants: p.variants,
+      rating: p.rating,
     }));
 }
 

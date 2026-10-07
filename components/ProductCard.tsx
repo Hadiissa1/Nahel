@@ -10,6 +10,7 @@ import { ProductDialog } from "@/components/ProductDialog";
 import { StockAndPrice } from "@/components/StockAndPrice";
 import { NotifyMe } from "@/components/NotifyMe";
 import { SaleBadge } from "@/components/SaleBadge";
+import { Stars } from "@/components/Stars";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
 export function ProductCard({ product }: { product: CatalogProduct }) {
@@ -47,6 +48,19 @@ export function ProductCard({ product }: { product: CatalogProduct }) {
             {name}
           </button>
         </h3>
+        {product.rating && (
+          <p
+            className="-mt-1 flex items-center gap-1.5 text-xs text-bark/60"
+            aria-label={t.reviews.ratingLabel[lang]
+              .replace("{a}", String(product.rating.avg))
+              .replace("{n}", String(product.rating.count))}
+          >
+            <Stars value={product.rating.avg} />
+            <span aria-hidden="true" dir="ltr">
+              {product.rating.avg} ({product.rating.count})
+            </span>
+          </p>
+        )}
         <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-bark/70">
           {pickText(product.desc, lang)}
         </p>

@@ -6,6 +6,8 @@ import { Footer } from "@/components/Footer";
 import { ProductDetail } from "@/components/ProductDetail";
 import { getCatalog, getProduct } from "@/lib/products";
 import { siteUrl } from "@/lib/site";
+import { getApprovedReviews } from "@/lib/reviews";
+import type { Review } from "@/lib/review-types";
 import { isOutOfStock, photoUrl, type CatalogProduct } from "@/lib/catalog-types";
 
 /** Products that exist at build time are prerendered; new ones render on first visit. */
@@ -58,7 +60,7 @@ export async function generateMetadata({ params }: PageProps<"/product/[id]">): 
 }
 
 /** schema.org Product data so Google can show name, photo, price and stock. */
-function jsonLd(p: CatalogProduct) {
+function jsonLd(p: CatalogProduct, reviews: Review[]) {
   const base = siteUrl() ?? "";
   const url = `${base}/product/${encodeURIComponent(p.id)}`;
   const offers = p.variants
@@ -81,6 +83,23 @@ function jsonLd(p: CatalogProduct) {
     brand: { "@type": "Brand", name: "Nahel" },
     url,
     ...(offers.length && { offers }),
+    // Only approved reviews; Google shows the stars in search results.
+    ...(p.rating && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: p.rating.avg,
+        reviewCount: p.rating.count,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      review: reviews.slice(0, 5).map((r) => ({
+        "@type": "Review",
+        author: { "@type": "Person", name: r.name },
+        datePublished: r.date,
+        reviewBody: r.text,
+        reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+      })),
+    }),
   };
   // "<" escaped so text can never close the script tag.
   return JSON.stringify(data).replace(/</g, "\\u003c");
@@ -108,13 +127,14 @@ async function Content({ params }: { params: PageProps<"/product/[id]">["params"
   const { id } = await params;
   const product = await getProduct(id);
   if (!product) notFound();
+  const reviews = await getApprovedReviews(product.id);
   const related = (await getCatalog())
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
   return (
     <>
-      <ProductDetail product={product} related={related} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(product) }} />
+      <ProductDetail product={product} related={related} reviews={reviews} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(product, reviews) }} />
     </>
   );
 }

@@ -372,6 +372,37 @@ export const t = {
     },
   },
 
+  reviews: {
+    title: { en: "Customer reviews", ar: "آراء الزبائن" },
+    summary: { en: "{a} out of 5 · {n} reviews", ar: "{a} من 5 · {n} تقييم" },
+    summaryOne: { en: "{a} out of 5 · 1 review", ar: "{a} من 5 · تقييم واحد" },
+    none: { en: "No reviews yet. Be the first!", ar: "لا توجد تقييمات بعد. كن أول من يقيّم!" },
+    write: { en: "Write a review", ar: "اكتب تقييماً" },
+    yourRating: { en: "Your rating", ar: "تقييمك" },
+    star: { en: "{n} star(s)", ar: "{n} نجوم" },
+    name: { en: "Your name", ar: "اسمك" },
+    text: { en: "Your review", ar: "تقييمك بالتفصيل" },
+    textHint: { en: "What did you think of it? (10 characters minimum)", ar: "ما رأيك بالمنتج؟ (10 أحرف على الأقل)" },
+    submit: { en: "Send my review", ar: "أرسل تقييمي" },
+    sending: { en: "Sending…", ar: "جارٍ الإرسال…" },
+    done: {
+      en: "Thank you! Your review will appear once we've read it.",
+      ar: "شكراً لك! سيظهر تقييمك بعد مراجعته.",
+    },
+    moderation: {
+      en: "Reviews are read before they appear. Your name is shown, never your contact details.",
+      ar: "تُراجَع التقييمات قبل نشرها. يظهر اسمك فقط، ولا تظهر أي بيانات اتصال.",
+    },
+    err_rating: { en: "Choose from 1 to 5 stars.", ar: "اختر من نجمة إلى 5 نجوم." },
+    err_name: { en: "Please enter your name.", ar: "يرجى إدخال اسمك." },
+    err_text_short: { en: "Please write a few words (10 characters minimum).", ar: "يرجى كتابة بضع كلمات (10 أحرف على الأقل)." },
+    err_too_long: { en: "Your text is too long.", ar: "النص طويل جداً." },
+    err_unavailable: { en: "This product is no longer available.", ar: "هذا المنتج لم يعد متاحاً." },
+    err_rate: { en: "Too many reviews sent. Please try again later.", ar: "تقييمات كثيرة. حاول لاحقاً." },
+    count: { en: "{n} reviews", ar: "{n} تقييم" },
+    ratingLabel: { en: "Rated {a} out of 5 ({n} reviews)", ar: "التقييم {a} من 5 ({n} تقييم)" },
+  },
+
   whatsappButton: {
     label: { en: "Chat on WhatsApp", ar: "تواصل عبر واتساب" },
     hello: { en: "Hello Nahel! I have a question.", ar: "مرحباً نحّال! لدي سؤال." },

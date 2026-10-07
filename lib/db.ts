@@ -118,6 +118,17 @@ CREATE TABLE IF NOT EXISTS stock_alerts (
   UNIQUE (variant_id, whatsapp)
 );
 CREATE INDEX IF NOT EXISTS stock_alerts_variant ON stock_alerts(variant_id);
+CREATE TABLE IF NOT EXISTS reviews (
+  id           TEXT PRIMARY KEY,
+  product_id   TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  rating       INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  name         TEXT NOT NULL,
+  text         TEXT NOT NULL,
+  lang         TEXT NOT NULL DEFAULT 'ar' CHECK (lang IN ('ar','en')),
+  approved     INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS reviews_product ON reviews(product_id, approved);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL

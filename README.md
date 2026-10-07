@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp
 - **Sales and promo codes**: a sale price per size (old price crossed out,
   "-20 %" badge) and codes like `RAMADAN10` that customers type in their cart
+- **Customer reviews** (1–5 stars) that you approve before they appear;
+  stars on product cards and in Google results
 - **Floating WhatsApp button** on every shop page (on a product page, the
   message already names the product)
 - **"Notify me when it's back" on sold-out sizes: automatic email, or a
@@ -89,6 +91,18 @@ How an order works:
 | **Re-open** / **Delete** | For cancelled orders (e.g. delete spam) |
 
 Placing an order never changes stock by itself: fake orders can't empty it.
+
+### Customer reviews
+
+Customers write a review on a product page (**Write a review**: stars, name,
+text). Nothing is published until you approve it:
+
+- **Reviews** tab (red badge = reviews waiting) → **✓ Approve**, or **Delete**
+  for spam. Published reviews can be **hidden** or deleted at any time.
+- Approved reviews show on the product page (average and list) and as stars
+  on the product cards, and are sent to Google so the stars can appear in
+  search results.
+- Only the name the customer typed is shown, never any contact details.
 
 ### Back-in-stock alerts
 

@@ -64,6 +64,15 @@
 | Remise supérieure au panier | Pourcentage limité à 90 % ; un montant fixe ne dépasse jamais le total. | `lib/promo-types.ts` |
 | Gestion des codes | Création, pause et suppression réservées à l'administrateur (vérifié côté serveur). | `app/admin/actions.ts` |
 
+### Avis clients
+
+| Risque | Protection | Où |
+|---|---|---|
+| Faux avis, spam, insultes | **Rien n'est publié sans votre validation** ; 5 avis / heure par IP, 200 / heure au total (testé) ; champ piège anti-robots. | `app/reviews/actions.ts` |
+| Code injecté dans un avis | Affiché comme du texte, dans la boutique comme dans l'admin (testé avec `<img onerror>` et `</script>`) ; échappé dans les données Google. | `components/ProductReviews.tsx`, page produit |
+| Note truquée (0, 9…) ou avis sur un produit inexistant / masqué | Refusés par le serveur (testé). | `app/reviews/actions.ts`, `lib/reviews.ts` |
+| Données personnelles | Seul le prénom saisi est publié ; aucune adresse ni téléphone demandés. | — |
+
 ### Alertes de retour en stock
 
 | Risque | Protection | Où |
@@ -116,6 +125,11 @@
 prix barré et badge, données Google au prix soldé, codes invalides refusés, minimum de commande,
 calcul de la remise, message WhatsApp, code mis en pause pendant la commande, utilisations comptées
 à la confirmation et rendues à l'annulation, limite d'essais, mobile en arabe).
+
+**Avis clients : 24 vérifications, toutes réussies** (étoiles obligatoires, texte trop court refusé, avis en attente
+invisibles dans la page et les données Google, note et produit falsifiés refusés, validation dans l'admin,
+moyenne 4,5 sur 2 avis, code injecté affiché comme du texte, données Google avec note, étoiles sur la carte,
+masquer et supprimer, arabe sur mobile, limite anti-abus).
 
 **Bouton WhatsApp flottant : 18 vérifications, toutes réussies** (anglais et arabe, coin bas droit / bas gauche,
 message dans la langue du visiteur, nom du produit sur sa page, ouverture sûre dans un nouvel onglet,

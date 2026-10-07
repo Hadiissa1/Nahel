@@ -11,15 +11,19 @@ import { NotifyMe } from "@/components/NotifyMe";
 import { ShareButtons } from "@/components/ShareButtons";
 import { SaleBadge } from "@/components/SaleBadge";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductReviews } from "@/components/ProductReviews";
+import type { Review } from "@/lib/review-types";
 import { t } from "@/lib/translations";
 import { isOutOfStock, pickText, type CatalogProduct } from "@/lib/catalog-types";
 
 export function ProductDetail({
   product,
   related,
+  reviews,
 }: {
   product: CatalogProduct;
   related: CatalogProduct[];
+  reviews: Review[];
 }) {
   const { lang } = useLang();
   const { add } = useCart();
@@ -104,6 +108,8 @@ export function ProductDetail({
             </div>
           </div>
         </article>
+
+        <ProductReviews productId={product.id} rating={product.rating} reviews={reviews} />
 
         {related.length > 0 && (
           <section className="mt-14">

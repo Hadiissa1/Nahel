@@ -4,6 +4,7 @@ import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { deleteAlert, sendRestockEmails } from "@/lib/stock-alerts";
+import { REVIEWS_TAG, deleteReview, setReviewApproved } from "@/lib/reviews";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
@@ -409,4 +410,28 @@ export async function deleteAlertAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
   return { ok: deleteAlert(id) };
+}
+
+// ---------- Reviews ----------
+
+export async function setReviewApprovedAction(id: string, approved: boolean): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100 || typeof approved !== "boolean") return { ok: false };
+  const ok = setReviewApproved(id, approved);
+  if (ok) {
+    updateTag(REVIEWS_TAG);
+    updateTag(PRODUCTS_TAG); // ratings are part of the catalog
+  }
+  return { ok };
+}
+
+export async function deleteReviewAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  const ok = deleteReview(id);
+  if (ok) {
+    updateTag(REVIEWS_TAG);
+    updateTag(PRODUCTS_TAG);
+  }
+  return { ok };
 }

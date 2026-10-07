@@ -1,4 +1,5 @@
 import type { LocalizedText } from "@/lib/data";
+import type { RatingSummary } from "@/lib/review-types";
 
 export type CategoryId = "honey" | "health" | "equipment";
 export const CATEGORIES: CategoryId[] = ["honey", "health", "equipment"];
@@ -25,6 +26,8 @@ export interface CatalogProduct {
   /** Photo id (see photoUrl); null = no photo yet. */
   photo: string | null;
   variants: Variant[];
+  /** Approved reviews: average and count; null when none yet. */
+  rating: RatingSummary | null;
 }
 
 /** A product as the admin sees it: includes hidden products. */
