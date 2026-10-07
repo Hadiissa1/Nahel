@@ -264,3 +264,7 @@ link in the quick view, or share it:
 
 - `docs/ARCHITECTURE.md`: how honey e-shops are structured and how Nahel applies it
 - `docs/SECURITY.md`: security measures, test and load-test results, hosting advice
+
+- ## pour tester le web site :
+- BASE_URL=https://votre-site.com npm run check:security
+- BASE_URL=https://votre-site.com npm run check:load -- 100 30
