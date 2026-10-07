@@ -37,6 +37,26 @@ CREATE TABLE IF NOT EXISTS meta (
   key         TEXT PRIMARY KEY,
   value       TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS subscribers (
+  id                  TEXT PRIMARY KEY,
+  email               TEXT UNIQUE,
+  whatsapp            TEXT UNIQUE,
+  lang                TEXT NOT NULL DEFAULT 'ar' CHECK (lang IN ('ar','en')),
+  token               TEXT NOT NULL UNIQUE,
+  email_confirmed_at  TEXT,
+  confirm_sent_at     TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS campaigns (
+  id          TEXT PRIMARY KEY,
+  subject_ar  TEXT NOT NULL DEFAULT '',
+  subject_en  TEXT NOT NULL DEFAULT '',
+  body_ar     TEXT NOT NULL DEFAULT '',
+  body_en     TEXT NOT NULL DEFAULT '',
+  sent        INTEGER NOT NULL DEFAULT 0,
+  failed      INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash  TEXT PRIMARY KEY,
   expires_at  INTEGER NOT NULL

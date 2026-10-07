@@ -1,10 +1,18 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATEGORIES, type CategoryId } from "@/lib/catalog-types";
 import { PhotoError, deletePhoto, savePhoto } from "@/lib/photo-store";
+import { mailConfigured } from "@/lib/mail";
+import {
+  deleteSubscriber,
+  normalizeEmail,
+  resendConfirmations,
+  sendCampaign,
+  sendTestCampaign,
+} from "@/lib/subscribers";
 import {
   PRODUCTS_TAG,
   createProduct,
@@ -174,4 +182,64 @@ export async function setStockAction(variantId: string, raw: string): Promise<{ 
   const ok = setStock(variantId, stock);
   if (ok) updateTag(PRODUCTS_TAG);
   return { ok };
+}
+
+// ---------- Subscribers & promotions ----------
+
+export async function deleteSubscriberAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || id.length > 100) return { ok: false };
+  return { ok: deleteSubscriber(id) };
+}
+
+export async function resendConfirmationsAction(): Promise<{ sent: number; failed: number } | null> {
+  await requireAdmin();
+  if (!mailConfigured()) return null;
+  return resendConfirmations();
+}
+
+export type PromoState = {
+  errors?: FieldErrors;
+  result?: { sent: number; failed: number };
+  test?: "sent" | "failed";
+};
+
+export async function sendPromotionAction(_prev: PromoState, fd: FormData): Promise<PromoState> {
+  await requireAdmin();
+  const errors: FieldErrors = {};
+  const text = (key: string, max: number) => {
+    const v = clean(fd.get(key));
+    if (v.length > max) errors[key] = "too_long";
+    return v.slice(0, max);
+  };
+  const subject = { ar: text("subject_ar", 150), en: text("subject_en", 150) };
+  // Keep line breaks in the message body.
+  const multiline = (key: string) =>
+    String(fd.get(key) ?? "")
+      .replace(/\r\n/g, "\n")
+      .replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "")
+      .trim()
+      .slice(0, 5000);
+  const body = { ar: multiline("body_ar"), en: multiline("body_en") };
+  if (!subject.ar && !subject.en) errors.subject_ar = "subject_required";
+  if (!body.ar && !body.en) errors.body_ar = "body_required";
+  if (!mailConfigured()) errors.form = "mail_not_configured";
+
+  const mode = fd.get("mode") === "test" ? "test" : "all";
+  let testTo: string | null = null;
+  if (mode === "test") {
+    const e = normalizeEmail(String(fd.get("test_email") ?? "").slice(0, 300));
+    if (!e || e === "invalid") errors.test_email = "email_invalid";
+    else testTo = e;
+  }
+  if (Object.keys(errors).length) return { errors };
+
+  if (mode === "test") {
+    const lang = fd.get("test_lang") === "en" ? "en" : "ar";
+    const ok = await sendTestCampaign({ subject, body }, testTo!, lang);
+    return { test: ok ? "sent" : "failed" };
+  }
+  const result = await sendCampaign({ subject, body });
+  refresh(); // show the new entry in "Sent promotions"
+  return { result };
 }

@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLang } from "@/components/LanguageProvider";
 import { logoutAction } from "@/app/admin/actions";
 import { a } from "@/lib/admin-i18n";
 
 export function AdminHeader() {
   const { lang, toggle } = useLang();
+  const path = usePathname();
+  const tabs = [
+    { href: "/admin", label: a.nav.products[lang], active: path === "/admin" || path.startsWith("/admin/products") },
+    { href: "/admin/subscribers", label: a.nav.subscribers[lang], active: path.startsWith("/admin/subscribers") },
+    { href: "/admin/promotions", label: a.nav.promotions[lang], active: path.startsWith("/admin/promotions") },
+  ];
   return (
     <header className="sticky top-0 z-40 border-b border-bark/10 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
@@ -37,6 +44,20 @@ export function AdminHeader() {
           </form>
         </div>
       </div>
+      <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2">
+        {tabs.map((tab) => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            aria-current={tab.active ? "page" : undefined}
+            className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+              tab.active ? "bg-amber text-white" : "text-bark/75 hover:bg-honey/10"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

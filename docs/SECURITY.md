@@ -28,6 +28,20 @@
 | Lecture de fichiers du serveur via l'adresse des photos | Seuls les noms au format exact `<uuid>-800.webp` / `-1600.webp` sont servis ; tout le reste répond 404. | `app/media/[file]/route.ts` |
 | Pages admin dans Google ou en cache | `noindex`, et `Cache-Control: private, no-store`. | `app/admin/layout.tsx` |
 
+### Abonnements aux offres (e-mail / WhatsApp)
+
+| Risque | Protection | Où |
+|---|---|---|
+| Inscrire l'adresse de quelqu'un d'autre | **Double confirmation** : aucun e-mail promotionnel avant que la personne clique sur le lien reçu. | `lib/subscribers.ts` |
+| Spam de confirmations vers une victime | Au plus 1 e-mail de confirmation toutes les 10 min par abonné ; 10 inscriptions / heure par IP, 300 / heure au total ; champ piège invisible contre les robots. | `app/offers/actions.ts` |
+| Savoir si quelqu'un est client | Réponse identique que l'adresse soit nouvelle ou déjà inscrite. | `lib/subscribers.ts` |
+| Liens piégés dans les e-mails | Les liens sont construits avec `SITE_URL` (réglage serveur), **jamais** avec l'en-tête `Host` de la requête, falsifiable. | `lib/mail.ts` |
+| Confirmation ou désinscription par un robot de messagerie | Ouvrir le lien ne fait rien : il faut **cliquer sur le bouton** (requête POST). Jetons aléatoires de 192 bits, jamais envoyés à la page d'administration. | `app/offers/` |
+| Désinscription impossible | Lien dans chaque e-mail + en-têtes `List-Unsubscribe` (désinscription en un clic depuis Gmail, Apple Mail…) + « توقف / STOP » sur WhatsApp. **Se désinscrire supprime la personne.** | `lib/subscribers.ts` |
+| Code injecté dans un e-mail | Le texte de la promotion est échappé (`<script>` devient du texte). | `lib/mail.ts` |
+| Formule piégée dans l'export Excel | Les cellules commençant par `=`, `+`, `-`, `@` sont neutralisées. | `app/admin/subscribers/export/route.ts` |
+| Données personnelles exposées | Liste, export et envoi réservés à l'administrateur (vérifié côté serveur, testé : export refusé sans connexion). | `app/admin/` |
+
 **Dépendances :** `npm audit --omit=dev` = **0 vulnérabilité** dans ce qui tourne en production
 (les alertes restantes concernent seulement l'outil ESLint du développeur).
 

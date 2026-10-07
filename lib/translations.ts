@@ -17,6 +17,7 @@ export const t = {
     why: { en: "Why Us", ar: "لماذا نحن" },
     pay: { en: "Payment", ar: "الدفع" },
     faq: { en: "FAQ", ar: "أسئلة" },
+    offers: { en: "Offers", ar: "العروض" },
     contact: { en: "Contact", ar: "تواصل" },
   },
 
@@ -215,6 +216,53 @@ export const t = {
         },
       },
     ],
+  },
+
+  offers: {
+    eyebrow: { en: "Offers & Sales", ar: "العروض والتخفيضات" },
+    title: { en: "Be the First to Know", ar: "كن أول من يعلم" },
+    subtitle: {
+      en: "Get our promotions, new harvests and seasonal sales by email or WhatsApp.",
+      ar: "تصلك عروضنا والقطاف الجديد والتخفيضات الموسمية عبر البريد الإلكتروني أو واتساب.",
+    },
+    email: { en: "Email", ar: "البريد الإلكتروني" },
+    whatsapp: { en: "WhatsApp number", ar: "رقم واتساب" },
+    whatsappHint: { en: "With country code, e.g. +961 70 123 456", ar: "مع رمز البلد، مثلاً ‎+961 70 123 456" },
+    oneOf: { en: "Fill in at least one of the two.", ar: "املأ واحداً منهما على الأقل." },
+    consent: {
+      en: "I agree to receive Nahel offers. I can unsubscribe at any time.",
+      ar: "أوافق على تلقي عروض نحّال، ويمكنني إلغاء الاشتراك في أي وقت.",
+    },
+    privacy: {
+      en: "We only use your email or number to send offers, and never share them.",
+      ar: "نستخدم بريدك أو رقمك فقط لإرسال العروض، ولا نشاركه مع أحد.",
+    },
+    submit: { en: "Subscribe", ar: "اشترك" },
+    check_inbox: {
+      en: "Almost done! Check your inbox and tap the link to confirm.",
+      ar: "تبقّت خطوة! افتح بريدك واضغط على الرابط للتأكيد.",
+    },
+    subscribed: { en: "Thank you! You're subscribed.", ar: "شكراً! تم اشتراكك." },
+    need_contact: { en: "Enter an email or a WhatsApp number.", ar: "أدخل بريداً إلكترونياً أو رقم واتساب." },
+    invalid_email: { en: "This email address isn't valid.", ar: "البريد الإلكتروني غير صالح." },
+    invalid_whatsapp: { en: "This number isn't valid.", ar: "الرقم غير صالح." },
+    consent_error: { en: "Please tick the box to agree.", ar: "يرجى تحديد مربع الموافقة." },
+    rate: { en: "Too many attempts. Please try again later.", ar: "محاولات كثيرة. حاول لاحقاً." },
+    confirmTitle: { en: "Confirm your subscription", ar: "تأكيد الاشتراك" },
+    confirmButton: { en: "Confirm", ar: "تأكيد" },
+    confirmed: { en: "Your subscription is confirmed. Thank you!", ar: "تم تأكيد اشتراكك. شكراً لك!" },
+    unsubTitle: { en: "Unsubscribe", ar: "إلغاء الاشتراك" },
+    unsubText: {
+      en: "You will no longer receive our offers, and your details will be deleted.",
+      ar: "لن تصلك عروضنا بعد الآن، وستُحذف بياناتك.",
+    },
+    unsubButton: { en: "Unsubscribe", ar: "إلغاء الاشتراك" },
+    unsubscribed: { en: "You're unsubscribed. Your details were deleted.", ar: "تم إلغاء اشتراكك وحذف بياناتك." },
+    invalidLink: {
+      en: "This link is invalid or was already used.",
+      ar: "هذا الرابط غير صالح أو تم استخدامه من قبل.",
+    },
+    backToShop: { en: "Back to the shop", ar: "العودة إلى المتجر" },
   },
 
   cart: {

@@ -10,6 +10,8 @@ Tailwind CSS v4 and SQLite.
 - Orders and contact messages sent through WhatsApp
 - **Store management at `/admin`**: add, edit, hide or delete products; set
   prices and stock; add photos from the phone camera or gallery
+- **Offers & sales subscription**: customers leave an email and/or WhatsApp
+  number (with consent); the owner sends promotions from `/admin/promotions`
 
 ## Run
 
@@ -27,6 +29,15 @@ npm run lint
 |---|---|---|
 | `ADMIN_PASSWORD` | yes, for `/admin` | Password for the store management. **At least 12 characters.** Without it, admin sign-in is disabled. |
 | `DATA_DIR` | no | Folder for the database (`nahel.db`) and uploaded photos. Default: `./data`. **Must be on persistent storage** and backed up. |
+| `SITE_URL` | for emails | Public address of the site, e.g. `https://nahel.com`. Used in email links (confirm, unsubscribe). |
+| `BREVO_API_KEY` | for emails | API key from [Brevo](https://www.brevo.com) (free plan: 300 emails/day). |
+| `MAIL_FROM_EMAIL` | for emails | Sender address, verified in Brevo (e.g. `offers@nahel.com`). |
+| `MAIL_FROM_NAME` | no | Sender name. Default: `Nahel`. |
+| `MAIL_DRIVER` | no | `log` writes emails to `DATA_DIR/outbox.log` instead of sending them (testing only). |
+
+Without the email settings, everything else works: email sign-ups are kept,
+and WhatsApp promotions work. Once email is set up, use **Subscribers →
+Re-send confirmation emails** for people who signed up before.
 
 ## Managing the store
 
@@ -47,6 +58,17 @@ minute.
 
 The first start fills the database once with the starter catalog from
 `lib/data.ts`; after that, products live only in the database.
+
+### Promotions
+
+| Task | How |
+|---|---|
+| See who subscribed | **Subscribers** tab: email, WhatsApp, language, confirmed or not; **Export (CSV)** |
+| Send a promotion by email | **Promotions** tab → write it in Arabic and/or English → **Send test** to yourself → **Send to all** |
+| Send by WhatsApp | Same tab: tap **Open WhatsApp** next to each number; the message opens ready, in the customer's language |
+
+Emails only go to people who **confirmed** their address (a link sent when they
+sign up). Each email has an unsubscribe link; unsubscribing deletes the person.
 
 ## Edit site text
 
