@@ -94,6 +94,16 @@ describe("buildReport", () => {
     expect(buildReport("2026-05-11", "2026-05-11").sales).toBe(1);
   });
 
+  it("puts sales on the right day when summer time starts (B1)", () => {
+    // 21:30 UTC on 28 March 2026 = 23:30 on the 28th (still winter time).
+    webSale(1, { deliveredAt: "2026-03-28 21:30:00" });
+    // 22:30 UTC = 01:30 on the 29th (clocks jumped from 00:00 to 01:00).
+    webSale(1, { deliveredAt: "2026-03-28 22:30:00" });
+    expect(buildReport("2026-03-28", "2026-03-28").sales).toBe(1);
+    expect(buildReport("2026-03-29", "2026-03-29").sales).toBe(1);
+    expect(salesRows("2026-03-29", "2026-03-29")).toHaveLength(1);
+  });
+
   it("keeps discounts and delivery fees, and leaves price-on-request sales out of the average", () => {
     makePromo({ code: "TEN", kind: "amount", value: 1000 });
     webSale(2, { promo: "TEN" }); // 4000 - 1000 = 3000

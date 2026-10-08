@@ -17,11 +17,17 @@ function offsetMinutes(at: Date): number {
   return Math.round((local - at.getTime()) / 60000);
 }
 
-/** UTC instant of 00:00 (shop time) on a YYYY-MM-DD day. */
+/**
+ * UTC instant of 00:00 (shop time) on a YYYY-MM-DD day. On the day summer
+ * time starts, Beirut jumps from 23:59 to 01:00, so the day starts at 01:00.
+ */
 export function dayStartUtc(day: string): Date {
   const [y, m, d] = day.split("-").map(Number);
   const guess = new Date(Date.UTC(y, m - 1, d));
-  return new Date(guess.getTime() - offsetMinutes(guess) * 60000);
+  // The offset at UTC midnight may already be the next one; take it again at
+  // the first estimate, which falls before any change made at local midnight.
+  const first = new Date(guess.getTime() - offsetMinutes(guess) * 60000);
+  return new Date(guess.getTime() - offsetMinutes(first) * 60000);
 }
 
 /** SQLite "YYYY-MM-DD HH:MM:SS" (UTC) for an instant. */

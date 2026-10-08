@@ -293,7 +293,7 @@ le stock à jour.
 
 | # | Module | Comportement observé | Impact | Test |
 |---|---|---|---|---|
-| B1 | `lib/shop-time.ts` → `dayStartUtc` | Le jour du passage à l'heure d'été (ex. 2026-03-29), minuit n'existe pas à Beyrouth (on saute à 01:00 = 22:00 UTC). La fonction renvoie 21:00 UTC, qui est encore 23:00 le 28. | `lib/finance.ts` (`buildReport`, `salesRows`) : le rapport du 29 mars compte aussi la dernière heure du 28, et le rapport du 28 la perd. 1 jour par an, faible. | `tests/unit/shop-time.test.ts` (`it.fails`) |
+| B1 | `lib/shop-time.ts` → `dayStartUtc` | Le jour du passage à l'heure d'été (ex. 2026-03-29), minuit n'existe pas à Beyrouth (on saute à 01:00 = 22:00 UTC). La fonction renvoie 21:00 UTC, qui est encore 23:00 le 28. | `lib/finance.ts` (`buildReport`, `salesRows`) : le rapport du 29 mars compte aussi la dernière heure du 28, et le rapport du 28 la perd. 1 jour par an, faible. | `tests/unit/shop-time.test.ts`, `tests/integration/finance.test.ts` — **corrigé le 2026-10-08** (la journée commence à 01:00 = 22:00 UTC ce jour-là) |
 
 ## Résultats
 

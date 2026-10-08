@@ -35,12 +35,26 @@ describe("dayStartUtc", () => {
     },
   );
 
-  // BUG (see tasks/todo.md): on the day summer time starts, 00:00 does not
-  // exist in Beirut (clocks jump to 01:00 = 22:00 UTC). dayStartUtc returns
-  // 21:00 UTC, which is still 23:00 on the 28th, so finance reports for
-  // 29 March also count the last hour of 28 March.
-  it.fails("starts exactly on the day summer time begins (2026-03-29)", () => {
-    expect(shopDay(dayStartUtc("2026-03-29"))).toBe("2026-03-29");
+  // B1 (fixed): on the day summer time starts, 00:00 does not exist in
+  // Beirut; clocks jump to 01:00 = 22:00 UTC, so that is when the day starts.
+  it("starts at 01:00 on the day summer time begins (2026-03-29)", () => {
+    const start = dayStartUtc("2026-03-29");
+    expect(start.toISOString()).toBe("2026-03-28T22:00:00.000Z");
+    expect(shopDay(start)).toBe("2026-03-29");
+    expect(shopDay(new Date(start.getTime() - 1))).toBe("2026-03-28");
+  });
+
+  it("starts at the second midnight on the day summer time ends (2026-10-25)", () => {
+    // 00:00 summer time becomes 23:00 on the 24th; the 25th starts an hour later.
+    expect(dayStartUtc("2026-10-25").toISOString()).toBe("2026-10-24T22:00:00.000Z");
+  });
+
+  it("starts exactly on every day of 2026", () => {
+    for (let day = "2026-01-01"; day <= "2026-12-31"; day = addDays(day, 1)) {
+      const start = dayStartUtc(day);
+      expect(shopDay(start)).toBe(day);
+      expect(shopDay(new Date(start.getTime() - 1))).toBe(addDays(day, -1));
+    }
   });
 });
 
