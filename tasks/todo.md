@@ -213,9 +213,9 @@ couverture de la spec.
 tester le parcours d'achat.
 
 **Critères d'acceptation :**
-- [ ] `playwright.config.ts` : `webServer` = `next build && next start -p 3100`, `DATA_DIR` temporaire, `ADMIN_PASSWORD` de test, Chromium seulement
-- [ ] `e2e/shop-order.spec.ts` : accueil → ajout d'un produit au panier → quantité → zone → formulaire → commande enregistrée (numéro affiché, lien WhatsApp préparé, sans l'ouvrir)
-- [ ] `npm run test:e2e` existe ; `data/` non touché
+- [x] `playwright.config.ts` : `webServer` = `next build && next start -p 3100`, `DATA_DIR` temporaire, `ADMIN_PASSWORD` de test, Chromium seulement
+- [x] `e2e/shop-order.spec.ts` : accueil → ajout d'un produit au panier → quantité → zone → formulaire → commande enregistrée (numéro affiché, lien WhatsApp préparé, sans l'ouvrir)
+- [x] `npm run test:e2e` existe ; `data/` non touché
 
 **Vérification :** `npm run test:e2e`
 
@@ -233,8 +233,8 @@ tester le parcours d'achat.
 le stock à jour.
 
 **Critères d'acceptation :**
-- [ ] Connexion `/admin` avec le mot de passe de test ; mauvais mot de passe → message d'erreur
-- [ ] Une commande passée côté boutique apparaît ; la passer à « confirmée » réduit le stock affiché dans les produits
+- [x] Connexion `/admin` avec le mot de passe de test ; mauvais mot de passe → message d'erreur
+- [x] Une commande passée côté boutique apparaît ; la passer à « confirmée » réduit le stock affiché dans les produits
 
 **Vérification :** `npx playwright test e2e/admin-order-stock.spec.ts`
 
@@ -251,8 +251,8 @@ le stock à jour.
 **Description :** Vérifier la bascule de langue et le sens d'écriture.
 
 **Critères d'acceptation :**
-- [ ] Bascule vers l'arabe → `<html dir="rtl" lang="ar">` et textes arabes visibles ; retour à l'anglais → `ltr`
-- [ ] Le choix de langue est conservé après rechargement
+- [x] Bascule vers l'arabe → `<html dir="rtl" lang="ar">` et textes arabes visibles ; retour à l'anglais → `ltr`
+- [x] Le choix de langue est conservé après rechargement
 
 **Vérification :** `npx playwright test e2e/language-rtl.spec.ts`
 
@@ -269,9 +269,9 @@ le stock à jour.
 **Description :** Documenter et vérifier les 7 critères de réussite de la spec.
 
 **Critères d'acceptation :**
-- [ ] Section « Tests » dans `README.md` (commandes, `npx playwright install chromium`, ce qui est testé)
-- [ ] `.gitignore` : `/test-results`, `/playwright-report`
-- [ ] Les 7 critères de réussite de `SPEC.md` cochés, avec les sorties de commandes
+- [x] Section « Tests » dans `README.md` (commandes, `npx playwright install chromium`, ce qui est testé)
+- [x] `.gitignore` : `/test-results`, `/playwright-report`
+- [x] Les 7 critères de réussite de `SPEC.md` cochés, avec les sorties de commandes
 
 **Vérification :** `npm test && npm run test:coverage && npm run test:e2e && npm run lint && npm run build`
 
@@ -284,7 +284,7 @@ le stock à jour.
 ---
 
 ### ✅ Checkpoint C (fin)
-- [ ] Tous les critères de réussite de la spec remplis
+- [x] Tous les critères de réussite de la spec remplis
 - [ ] Revue humaine avant le commit final
 
 ---
@@ -304,5 +304,11 @@ le stock à jour.
 Non couverts (hors périmètre de la spec, prévus pour plus tard si besoin) : `articles.ts`, `lots.ts`, `subscribers.ts`, `doc-store.ts`, `photo-store.ts`, `prepare-photo.ts`, le comptage de visites de `analytics.ts`.
 
 Ajouts phase 2 : `tests/setup/fixtures.ts` (produits, zones, codes promo), `tests/setup/mail.ts` (faux Brevo : aucun email ne sort), `tests/integration/delivery.test.ts` et `tests/unit/rate-limit.test.ts` (non prévus, ajoutés pour la marge de couverture). Le bouchon `next/headers` garde les options des cookies (vérification `httpOnly`/`secure`). `eslint.config.mjs` ignore désormais `coverage/`, `test-results/`, `playwright-report/` (le rapport de couverture généré faisait un avertissement de lint).
+
+**Checkpoint C (2026-10-08)** : `npm run test:e2e` : 6 tests Playwright verts en ~27 s (build compris), Chromium, serveur `next start` sur le port 3100 avec `DATA_DIR` = `%TEMP%/nahel-e2e` (effacé à chaque lancement). `npm test` 251 verts + 1 échec attendu (B1), 9,6 s ; `npm run test:coverage` vert ; `npm run lint` et `npm run build` verts ; `data/` inchangé ; port 3100 libéré après les tests.
+
+Critères de réussite de `SPEC.md` : 1 ✓ (`npm test` sans variable ni serveur, < 30 s) · 2 ✓ (seuils respectés) · 3 ✓ (3 parcours E2E, `data/` intact) · 4 ✓ (tous les cas listés couverts) · 5 ✓ · 6 ✓ (section « Tests » du README) · 7 ✓ (`.gitignore`).
+
+Ajouts phase 3 : Playwright 1.64 ; `e2e/server.mjs` (efface la base de test, build, `next start`) ; `e2e/helpers.ts` ; un 2e test boutique (numéro de téléphone invalide) et un test « mauvais mot de passe admin » en plus des parcours prévus. Note : `npm run test:e2e` refait le build dans `.next/`, comme `npm run build`.
 
 Écarts par rapport au plan : Vitest 5.0.3 ; `vite-tsconfig-paths` retiré (Vite gère `@/` nativement via `resolve.tsconfigPaths`) ; bouchons supplémentaires `next/navigation` et `next/server` ; le setup vide aussi `MAIL_FROM_EMAIL` et `SITE_URL`.

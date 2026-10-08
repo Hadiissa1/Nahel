@@ -82,7 +82,7 @@ sont indépendants entre eux.
 - [x] T3 : Tests unitaires texte & validation
 
 ### Checkpoint A
-- [ ] `npm test` vert, `npm run lint` vert, `npm run build` vert ; revue humaine
+- [x] `npm test` vert, `npm run lint` vert, `npm run build` vert ; revue humaine
 
 ### Phase 2 : Intégration (logique métier sur SQLite)
 - [x] T4 : Fixtures + produits & codes promo
@@ -93,13 +93,13 @@ sont indépendants entre eux.
 - [x] T9 : Avis + seuils de couverture activés
 
 ### Checkpoint B
-- [ ] `npm run test:coverage` vert avec les seuils de la spec ; liste des bugs trouvés ; revue humaine
+- [x] `npm run test:coverage` vert avec les seuils de la spec ; liste des bugs trouvés ; revue humaine
 
 ### Phase 3 : E2E et finition
-- [ ] T10 : Infra Playwright + parcours boutique → commande
-- [ ] T11 : Parcours admin → confirmation → stock
-- [ ] T12 : Parcours langue EN ⇄ AR (RTL)
-- [ ] T13 : README + `.gitignore` + vérification finale
+- [x] T10 : Infra Playwright + parcours boutique → commande
+- [x] T11 : Parcours admin → confirmation → stock
+- [x] T12 : Parcours langue EN ⇄ AR (RTL)
+- [x] T13 : README + `.gitignore` + vérification finale
 
 ### Checkpoint C (fin)
 - [ ] Les 7 critères de réussite de la spec sont remplis ; revue humaine avant commit final

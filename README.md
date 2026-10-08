@@ -50,6 +50,29 @@ npm run check:security   # security check of a running site (BASE_URL=…, read-
 npm run check:load -- 100 30   # 100 visitors at once for 30 s (BASE_URL=…)
 ```
 
+## Tests
+
+```bash
+npm test                  # unit + integration tests (Vitest), ~10 s, no server needed
+npm run test:watch        # same, re-run on every change
+npm run test:coverage     # with a coverage report in coverage/ (fails under the minimums)
+npx playwright install chromium   # once, before the first browser test
+npm run test:e2e          # browser tests (Playwright): builds the site and runs it on port 3100
+```
+
+- Tests **never touch `data/`**: each test gets a fresh temporary database,
+  and the browser tests run the site on its own temporary `DATA_DIR`.
+- No real email or WhatsApp message is sent: emails go to a fake Brevo.
+- What is tested: prices, promo codes and delivery fees; orders and stock
+  (taken on confirmation, given back on cancellation, never negative); the
+  till; finance reports (Beirut days); low-stock and back-in-stock alerts;
+  admin and staff sign-in and rights; reviews. In the browser: ordering from
+  the shop, confirming an order in the admin, and English ⇄ Arabic (RTL).
+- Minimum coverage: 70 % of `lib/`, and 90 % for each of `orders`, `promo`,
+  `promo-types`, `delivery-types`, `finance` and `auth`.
+- Test files: `tests/unit` (no database), `tests/integration` (database),
+  `e2e` (browser). Spec and plan: `SPEC.md`, `tasks/`.
+
 ## Server settings (environment variables)
 
 | Variable | Required | Meaning |
