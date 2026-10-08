@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "check:security": "node scripts/security-check.mjs",
-    "check:load": "node scripts/load-test.mjs"
+    "check:load": "node scripts/load-test.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -26,10 +29,12 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^5.0.3",
     "autocannon": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.3"
   }
 }
