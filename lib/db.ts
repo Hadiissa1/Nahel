@@ -260,12 +260,32 @@ function seed(db: DatabaseSync) {
   }
 }
 
+/**
+ * Switches a new database file to WAL. When several processes open the same
+ * new file at once (e.g. `next build` workers, or servers starting together),
+ * SQLite may answer "database is locked" at once instead of waiting, so the
+ * switch is retried for up to ~5 s.
+ */
+function enableWal(db: DatabaseSync) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      db.exec("PRAGMA journal_mode = WAL");
+      return;
+    } catch (e) {
+      if (attempt >= 50 || !String((e as Error).message).includes("database is locked")) throw e;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100); // sleep 100 ms
+    }
+  }
+}
+
 function open() {
   mkdirSync(UPLOAD_DIR, { recursive: true });
   mkdirSync(DOCS_DIR, { recursive: true });
   const db = new DatabaseSync(path.join(DATA_DIR, "nahel.db"));
   // WAL + busy timeout: safe when several server processes share the file.
-  db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;");
+  // The timeout comes first so the statements below wait for each other.
+  db.exec("PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;");
+  enableWal(db);
   db.exec(SCHEMA);
   // Seed the starter catalog exactly once, ever: a marker (not an empty table)
   // decides, so deleting every product never brings the defaults back. The

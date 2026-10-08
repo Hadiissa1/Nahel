@@ -8,6 +8,12 @@ describe("test database", () => {
     expect(DATA_DIR).toContain("nahel-test-");
   });
 
+  it("is shared safely between processes (WAL, waits up to 5 s for a lock)", () => {
+    expect(db().prepare("PRAGMA journal_mode").get()).toEqual({ journal_mode: "wal" });
+    expect(db().prepare("PRAGMA busy_timeout").get()).toEqual({ timeout: 5000 });
+    expect(db().prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
+  });
+
   it("opens with the starter catalog", () => {
     const { n } = db().prepare("SELECT COUNT(*) AS n FROM products").get() as { n: number };
     expect(n).toBeGreaterThan(0);
