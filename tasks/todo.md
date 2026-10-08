@@ -294,6 +294,7 @@ le stock à jour.
 | # | Module | Comportement observé | Impact | Test |
 |---|---|---|---|---|
 | B1 | `lib/shop-time.ts` → `dayStartUtc` | Le jour du passage à l'heure d'été (ex. 2026-03-29), minuit n'existe pas à Beyrouth (on saute à 01:00 = 22:00 UTC). La fonction renvoie 21:00 UTC, qui est encore 23:00 le 28. | `lib/finance.ts` (`buildReport`, `salesRows`) : le rapport du 29 mars compte aussi la dernière heure du 28, et le rapport du 28 la perd. 1 jour par an, faible. | `tests/unit/shop-time.test.ts`, `tests/integration/finance.test.ts` — **corrigé le 2026-10-08** (la journée commence à 01:00 = 22:00 UTC ce jour-là) |
+| B2 | `lib/db.ts` → `open` | Plusieurs processus qui ouvrent en même temps une base neuve (workers de `next build`, serveurs qui démarrent ensemble) : le passage en WAL demande un accès exclusif, et le délai d’attente n’était réglé qu’après, donc SQLite répondait parfois `database is locked` tout de suite. Trouvé par le 1er lancement de la CI (build en échec). Reproduit : 33 échecs sur 240 ouvertures simultanées. | Échec du build sur une base neuve ; risque au tout premier démarrage en production. | `tests/integration/db-smoke.test.ts` (réglages WAL, délai 5 s) ; course vérifiée par script : 0 échec sur 800 ouvertures — **corrigé le 2026-10-08** (`a92e5b0` : délai réglé en premier, passage en WAL retenté jusqu’à ~5 s) |
 
 ## Résultats
 
