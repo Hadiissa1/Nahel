@@ -27,6 +27,12 @@ export default defineConfig({
       provider: "v8",
       include: ["lib/**"],
       exclude: ["lib/data.ts", "lib/starter-articles.ts", "lib/translations.ts", "lib/admin-i18n.ts"],
+      // Agreed in SPEC.md: changing a threshold needs the owner's approval.
+      thresholds: {
+        lines: 70,
+        // Money, stock and sign-in: where a mistake costs the most.
+        "lib/{orders,promo,promo-types,delivery-types,finance,auth}.ts": { lines: 90, perFile: true },
+      },
     },
   },
 });

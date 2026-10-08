@@ -86,9 +86,9 @@ jours de boutique.
 et tester la gestion des produits et la recherche d'un code promo utilisable.
 
 **Critères d'acceptation :**
-- [ ] `tests/setup/fixtures.ts` : `makeProduct({ visible, variants })`, `makeZone({ fee, freeFrom })`, `makePromo({ … })`
-- [ ] `createProduct` / `updateProduct` / `setVisible` / `setStock` / `deleteProduct` ; `getCatalog` n'inclut pas les produits masqués
-- [ ] `findUsablePromo` : `not_found`, `expired`, `used_up`, code désactivé ; `createPromoCode` → `taken` si doublon (dates fixées avec `vi.setSystemTime`)
+- [x] `tests/setup/fixtures.ts` : `makeProduct({ visible, variants })`, `makeZone({ fee, freeFrom })`, `makePromo({ … })`
+- [x] `createProduct` / `updateProduct` / `setVisible` / `setStock` / `deleteProduct` ; `getCatalog` n'inclut pas les produits masqués
+- [x] `findUsablePromo` : `not_found`, `expired`, `used_up`, code désactivé ; `createPromoCode` → `taken` si doublon (dates fixées avec `vi.setSystemTime`)
 
 **Vérification :** `npx vitest run tests/integration/products tests/integration/promo`
 
@@ -106,9 +106,9 @@ et tester la gestion des produits et la recherche d'un code promo utilisable.
 la boutique.
 
 **Critères d'acceptation :**
-- [ ] `placeOrder` refuse produit inconnu / masqué / taille inconnue / rupture (résultat `Shortage`) ; prix et noms pris dans la base ; lignes dupliquées fusionnées ; plafonds `MAX_CART_QTY` et `MAX_ORDER_LINES` ; promo appliquée ; frais de zone ajoutés
-- [ ] Stock inchangé à la création ; réduit au passage à `confirmed` ; rendu à `cancelled` ; pas de double réduction (`confirmed` → `delivered`)
-- [ ] Confirmation refusée si le stock est devenu insuffisant entre-temps ; aucun stock négatif
+- [x] `placeOrder` refuse produit inconnu / masqué / taille inconnue / rupture (résultat `Shortage`) ; prix et noms pris dans la base ; lignes dupliquées fusionnées ; plafonds `MAX_CART_QTY` et `MAX_ORDER_LINES` ; promo appliquée ; frais de zone ajoutés
+- [x] Stock inchangé à la création ; réduit au passage à `confirmed` ; rendu à `cancelled` ; pas de double réduction (`confirmed` → `delivered`)
+- [x] Confirmation refusée si le stock est devenu insuffisant entre-temps ; aucun stock négatif
 
 **Vérification :** `npx vitest run tests/integration/orders`
 
@@ -125,9 +125,9 @@ la boutique.
 **Description :** Tester la vente en personne et les rapports d'argent.
 
 **Critères d'acceptation :**
-- [ ] `recordCounterSale` réduit le stock tout de suite, enregistre le paiement (`cash` / `card` / `whish`), refuse si stock insuffisant
-- [ ] `buildReport` sur une période : total ventes, meilleures ventes, dépenses, bénéfice = ventes − dépenses ; commandes annulées exclues ; ventes web et caisse comptées
-- [ ] `periodDays` pour chaque `PeriodKey` (date fixée) ; `addExpense` / `deleteExpense` ; `salesRows` (contenu de l'export CSV)
+- [x] `recordCounterSale` réduit le stock tout de suite, enregistre le paiement (`cash` / `card` / `whish`), refuse si stock insuffisant
+- [x] `buildReport` sur une période : total ventes, meilleures ventes, dépenses, bénéfice = ventes − dépenses ; commandes annulées exclues ; ventes web et caisse comptées
+- [x] `periodDays` pour chaque `PeriodKey` (date fixée) ; `addExpense` / `deleteExpense` ; `salesRows` (contenu de l'export CSV)
 
 **Vérification :** `npx vitest run tests/integration/counter-sale tests/integration/finance`
 
@@ -145,9 +145,9 @@ la boutique.
 demandes de retour en stock des clients.
 
 **Critères d'acceptation :**
-- [ ] `listLowStock` / `countLowStock` respectent le seuil réglé (`saveStockSettings`)
-- [ ] `requestAlert` : `in_stock`, `unavailable`, `too_many` (`MAX_ALERTS_PER_CONTACT`), `ok` ; `listReadyAlerts` après remise en stock
-- [ ] `sendRestockEmails` avec `fetch` simulé : un appel par alerte prête, rien envoyé sans clé Brevo
+- [x] `listLowStock` / `countLowStock` respectent le seuil réglé (`saveStockSettings`)
+- [x] `requestAlert` : `in_stock`, `unavailable`, `too_many` (`MAX_ALERTS_PER_CONTACT`), `ok` ; `listReadyAlerts` après remise en stock
+- [x] `sendRestockEmails` avec `fetch` simulé : un appel par alerte prête, rien envoyé sans clé Brevo
 
 **Vérification :** `npx vitest run tests/integration/low-stock tests/integration/stock-alerts`
 
@@ -164,9 +164,9 @@ demandes de retour en stock des clients.
 **Description :** Tester la connexion propriétaire/staff, le blocage et les droits.
 
 **Critères d'acceptation :**
-- [ ] `ADMIN_PASSWORD` absent ou < 12 caractères → `isAdminConfigured()` faux, `login` → `not_configured` ; bon mot de passe → `ok` + cookie posé ; 5 échecs → `blocked`
-- [ ] Staff : `createStaff` (`taken` si doublon), `hashPassword` salé (deux hachages différents), compte désactivé ne peut pas se connecter, `setStaffPassword` coupe ses sessions
-- [ ] `requireAdmin` refuse une session staff ; `requireStaff` accepte staff et propriétaire ; sans session → redirection vers la connexion
+- [x] `ADMIN_PASSWORD` absent ou < 12 caractères → `isAdminConfigured()` faux, `login` → `not_configured` ; bon mot de passe → `ok` + cookie posé ; 5 échecs → `blocked`
+- [x] Staff : `createStaff` (`taken` si doublon), `hashPassword` salé (deux hachages différents), compte désactivé ne peut pas se connecter, `setStaffPassword` coupe ses sessions
+- [x] `requireAdmin` refuse une session staff ; `requireStaff` accepte staff et propriétaire ; sans session → redirection vers la connexion
 
 **Vérification :** `npx vitest run tests/integration/auth tests/integration/staff`
 
@@ -184,9 +184,9 @@ demandes de retour en stock des clients.
 couverture de la spec.
 
 **Critères d'acceptation :**
-- [ ] `submitReview` → en attente ; non visible avant `setReviewApproved` ; `ratingSummaries` (moyenne, nombre) ignore les avis non approuvés
-- [ ] Seuils dans `vitest.config.mts` : ≥ 90 % lignes pour `orders`, `promo`, `promo-types`, `delivery-types`, `finance`, `auth` ; ≥ 70 % sur `lib/**` (exclusions de la spec)
-- [ ] Si un seuil n'est pas atteignable sans toucher au code : s'arrêter et demander
+- [x] `submitReview` → en attente ; non visible avant `setReviewApproved` ; `ratingSummaries` (moyenne, nombre) ignore les avis non approuvés
+- [x] Seuils dans `vitest.config.mts` : ≥ 90 % lignes pour `orders`, `promo`, `promo-types`, `delivery-types`, `finance`, `auth` ; ≥ 70 % sur `lib/**` (exclusions de la spec)
+- [x] Si un seuil n'est pas atteignable sans toucher au code : s'arrêter et demander
 
 **Vérification :** `npm run test:coverage` vert
 
@@ -199,9 +199,9 @@ couverture de la spec.
 ---
 
 ### ✅ Checkpoint B
-- [ ] `npm run test:coverage` vert ; `npm run lint` et `npm run build` verts
-- [ ] Section « Bugs trouvés » ci-dessous à jour
-- [ ] Revue humaine avant la phase 3
+- [x] `npm run test:coverage` vert ; `npm run lint` et `npm run build` verts
+- [x] Section « Bugs trouvés » ci-dessous à jour
+- [x] Revue humaine avant la phase 3
 
 ---
 
@@ -298,5 +298,11 @@ le stock à jour.
 ## Résultats
 
 **Checkpoint A (2026-10-08)** : 9 fichiers, 111 tests verts + 1 échec attendu (B1), ~0,5 s. `npm run lint` vert. `npm run build` vert (lancé avec un `DATA_DIR` temporaire). `data/` inchangé.
+
+**Checkpoint B (2026-10-08)** : 20 fichiers, 251 tests verts + 1 échec attendu (B1), ~9 s (dont ~6 s d'attentes volontaires de 0,4 s après chaque mauvais mot de passe dans `auth.test.ts`). `npm run test:coverage` vert : 73,2 % des lignes sur `lib/` (seuil 70 %) ; par fichier : `orders` 98,6 %, `finance` 93,9 %, `auth` 100 %, `promo`, `promo-types`, `delivery-types` 100 % (seuil 90 % par fichier, vérifié en le montant à 99 % : la commande échoue bien). `npm run lint` et `npm run build` verts. Aucun nouveau bug trouvé en phase 2.
+
+Non couverts (hors périmètre de la spec, prévus pour plus tard si besoin) : `articles.ts`, `lots.ts`, `subscribers.ts`, `doc-store.ts`, `photo-store.ts`, `prepare-photo.ts`, le comptage de visites de `analytics.ts`.
+
+Ajouts phase 2 : `tests/setup/fixtures.ts` (produits, zones, codes promo), `tests/setup/mail.ts` (faux Brevo : aucun email ne sort), `tests/integration/delivery.test.ts` et `tests/unit/rate-limit.test.ts` (non prévus, ajoutés pour la marge de couverture). Le bouchon `next/headers` garde les options des cookies (vérification `httpOnly`/`secure`). `eslint.config.mjs` ignore désormais `coverage/`, `test-results/`, `playwright-report/` (le rapport de couverture généré faisait un avertissement de lint).
 
 Écarts par rapport au plan : Vitest 5.0.3 ; `vite-tsconfig-paths` retiré (Vite gère `@/` nativement via `resolve.tsconfigPaths`) ; bouchons supplémentaires `next/navigation` et `next/server` ; le setup vide aussi `MAIL_FROM_EMAIL` et `SITE_URL`.

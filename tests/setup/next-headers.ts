@@ -2,6 +2,8 @@
 // (e.g. a different IP per test) and read back the cookies the code set.
 
 const jar = new Map<string, string>();
+/** Options passed to cookies().set(), by cookie name (httpOnly, secure…). */
+export const cookieOptions = new Map<string, Record<string, unknown>>();
 let requestHeaders = new Headers({ host: "localhost:3000", "x-forwarded-for": "127.0.0.1" });
 
 export function setRequestHeaders(init: Record<string, string>) {
@@ -10,6 +12,7 @@ export function setRequestHeaders(init: Record<string, string>) {
 
 export function resetRequest() {
   jar.clear();
+  cookieOptions.clear();
   setRequestHeaders({ "x-forwarded-for": "127.0.0.1" });
 }
 
@@ -20,7 +23,10 @@ export async function cookies() {
     get: (name: string) => (jar.has(name) ? { name, value: jar.get(name)! } : undefined),
     has: (name: string) => jar.has(name),
     getAll: () => [...jar].map(([name, value]) => ({ name, value })),
-    set: (name: string, value: string) => void jar.set(name, value),
+    set: (name: string, value: string, options: Record<string, unknown> = {}) => {
+      jar.set(name, value);
+      cookieOptions.set(name, options);
+    },
     delete: (name: string) => void jar.delete(name),
   };
 }

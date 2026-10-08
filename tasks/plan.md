@@ -85,12 +85,12 @@ sont indépendants entre eux.
 - [ ] `npm test` vert, `npm run lint` vert, `npm run build` vert ; revue humaine
 
 ### Phase 2 : Intégration (logique métier sur SQLite)
-- [ ] T4 : Fixtures + produits & codes promo
-- [ ] T5 : Commandes web
-- [ ] T6 : Vente en caisse + rapports finance
-- [ ] T7 : Stock bas + alertes « prévenez-moi »
-- [ ] T8 : Authentification + comptes staff
-- [ ] T9 : Avis + seuils de couverture activés
+- [x] T4 : Fixtures + produits & codes promo
+- [x] T5 : Commandes web
+- [x] T6 : Vente en caisse + rapports finance
+- [x] T7 : Stock bas + alertes « prévenez-moi »
+- [x] T8 : Authentification + comptes staff
+- [x] T9 : Avis + seuils de couverture activés
 
 ### Checkpoint B
 - [ ] `npm run test:coverage` vert avec les seuils de la spec ; liste des bugs trouvés ; revue humaine
