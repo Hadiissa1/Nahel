@@ -72,6 +72,10 @@ npm run test:e2e          # browser tests (Playwright): builds the site and runs
   `promo-types`, `delivery-types`, `finance` and `auth`.
 - Test files: `tests/unit` (no database), `tests/integration` (database),
   `e2e` (browser). Spec and plan: `SPEC.md`, `tasks/`.
+- **GitHub Actions** (`.github/workflows/ci.yml`) runs all of this on every
+  push and pull request: lint, tests with coverage minimums, build, then the
+  browser tests. Reports (coverage, failed browser tests) are kept 14 days
+  in the run's artifacts.
 
 ## Server settings (environment variables)
 

@@ -11,6 +11,8 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   retries: 0,
+  // A forgotten test.only must not silently skip the rest in CI.
+  forbidOnly: !!process.env.CI,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
