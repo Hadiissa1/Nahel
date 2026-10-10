@@ -36,5 +36,7 @@
     // Same bucket, used by OpenNext for its page cache (incremental-cache/).
     { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "nahel-files" }
   ],
+  // Public address: used for email links, share previews, the sitemap and QR codes.
+  "vars": { "SITE_URL": "https://nahel.hidev-solutions-lib.workers.dev" },
   "observability": { "enabled": true }
 }
