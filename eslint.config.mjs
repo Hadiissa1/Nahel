@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "test-results/**",
     "playwright-report/**",
+    // Cloudflare build output and local state.
+    ".open-next/**",
+    ".wrangler/**",
   ]),
 ]);
 
