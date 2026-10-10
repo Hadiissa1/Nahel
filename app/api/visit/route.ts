@@ -1,7 +1,7 @@
-import { clientIp, rateLimiter } from "@/lib/rate-limit";
+import { clientIp, memoryRateLimiter } from "@/lib/rate-limit";
 import { normalizePath, recordView } from "@/lib/analytics";
 
-const perIp = rateLimiter(120, 60 * 1000);
+const perIp = memoryRateLimiter(120, 60 * 1000);
 
 /** Page-view beacon from the shop (see components/VisitCounter.tsx). */
 export async function POST(req: Request) {
@@ -15,6 +15,6 @@ export async function POST(req: Request) {
     /* ignore malformed */
   }
   const ip = await clientIp();
-  if (path && perIp(ip)) recordView(path, ip, req.headers.get("user-agent") ?? "");
+  if (path && perIp(ip)) await recordView(path, ip, req.headers.get("user-agent") ?? "");
   return new Response(null, { status: 204 });
 }

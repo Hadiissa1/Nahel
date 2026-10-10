@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/db";
+import { Statement, db } from "@/lib/db";
 import { layout, mailConfigured, sendMail, siteUrl } from "@/lib/mail";
 
 /**
@@ -15,23 +15,23 @@ export interface StockSettings {
   email: string | null;
 }
 
-const meta = (key: string) =>
-  (db().prepare("SELECT value FROM meta WHERE key = ?").get(key) as { value: string } | undefined)?.value;
-
-export function getStockSettings(): StockSettings {
-  const t = Number(meta("low_stock_threshold"));
+export async function getStockSettings(): Promise<StockSettings> {
+  const rows = (await db()
+    .prepare("SELECT key, value FROM meta WHERE key IN ('low_stock_threshold', 'low_stock_email')")
+    .all()) as { key: string; value: string }[];
+  const meta = (key: string) => rows.find((r) => r.key === key)?.value;
+  const t = Number(meta("low_stock_threshold") ?? NaN);
   return {
     threshold: Number.isInteger(t) && t >= 0 ? t : DEFAULT_THRESHOLD,
     email: meta("low_stock_email") || null,
   };
 }
 
-export function saveStockSettings(s: StockSettings) {
+export async function saveStockSettings(s: StockSettings) {
   const set = db().prepare(
     "INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
   );
-  set.run("low_stock_threshold", String(s.threshold));
-  set.run("low_stock_email", s.email ?? "");
+  await db().batch([set.bind("low_stock_threshold", String(s.threshold)), set.bind("low_stock_email", s.email ?? "")]);
 }
 
 export interface LowStockItem {
@@ -65,12 +65,13 @@ const toItem = (r: Row): LowStockItem => ({
 });
 
 /** Visible sizes at or below the threshold (sold out first). */
-export function listLowStock(threshold = getStockSettings().threshold): LowStockItem[] {
-  return (db().prepare(`${LOW_SQL} ORDER BY v.stock, p.sort`).all(threshold) as unknown as Row[]).map(toItem);
+export async function listLowStock(threshold?: number): Promise<LowStockItem[]> {
+  threshold ??= (await getStockSettings()).threshold;
+  return ((await db().prepare(`${LOW_SQL} ORDER BY v.stock, p.sort`).all(threshold)) as unknown as Row[]).map(toItem);
 }
 
-export function countLowStock(): number {
-  return listLowStock().length;
+export async function countLowStock(): Promise<number> {
+  return (await listLowStock()).length;
 }
 
 const line = (i: LowStockItem, lang: "ar" | "en") => {
@@ -89,14 +90,20 @@ const line = (i: LowStockItem, lang: "ar" | "en") => {
  */
 export async function checkLowStock(): Promise<number> {
   const d = db();
-  const { threshold, email } = getStockSettings();
+  const { threshold, email } = await getStockSettings();
   // Back above the threshold (or no longer tracked): may alert again later.
-  d.prepare("UPDATE variants SET low_alerted = 0 WHERE low_alerted = 1 AND (stock IS NULL OR stock > ?)").run(threshold);
+  await d.prepare("UPDATE variants SET low_alerted = 0 WHERE low_alerted = 1 AND (stock IS NULL OR stock > ?)").run(threshold);
   if (!email || !mailConfigured()) return 0;
 
-  const fresh = (d.prepare(`${LOW_SQL} AND v.low_alerted = 0 ORDER BY v.stock, p.sort`).all(threshold) as unknown as Row[]).map(toItem);
-  const claim = d.prepare("UPDATE variants SET low_alerted = 1 WHERE id = ? AND low_alerted = 0");
-  const items = fresh.filter((i) => Number(claim.run(i.variantId).changes) > 0); // another process may have taken some
+  const fresh = (
+    (await d.prepare(`${LOW_SQL} AND v.low_alerted = 0 ORDER BY v.stock, p.sort`).all(threshold)) as unknown as Row[]
+  ).map(toItem);
+  if (fresh.length === 0) return 0;
+  // Claim them (another server may have taken some at the same moment).
+  const claimed = await d.batch(
+    fresh.map((i) => new Statement("UPDATE variants SET low_alerted = 1 WHERE id = ? AND low_alerted = 0", [i.variantId])),
+  );
+  const items = fresh.filter((_, n) => claimed[n].changes > 0);
   if (items.length === 0) return 0;
 
   const admin = `${siteUrl()}/admin`;
@@ -110,8 +117,7 @@ export async function checkLowStock(): Promise<number> {
   });
   if (!ok) {
     // Let the next stock change try again.
-    const unclaim = d.prepare("UPDATE variants SET low_alerted = 0 WHERE id = ?");
-    for (const i of items) unclaim.run(i.variantId);
+    await d.batch(items.map((i) => new Statement("UPDATE variants SET low_alerted = 0 WHERE id = ?", [i.variantId])));
     return 0;
   }
   return items.length;

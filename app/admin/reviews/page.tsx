@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <ReviewList reviews={listAdminReviews()} />
+      <ReviewList reviews={await listAdminReviews()} />
     </>
   );
 }

@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <ZoneManager zones={listAdminZones()} />
+      <ZoneManager zones={await listAdminZones()} />
     </>
   );
 }

@@ -10,7 +10,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/docs/[file]">) {
   const { file } = await ctx.params;
   const data = await readDoc(file);
   if (!data) return new Response("Not found", { status: 404 });
-  return new Response(new Uint8Array(data), {
+  return new Response(data, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="nahel-analysis.pdf"`,

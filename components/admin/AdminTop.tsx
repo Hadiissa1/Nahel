@@ -14,10 +14,10 @@ export async function AdminTop() {
     <AdminHeader
       isOwner={owner}
       userName={owner ? null : (me?.name ?? null)}
-      newOrders={countNewOrders()}
-      readyAlerts={countReadyAlerts()}
-      pendingReviews={owner ? countPendingReviews() : 0}
-      lowStock={countLowStock()}
+      newOrders={await countNewOrders()}
+      readyAlerts={await countReadyAlerts()}
+      pendingReviews={owner ? await countPendingReviews() : 0}
+      lowStock={await countLowStock()}
     />
   );
 }

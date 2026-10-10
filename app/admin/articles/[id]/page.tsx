@@ -18,12 +18,12 @@ export default function EditArticlePage({ params }: PageProps<"/admin/articles/[
 async function Content({ params }: { params: PageProps<"/admin/articles/[id]">["params"] }) {
   await requireAdmin();
   const { id } = await params;
-  const article = getAdminArticle(decodeURIComponent(id));
+  const article = await getAdminArticle(decodeURIComponent(id));
   if (!article) notFound();
   return (
     <>
       <AdminTop />
-      <ArticleForm article={article} products={listAdminProducts().map((p) => ({ id: p.id, name: p.name }))} />
+      <ArticleForm article={article} products={(await listAdminProducts()).map((p) => ({ id: p.id, name: p.name }))} />
     </>
   );
 }

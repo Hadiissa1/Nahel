@@ -20,7 +20,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/admin/artic
   return (
     <>
       <AdminTop />
-      <ArticleList key={s ?? "list"} articles={listAdminArticles()} saved={s} />
+      <ArticleList key={s ?? "list"} articles={await listAdminArticles()} saved={s} />
     </>
   );
 }

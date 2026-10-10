@@ -18,7 +18,7 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
 async function Products({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
   const me = await requireStaff(); // open to staff
   const { saved } = await searchParams;
-  const settings = getStockSettings();
+  const settings = await getStockSettings();
   return (
     <>
       <AdminTop />
@@ -26,10 +26,10 @@ async function Products({ searchParams }: { searchParams: PageProps<"/admin">["s
           router reuses this page after an in-app navigation. */}
       <ProductList
         key={typeof saved === "string" ? saved : "list"}
-        products={listAdminProducts()}
+        products={await listAdminProducts()}
         saved={typeof saved === "string" ? saved : undefined}
         settings={settings}
-        low={listLowStock(settings.threshold)}
+        low={await listLowStock(settings.threshold)}
         canEmail={mailConfigured()}
         isOwner={me.role === "owner"}
       />

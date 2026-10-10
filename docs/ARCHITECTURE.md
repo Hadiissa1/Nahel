@@ -59,13 +59,17 @@ Visiteur ──▶ (CDN, cache 60 s) ──▶ Boutique Next.js : page pré-gén
                                  Commande enregistrée (n°, client) puis envoyée par WhatsApp
                                  Paiement : espèces / carte / Whish Money, réglé avec le vendeur
 
-Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ SQLite (DATA_DIR/nahel.db)
-                                          │                photos (DATA_DIR/uploads, WebP)
+Gérant ──▶ /admin (mot de passe) ──▶ actions serveur ──▶ base de données (Cloudflare D1)
+                                          │                photos et PDF (Cloudflare R2, WebP)
                                           └──▶ invalide le cache : la boutique se met à jour
 ```
 
-- **Base de données SQLite** (intégrée à Node, rien à installer) : produits, tailles (prix, stock), sessions
-  d'administration. Les photos sont des fichiers WebP à côté de la base.
+Le site tourne sur **Cloudflare Workers** (voir `docs/DEPLOY-CLOUDFLARE.md`). Le même code marche
+aussi sur un serveur Node classique : la base est alors un fichier SQLite et les photos des fichiers
+dans `DATA_DIR` (c'est ce qu'utilisent les tests).
+
+- **Base de données SQLite** (Cloudflare D1 en ligne, fichier local en test) : produits, tailles (prix,
+  stock), commandes, sessions d'administration. Les photos sont en WebP dans R2 (ou dans `DATA_DIR`).
 - **Espace de gestion** (`/admin`) : ajouter, modifier, masquer, supprimer des produits ; prix et stock
   par taille ; photo par appareil photo ou galerie. Détails de sécurité : `docs/SECURITY.md`.
 - **Boutique pré-générée** : tous les visiteurs reçoivent la même page déjà prête, gardée en cache

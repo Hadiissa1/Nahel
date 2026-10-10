@@ -17,7 +17,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/offers/conf
   await connection();
   const raw = (await searchParams).token;
   const token = typeof raw === "string" ? raw : "";
-  const sub = findByToken(token);
+  const sub = await findByToken(token);
   const valid = !!sub?.email;
   return <TokenPage mode="confirm" token={token} valid={valid} />;
 }

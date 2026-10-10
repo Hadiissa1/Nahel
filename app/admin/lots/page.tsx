@@ -19,7 +19,7 @@ export default function LotsPage() {
 async function Content() {
   await requireAdmin();
   const site = siteUrl();
-  const lots = listAdminLots();
+  const lots = await listAdminLots();
   // QR codes point to the public lot page; they need the site's real address.
   const qr: Record<string, string> = {};
   if (site) {
@@ -32,7 +32,7 @@ async function Content() {
       });
     }
   }
-  const products = listAdminProducts().map((p) => ({ id: p.id, name: p.name }));
+  const products = (await listAdminProducts()).map((p) => ({ id: p.id, name: p.name }));
   return (
     <>
       <AdminTop />

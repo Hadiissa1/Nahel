@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <TeamManager staff={listStaff()} />
+      <TeamManager staff={await listStaff()} />
     </>
   );
 }

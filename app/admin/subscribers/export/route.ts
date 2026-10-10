@@ -11,7 +11,7 @@ function cell(v: string | null) {
 
 export async function GET() {
   if (!(await isAdmin())) return new Response("Unauthorized", { status: 401 });
-  const rows = listSubscribers().map((s) =>
+  const rows = (await listSubscribers()).map((s) =>
     [
       cell(s.email),
       // Numbers are stored as verified digits only, so "+…" is safe as-is.

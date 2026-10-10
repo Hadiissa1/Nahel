@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
-import { db } from "@/lib/db";
+import { Statement, db } from "@/lib/db";
 import { docUrl, type AdminLot, type Lot } from "@/lib/lot-types";
 
 export const LOTS_TAG = "lots";
@@ -42,7 +42,7 @@ export async function getLotByCode(code: string): Promise<Lot | null> {
   "use cache";
   cacheTag(LOTS_TAG);
   cacheLife("minutes");
-  const r = db().prepare(`${SELECT} WHERE l.code = ? AND p.visible = 1`).get(code) as Row | undefined;
+  const r = (await db().prepare(`${SELECT} WHERE l.code = ? AND p.visible = 1`).get(code)) as Row | undefined;
   return r ? toLot(r) : null;
 }
 
@@ -52,16 +52,16 @@ export async function getProductLots(productId: string): Promise<Lot[]> {
   cacheTag(LOTS_TAG);
   cacheLife("minutes");
   return (
-    db()
+    (await db()
       .prepare(`${SELECT} WHERE l.product_id = ? AND l.current = 1 ORDER BY l.harvest_on DESC, l.created_at DESC LIMIT 5`)
-      .all(productId) as unknown as Row[]
+      .all(productId)) as unknown as Row[]
   ).map(toLot);
 }
 
 // ---------- Admin ----------
 
-export function listAdminLots(): AdminLot[] {
-  return (db().prepare(`${SELECT} ORDER BY l.created_at DESC`).all() as unknown as Row[]).map((r) => ({
+export async function listAdminLots(): Promise<AdminLot[]> {
+  return ((await db().prepare(`${SELECT} ORDER BY l.created_at DESC`).all()) as unknown as Row[]).map((r) => ({
     ...toLot(r),
     productName: { ar: r.name_ar, en: r.name_en },
     current: r.current === 1,
@@ -86,14 +86,18 @@ export type SaveLotResult =
  * Create (no id) or update a lot. `certificate`: new file name, null to
  * remove, undefined to keep. Returns the replaced file to delete.
  */
-export function saveLot(id: string | null, input: LotInput, certificate: string | null | undefined): SaveLotResult {
+export async function saveLot(
+  id: string | null,
+  input: LotInput,
+  certificate: string | null | undefined,
+): Promise<SaveLotResult> {
   const d = db();
-  if (!d.prepare("SELECT 1 FROM products WHERE id = ?").get(input.productId)) return { ok: false, error: "product" };
-  const clash = d.prepare("SELECT id FROM lots WHERE code = ?").get(input.code) as { id: string } | undefined;
+  if (!(await d.prepare("SELECT 1 FROM products WHERE id = ?").get(input.productId))) return { ok: false, error: "product" };
+  const clash = (await d.prepare("SELECT id FROM lots WHERE code = ?").get(input.code)) as { id: string } | undefined;
   if (clash && clash.id !== id) return { ok: false, error: "code_taken" };
 
   if (!id) {
-    d.prepare(
+    await d.prepare(
       `INSERT INTO lots (id, code, product_id, harvest_on, region_ar, region_en, notes_ar, notes_en, certificate, current)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
@@ -102,9 +106,11 @@ export function saveLot(id: string | null, input: LotInput, certificate: string 
     );
     return { ok: true, oldCertificate: null };
   }
-  const row = d.prepare("SELECT certificate FROM lots WHERE id = ?").get(id) as { certificate: string | null } | undefined;
+  const row = (await d.prepare("SELECT certificate FROM lots WHERE id = ?").get(id)) as
+    | { certificate: string | null }
+    | undefined;
   if (!row) return { ok: false, error: "not_found" };
-  d.prepare(
+  await d.prepare(
     `UPDATE lots SET code = ?, product_id = ?, harvest_on = ?, region_ar = ?, region_en = ?, notes_ar = ?,
        notes_en = ?, certificate = ?, current = ? WHERE id = ?`,
   ).run(
@@ -116,9 +122,11 @@ export function saveLot(id: string | null, input: LotInput, certificate: string 
 }
 
 /** Returns the lot's certificate file name to delete, or false if not found. */
-export function deleteLot(id: string): string | null | false {
-  const row = db().prepare("SELECT certificate FROM lots WHERE id = ?").get(id) as { certificate: string | null } | undefined;
-  if (!row) return false;
-  db().prepare("DELETE FROM lots WHERE id = ?").run(id);
-  return row.certificate;
+export async function deleteLot(id: string): Promise<string | null | false> {
+  const [found] = await db().batch([
+    new Statement("SELECT certificate FROM lots WHERE id = ?", [id]),
+    new Statement("DELETE FROM lots WHERE id = ?", [id]),
+  ]);
+  const row = found.rows[0] as { certificate: string | null } | undefined;
+  return row ? row.certificate : false;
 }

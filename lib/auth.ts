@@ -3,7 +3,8 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypt
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { db } from "@/lib/db";
+import { Statement, db } from "@/lib/db";
+import { clientIp, rateLimiter } from "@/lib/rate-limit";
 
 /**
  * Two kinds of admin users:
@@ -53,45 +54,24 @@ function verifyPassword(password: string, stored: string): boolean {
 }
 
 // Used when the username doesn't exist, so the answer takes as long either way.
-const DUMMY_HASH = hashPassword(randomBytes(12).toString("hex"));
+// Made on first use (Cloudflare forbids random numbers at startup).
+let dummyHash: string | undefined;
+const dummy = () => (dummyHash ??= hashPassword(randomBytes(12).toString("hex")));
 
-// ---- Login rate limiting (per client IP, per server process) ----
+// ---- Login rate limiting (per client IP), shared by all servers ----
 const WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILURES = 5;
-const failures = new Map<string, { count: number; first: number }>();
+const perIp = rateLimiter("login-ip", 5, WINDOW_MS);
+// Site-wide backstop: if the IP can be faked (e.g. X-Forwarded-For without
+// Cloudflare in front), all failures together are capped too.
+const siteWide = rateLimiter("login-all", 100, WINDOW_MS);
 
-async function clientIp() {
-  const h = await headers();
-  return (
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    "unknown"
-  );
+async function isBlocked(ip: string) {
+  return (await siteWide.exhausted("all")) || (await perIp.exhausted(ip));
 }
 
-// Site-wide backstop: the per-IP limit relies on X-Forwarded-For, which a
-// client can forge, so all failures together are capped too.
-const GLOBAL_MAX_FAILURES = 100;
-let globalFailures = { count: 0, first: 0 };
-
-function isBlocked(ip: string) {
-  if (Date.now() - globalFailures.first > WINDOW_MS) globalFailures = { count: 0, first: Date.now() };
-  if (globalFailures.count >= GLOBAL_MAX_FAILURES) return true;
-  const f = failures.get(ip);
-  if (!f) return false;
-  if (Date.now() - f.first > WINDOW_MS) {
-    failures.delete(ip);
-    return false;
-  }
-  return f.count >= MAX_FAILURES;
-}
-
-function recordFailure(ip: string) {
-  globalFailures.count++;
-  const f = failures.get(ip);
-  if (!f || Date.now() - f.first > WINDOW_MS) failures.set(ip, { count: 1, first: Date.now() });
-  else f.count++;
-  if (failures.size > 10_000) failures.clear(); // bound memory
+async function recordFailure(ip: string) {
+  await siteWide.hit("all");
+  await perIp.hit(ip);
 }
 
 async function isLocalhost() {
@@ -105,36 +85,37 @@ export type LoginResult = "ok" | "invalid" | "blocked" | "not_configured";
 export async function login(username: string, password: string): Promise<LoginResult> {
   if (!isAdminConfigured()) return "not_configured";
   const ip = await clientIp();
-  if (isBlocked(ip)) return "blocked";
+  if (await isBlocked(ip)) return "blocked";
 
   let userId: string | null = null;
   let ok: boolean;
   if (!username) {
     ok = ownerPasswordMatches(password);
   } else {
-    const user = db()
+    const user = (await db()
       .prepare("SELECT id, pw_hash FROM staff WHERE username = ? AND active = 1")
-      .get(username.trim().toLowerCase()) as { id: string; pw_hash: string } | undefined;
-    ok = verifyPassword(password, user?.pw_hash ?? DUMMY_HASH) && Boolean(user);
+      .get(username.trim().toLowerCase())) as { id: string; pw_hash: string } | undefined;
+    ok = verifyPassword(password, user?.pw_hash ?? dummy()) && Boolean(user);
     userId = user?.id ?? null;
   }
   if (!ok) {
-    recordFailure(ip);
+    await recordFailure(ip);
     await new Promise((r) => setTimeout(r, 400)); // slow down guessing
-    return isBlocked(ip) ? "blocked" : "invalid";
+    return (await isBlocked(ip)) ? "blocked" : "invalid";
   }
-  failures.delete(ip);
+  await perIp.reset(ip);
 
   const token = randomBytes(32).toString("base64url");
   const expires = Date.now() + SESSION_HOURS * 3600 * 1000;
-  const d = db();
-  d.prepare("DELETE FROM sessions WHERE expires_at < ?").run(Date.now());
-  d.prepare("INSERT INTO sessions (token_hash, expires_at, user_id) VALUES (?, ?, ?)").run(
-    sha256(token).toString("hex"),
-    expires,
-    userId,
-  );
-  if (userId) d.prepare("UPDATE staff SET last_login = datetime('now') WHERE id = ?").run(userId);
+  await db().batch([
+    new Statement("DELETE FROM sessions WHERE expires_at < ?", [Date.now()]),
+    new Statement("INSERT INTO sessions (token_hash, expires_at, user_id) VALUES (?, ?, ?)", [
+      sha256(token).toString("hex"),
+      expires,
+      userId,
+    ]),
+    ...(userId ? [new Statement("UPDATE staff SET last_login = datetime('now') WHERE id = ?", [userId])] : []),
+  ]);
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     // HTTPS-only everywhere, except on this machine's own localhost (plain
@@ -151,14 +132,14 @@ export async function logout() {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
   if (token) {
-    db().prepare("DELETE FROM sessions WHERE token_hash = ?").run(sha256(token).toString("hex"));
+    await db().prepare("DELETE FROM sessions WHERE token_hash = ?").run(sha256(token).toString("hex"));
   }
   jar.delete(COOKIE);
 }
 
 /** End every session of a staff account (deactivated, deleted, new password). */
-export function endSessionsOf(userId: string) {
-  db().prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+export async function endSessionsOf(userId: string) {
+  await db().prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
 }
 
 export interface Session {
@@ -173,18 +154,18 @@ export async function getSession(): Promise<Session | null> {
   // Wait for the request FIRST: admin pages must never be prerendered. If the
   // config check came first, a build without ADMIN_PASSWORD would prerender a
   // permanent redirect to the login page. connection() also keeps the
-  // synchronous SQLite query and Date.now() below out of prerendering.
+  // database query and Date.now() below out of prerendering.
   await connection();
   const token = (await cookies()).get(COOKIE)?.value;
   if (!isAdminConfigured()) return null;
   if (!token || token.length > 100) return null;
-  const row = db()
+  const row = (await db()
     .prepare(
       `SELECT s.expires_at, s.user_id, u.name, u.active
        FROM sessions s LEFT JOIN staff u ON u.id = s.user_id
        WHERE s.token_hash = ?`,
     )
-    .get(sha256(token).toString("hex")) as
+    .get(sha256(token).toString("hex"))) as
     | { expires_at: number; user_id: string | null; name: string | null; active: number | null }
     | undefined;
   if (!row || row.expires_at <= Date.now()) return null;

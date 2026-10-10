@@ -17,7 +17,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/offers/unsu
   await connection();
   const raw = (await searchParams).token;
   const token = typeof raw === "string" ? raw : "";
-  const sub = findByToken(token);
+  const sub = await findByToken(token);
   const valid = !!sub;
   return <TokenPage mode="unsubscribe" token={token} valid={valid} />;
 }

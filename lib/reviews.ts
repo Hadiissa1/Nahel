@@ -30,19 +30,19 @@ const toReview = (r: Row): Review => ({
   date: r.created_at.slice(0, 10),
 });
 
-export function submitReview(input: {
+export async function submitReview(input: {
   productId: string;
   rating: number;
   name: string;
   text: string;
   lang: "ar" | "en";
-}): "ok" | "unavailable" {
+}): Promise<"ok" | "unavailable"> {
   const d = db();
-  const p = d.prepare("SELECT visible FROM products WHERE id = ?").get(input.productId) as
+  const p = (await d.prepare("SELECT visible FROM products WHERE id = ?").get(input.productId)) as
     | { visible: number }
     | undefined;
   if (!p || p.visible !== 1) return "unavailable";
-  d.prepare("INSERT INTO reviews (id, product_id, rating, name, text, lang) VALUES (?, ?, ?, ?, ?, ?)").run(
+  await d.prepare("INSERT INTO reviews (id, product_id, rating, name, text, lang) VALUES (?, ?, ?, ?, ?, ?)").run(
     randomUUID(), input.productId, input.rating, input.name, input.text, input.lang,
   );
   return "ok";
@@ -54,19 +54,19 @@ export async function getApprovedReviews(productId: string): Promise<Review[]> {
   cacheTag(REVIEWS_TAG);
   cacheLife("minutes");
   return (
-    db()
+    (await db()
       .prepare("SELECT * FROM reviews WHERE product_id = ? AND approved = 1 ORDER BY created_at DESC LIMIT 50")
-      .all(productId) as unknown as Row[]
+      .all(productId)) as unknown as Row[]
   ).map(toReview);
 }
 
 /** Average and count of approved reviews per product (for the catalog). */
-export function ratingSummaries(): Map<string, RatingSummary> {
-  const rows = db()
+export async function ratingSummaries(): Promise<Map<string, RatingSummary>> {
+  const rows = (await db()
     .prepare(
       "SELECT product_id, AVG(rating) AS avg, COUNT(*) AS n FROM reviews WHERE approved = 1 GROUP BY product_id",
     )
-    .all() as { product_id: string; avg: number; n: number }[];
+    .all()) as { product_id: string; avg: number; n: number }[];
   return new Map(rows.map((r) => [r.product_id, { avg: Math.round(r.avg * 10) / 10, count: r.n }]));
 }
 
@@ -78,14 +78,14 @@ export interface AdminReview extends Review {
   approved: boolean;
 }
 
-export function listAdminReviews(): AdminReview[] {
+export async function listAdminReviews(): Promise<AdminReview[]> {
   return (
-    db()
+    (await db()
       .prepare(
         `SELECT r.*, p.name_ar, p.name_en FROM reviews r JOIN products p ON p.id = r.product_id
          ORDER BY r.approved, r.created_at DESC LIMIT 500`,
       )
-      .all() as unknown as (Row & { name_ar: string; name_en: string })[]
+      .all()) as unknown as (Row & { name_ar: string; name_en: string })[]
   ).map((r) => ({
     ...toReview(r),
     productId: r.product_id,
@@ -94,14 +94,14 @@ export function listAdminReviews(): AdminReview[] {
   }));
 }
 
-export function countPendingReviews(): number {
-  return (db().prepare("SELECT COUNT(*) AS n FROM reviews WHERE approved = 0").get() as { n: number }).n;
+export async function countPendingReviews(): Promise<number> {
+  return ((await db().prepare("SELECT COUNT(*) AS n FROM reviews WHERE approved = 0").get()) as { n: number }).n;
 }
 
-export function setReviewApproved(id: string, approved: boolean): boolean {
-  return Number(db().prepare("UPDATE reviews SET approved = ? WHERE id = ?").run(approved ? 1 : 0, id).changes) > 0;
+export async function setReviewApproved(id: string, approved: boolean): Promise<boolean> {
+  return (await db().prepare("UPDATE reviews SET approved = ? WHERE id = ?").run(approved ? 1 : 0, id)).changes > 0;
 }
 
-export function deleteReview(id: string): boolean {
-  return Number(db().prepare("DELETE FROM reviews WHERE id = ?").run(id).changes) > 0;
+export async function deleteReview(id: string): Promise<boolean> {
+  return (await db().prepare("DELETE FROM reviews WHERE id = ?").run(id)).changes > 0;
 }

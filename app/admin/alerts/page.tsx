@@ -21,7 +21,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <AlertList ready={listReadyAlerts()} waiting={listWaiting()} />
+      <AlertList ready={await listReadyAlerts()} waiting={await listWaiting()} />
     </>
   );
 }

@@ -1,13 +1,11 @@
 import "server-only";
-import { appendFile } from "node:fs/promises";
-import path from "node:path";
-import { DATA_DIR, db } from "@/lib/db";
+import { DATA_DIR } from "@/lib/db";
 import { siteUrl } from "@/lib/site";
 
 /**
  * Outgoing email.
  *
- * - MAIL_DRIVER=log      → emails are appended to DATA_DIR/outbox.log (testing).
+ * - MAIL_DRIVER=log      → emails are appended to DATA_DIR/outbox.log (local tests only).
  * - BREVO_API_KEY + MAIL_FROM_EMAIL → sent through Brevo's transactional API.
  *
  * SITE_URL (e.g. https://nahel.com) is required: links in emails must never be
@@ -40,9 +38,10 @@ export interface Mail {
 export async function sendMail(mail: Mail): Promise<boolean> {
   const d = driver();
   if (d === "log") {
-    db(); // make sure DATA_DIR exists
+    const { appendFile, mkdir } = await import(/* webpackIgnore: true */ "node:fs/promises");
+    await mkdir(DATA_DIR, { recursive: true });
     await appendFile(
-      path.join(DATA_DIR, "outbox.log"),
+      `${DATA_DIR}/outbox.log`,
       JSON.stringify({ at: new Date().toISOString(), ...mail }) + "\n",
     );
     return true;

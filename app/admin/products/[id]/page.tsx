@@ -17,7 +17,7 @@ export default function EditProductPage({ params }: PageProps<"/admin/products/[
 async function EditProduct({ params }: { params: PageProps<"/admin/products/[id]">["params"] }) {
   await requireAdmin();
   const { id } = await params;
-  const product = getAdminProduct(decodeURIComponent(id));
+  const product = await getAdminProduct(decodeURIComponent(id));
   if (!product) notFound();
   return (
     <>

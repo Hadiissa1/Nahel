@@ -97,7 +97,7 @@ async function sendConfirmation(sub: Row): Promise<boolean> {
     text: `${T.confirmBody[lang]}\n\n${l.confirm}`,
   });
   if (ok) {
-    db().prepare("UPDATE subscribers SET confirm_sent_at = datetime('now') WHERE id = ?").run(sub.id);
+    await db().prepare("UPDATE subscribers SET confirm_sent_at = datetime('now') WHERE id = ?").run(sub.id);
   }
   return ok;
 }
@@ -115,9 +115,9 @@ export async function subscribe(input: {
   lang: SubLang;
 }): Promise<void> {
   const d = db();
-  const existing = d
+  const existing = (await d
     .prepare("SELECT * FROM subscribers WHERE email = ? OR whatsapp = ? LIMIT 1")
-    .get(input.email ?? "\u0000", input.whatsapp ?? "\u0000") as Row | undefined;
+    .get(input.email ?? "\u0000", input.whatsapp ?? "\u0000")) as Row | undefined;
 
   let row: Row;
   if (existing) {
@@ -125,21 +125,21 @@ export async function subscribe(input: {
     const emailFree =
       input.email &&
       !existing.email &&
-      !d.prepare("SELECT 1 FROM subscribers WHERE email = ?").get(input.email);
+      !(await d.prepare("SELECT 1 FROM subscribers WHERE email = ?").get(input.email));
     const waFree =
       input.whatsapp &&
       !existing.whatsapp &&
-      !d.prepare("SELECT 1 FROM subscribers WHERE whatsapp = ?").get(input.whatsapp);
-    d.prepare(
+      !(await d.prepare("SELECT 1 FROM subscribers WHERE whatsapp = ?").get(input.whatsapp));
+    await d.prepare(
       "UPDATE subscribers SET email = COALESCE(email, ?), whatsapp = COALESCE(whatsapp, ?), lang = ? WHERE id = ?",
     ).run(emailFree ? input.email : null, waFree ? input.whatsapp : null, input.lang, existing.id);
-    row = d.prepare("SELECT * FROM subscribers WHERE id = ?").get(existing.id) as unknown as Row;
+    row = (await d.prepare("SELECT * FROM subscribers WHERE id = ?").get(existing.id)) as Row;
   } else {
     const id = randomUUID();
-    d.prepare(
+    await d.prepare(
       "INSERT INTO subscribers (id, email, whatsapp, lang, token) VALUES (?, ?, ?, ?, ?)",
     ).run(id, input.email, input.whatsapp, input.lang, randomBytes(24).toString("base64url"));
-    row = d.prepare("SELECT * FROM subscribers WHERE id = ?").get(id) as unknown as Row;
+    row = (await d.prepare("SELECT * FROM subscribers WHERE id = ?").get(id)) as Row;
   }
 
   const recentlySent =
@@ -152,47 +152,43 @@ export async function subscribe(input: {
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,64}$/;
 
-export function findByToken(token: string): Subscriber | null {
+export async function findByToken(token: string): Promise<Subscriber | null> {
   if (!TOKEN_RE.test(token)) return null;
-  const r = db().prepare("SELECT * FROM subscribers WHERE token = ?").get(token) as Row | undefined;
+  const r = (await db().prepare("SELECT * FROM subscribers WHERE token = ?").get(token)) as Row | undefined;
   return r ? toSub(r) : null;
 }
 
-export function confirmEmail(token: string): boolean {
+export async function confirmEmail(token: string): Promise<boolean> {
   if (!TOKEN_RE.test(token)) return false;
-  const r = db()
+  const r = await db()
     .prepare(
       "UPDATE subscribers SET email_confirmed_at = COALESCE(email_confirmed_at, datetime('now')) WHERE token = ? AND email IS NOT NULL",
     )
     .run(token);
-  return Number(r.changes) > 0;
+  return r.changes > 0;
 }
 
 /** Unsubscribing deletes the subscriber entirely (we keep no data). */
-export function unsubscribe(token: string): boolean {
+export async function unsubscribe(token: string): Promise<boolean> {
   if (!TOKEN_RE.test(token)) return false;
-  return Number(db().prepare("DELETE FROM subscribers WHERE token = ?").run(token).changes) > 0;
+  return (await db().prepare("DELETE FROM subscribers WHERE token = ?").run(token)).changes > 0;
 }
 
 // ---------- Admin operations ----------
 
-export function listSubscribers(): Subscriber[] {
-  return (
-    db().prepare("SELECT * FROM subscribers ORDER BY created_at DESC").all() as unknown as Row[]
-  ).map(toSub);
+export async function listSubscribers(): Promise<Subscriber[]> {
+  return ((await db().prepare("SELECT * FROM subscribers ORDER BY created_at DESC").all()) as unknown as Row[]).map(toSub);
 }
 
-export function deleteSubscriber(id: string): boolean {
-  return Number(db().prepare("DELETE FROM subscribers WHERE id = ?").run(id).changes) > 0;
+export async function deleteSubscriber(id: string): Promise<boolean> {
+  return (await db().prepare("DELETE FROM subscribers WHERE id = ?").run(id)).changes > 0;
 }
 
 /** Re-send confirmation emails to subscribers who haven't confirmed yet. */
 export async function resendConfirmations(): Promise<{ sent: number; failed: number }> {
-  const rows = db()
-    .prepare(
-      "SELECT * FROM subscribers WHERE email IS NOT NULL AND email_confirmed_at IS NULL",
-    )
-    .all() as unknown as Row[];
+  const rows = (await db()
+    .prepare("SELECT * FROM subscribers WHERE email IS NOT NULL AND email_confirmed_at IS NULL")
+    .all()) as unknown as Row[];
   let sent = 0;
   let failed = 0;
   for (const r of rows) {
@@ -224,11 +220,9 @@ function campaignMail(c: CampaignInput, to: string, lang: SubLang, token: string
 
 /** Email a promotion to every confirmed subscriber (5 at a time). */
 export async function sendCampaign(c: CampaignInput): Promise<{ sent: number; failed: number }> {
-  const rows = db()
-    .prepare(
-      "SELECT * FROM subscribers WHERE email IS NOT NULL AND email_confirmed_at IS NOT NULL",
-    )
-    .all() as unknown as Row[];
+  const rows = (await db()
+    .prepare("SELECT * FROM subscribers WHERE email IS NOT NULL AND email_confirmed_at IS NOT NULL")
+    .all()) as unknown as Row[];
   let sent = 0;
   let failed = 0;
   for (let i = 0; i < rows.length; i += 5) {
@@ -238,7 +232,7 @@ export async function sendCampaign(c: CampaignInput): Promise<{ sent: number; fa
     sent += results.filter(Boolean).length;
     failed += results.filter((ok) => !ok).length;
   }
-  db()
+  await db()
     .prepare(
       "INSERT INTO campaigns (id, subject_ar, subject_en, body_ar, body_en, sent, failed) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
@@ -258,11 +252,11 @@ export interface CampaignRecord {
   createdAt: string;
 }
 
-export function listCampaigns(): CampaignRecord[] {
+export async function listCampaigns(): Promise<CampaignRecord[]> {
   return (
-    db()
+    (await db()
       .prepare("SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 20")
-      .all() as unknown as {
+      .all()) as unknown as {
       id: string;
       subject_ar: string;
       subject_en: string;

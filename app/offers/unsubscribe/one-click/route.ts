@@ -6,7 +6,7 @@ import { unsubscribe } from "@/lib/subscribers";
  */
 export async function POST(req: Request) {
   const token = new URL(req.url).searchParams.get("token") ?? "";
-  unsubscribe(token);
+  await unsubscribe(token);
   // Same answer either way: don't reveal whether the token existed.
   return new Response("Unsubscribed", { status: 200 });
 }

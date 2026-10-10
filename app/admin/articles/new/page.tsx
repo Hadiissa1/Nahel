@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <ArticleForm products={listAdminProducts().map((p) => ({ id: p.id, name: p.name }))} />
+      <ArticleForm products={(await listAdminProducts()).map((p) => ({ id: p.id, name: p.name }))} />
     </>
   );
 }

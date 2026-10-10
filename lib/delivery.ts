@@ -23,9 +23,9 @@ const toZone = (r: Row): AdminZone => ({
   active: r.active === 1,
 });
 
-function load(where = ""): AdminZone[] {
+async function load(where = ""): Promise<AdminZone[]> {
   return (
-    db().prepare(`SELECT * FROM delivery_zones ${where} ORDER BY sort, created_at`).all() as unknown as Row[]
+    (await db().prepare(`SELECT * FROM delivery_zones ${where} ORDER BY sort, created_at`).all()) as unknown as Row[]
   ).map(toZone);
 }
 
@@ -34,15 +34,15 @@ export async function getDeliveryZones(): Promise<DeliveryZone[]> {
   "use cache";
   cacheTag(ZONES_TAG);
   cacheLife("minutes");
-  return load("WHERE active = 1").map(({ id, name, fee, freeFrom }) => ({ id, name, fee, freeFrom }));
+  return (await load("WHERE active = 1")).map(({ id, name, fee, freeFrom }) => ({ id, name, fee, freeFrom }));
 }
 
 /** Fresh read for placing an order (never trusts the cache or the browser). */
-export function activeZones(): DeliveryZone[] {
+export function activeZones(): Promise<DeliveryZone[]> {
   return load("WHERE active = 1");
 }
 
-export function listAdminZones(): AdminZone[] {
+export function listAdminZones(): Promise<AdminZone[]> {
   return load();
 }
 
@@ -54,21 +54,23 @@ export interface ZoneInput {
 }
 
 /** Create (no id) or update a zone. Returns false when the zone to update is gone. */
-export function saveZone(id: string | null, z: ZoneInput): boolean {
+export async function saveZone(id: string | null, z: ZoneInput): Promise<boolean> {
   const d = db();
   if (!id) {
-    const { m } = d.prepare("SELECT COALESCE(MAX(sort), -1) + 1 AS m FROM delivery_zones").get() as { m: number };
-    d.prepare(
-      "INSERT INTO delivery_zones (id, name_ar, name_en, fee, free_from, active, sort) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    ).run(randomUUID(), z.name.ar, z.name.en, z.fee, z.freeFrom, z.active ? 1 : 0, m);
+    await d
+      .prepare(
+        `INSERT INTO delivery_zones (id, name_ar, name_en, fee, free_from, active, sort)
+         VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort), -1) + 1 FROM delivery_zones))`,
+      )
+      .run(randomUUID(), z.name.ar, z.name.en, z.fee, z.freeFrom, z.active ? 1 : 0);
     return true;
   }
-  const r = d
+  const r = await d
     .prepare("UPDATE delivery_zones SET name_ar = ?, name_en = ?, fee = ?, free_from = ?, active = ? WHERE id = ?")
     .run(z.name.ar, z.name.en, z.fee, z.freeFrom, z.active ? 1 : 0, id);
-  return Number(r.changes) > 0;
+  return r.changes > 0;
 }
 
-export function deleteZone(id: string): boolean {
-  return Number(db().prepare("DELETE FROM delivery_zones WHERE id = ?").run(id).changes) > 0;
+export async function deleteZone(id: string): Promise<boolean> {
+  return (await db().prepare("DELETE FROM delivery_zones WHERE id = ?").run(id)).changes > 0;
 }

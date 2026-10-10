@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <PosTerminal products={listAdminProducts()} />
+      <PosTerminal products={await listAdminProducts()} />
     </>
   );
 }

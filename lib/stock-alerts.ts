@@ -22,36 +22,39 @@ interface VariantRow {
 /** A size is "available" when visible and not out of stock. */
 const AVAILABLE = "p.visible = 1 AND (v.stock IS NULL OR v.stock > 0)";
 
-export function requestAlert(input: {
+export async function requestAlert(input: {
   productId: string;
   variantId: string;
   email: string | null;
   whatsapp: string | null;
   lang: "ar" | "en";
-}): AlertResult {
+}): Promise<AlertResult> {
   const d = db();
-  const v = d
+  const v = (await d
     .prepare(
       `SELECT v.stock, p.visible FROM variants v JOIN products p ON p.id = v.product_id
        WHERE v.id = ? AND v.product_id = ?`,
     )
-    .get(input.variantId, input.productId) as VariantRow | undefined;
+    .get(input.variantId, input.productId)) as VariantRow | undefined;
   if (!v || v.visible !== 1) return "unavailable";
   if (v.stock === null || v.stock > 0) return "in_stock";
 
-  const count = (col: "email" | "whatsapp", value: string | null) =>
+  const count = async (col: "email" | "whatsapp", value: string | null) =>
     value
-      ? (d.prepare(`SELECT COUNT(*) AS n FROM stock_alerts WHERE ${col} = ?`).get(value) as { n: number }).n
+      ? ((await d.prepare(`SELECT COUNT(*) AS n FROM stock_alerts WHERE ${col} = ?`).get(value)) as { n: number }).n
       : 0;
-  if (count("email", input.email) >= MAX_ALERTS_PER_CONTACT || count("whatsapp", input.whatsapp) >= MAX_ALERTS_PER_CONTACT)
+  if (
+    (await count("email", input.email)) >= MAX_ALERTS_PER_CONTACT ||
+    (await count("whatsapp", input.whatsapp)) >= MAX_ALERTS_PER_CONTACT
+  )
     return "too_many";
 
   // Same answer whether or not the request already existed (no information leak).
   const ins = d.prepare(
     "INSERT INTO stock_alerts (id, variant_id, email, whatsapp, lang) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
   );
-  if (input.email) ins.run(randomUUID(), input.variantId, input.email, null, input.lang);
-  if (input.whatsapp) ins.run(randomUUID(), input.variantId, null, input.whatsapp, input.lang);
+  if (input.email) await ins.run(randomUUID(), input.variantId, input.email, null, input.lang);
+  if (input.whatsapp) await ins.run(randomUUID(), input.variantId, null, input.whatsapp, input.lang);
   return "ok";
 }
 
@@ -106,22 +109,22 @@ export async function sendRestockEmails(): Promise<number> {
   if (!mailConfigured()) return 0;
   const d = db();
   // Claims older than 10 minutes are from a crashed attempt: retry them.
-  const rows = d
+  const rows = (await d
     .prepare(
       `${READY_SQL} AND a.email IS NOT NULL
        AND (a.sending_at IS NULL OR a.sending_at < datetime('now', '-10 minutes'))
        LIMIT 500`,
     )
-    .all() as unknown as ReadyRow[];
+    .all()) as unknown as ReadyRow[];
   let sent = 0;
   for (const r of rows) {
-    const claim = d
+    const claim = await d
       .prepare(
         `UPDATE stock_alerts SET sending_at = datetime('now')
          WHERE id = ? AND (sending_at IS NULL OR sending_at < datetime('now', '-10 minutes'))`,
       )
       .run(r.id);
-    if (Number(claim.changes) === 0) continue; // another process took it
+    if (claim.changes === 0) continue; // another process took it
     const name = fullName(r, r.lang);
     const ok = await sendMail({
       to: r.email!,
@@ -135,10 +138,10 @@ export async function sendRestockEmails(): Promise<number> {
       }),
     });
     if (ok) {
-      d.prepare("DELETE FROM stock_alerts WHERE id = ?").run(r.id);
+      await d.prepare("DELETE FROM stock_alerts WHERE id = ?").run(r.id);
       sent++;
     } else {
-      d.prepare("UPDATE stock_alerts SET sending_at = NULL WHERE id = ?").run(r.id);
+      await d.prepare("UPDATE stock_alerts SET sending_at = NULL WHERE id = ?").run(r.id);
     }
   }
   return sent;
@@ -166,10 +169,10 @@ export interface WaitingGroup {
 }
 
 /** Requests whose size is back in stock and still need a manual action. */
-export function listReadyAlerts(): ReadyAlert[] {
-  const rows = db()
+export async function listReadyAlerts(): Promise<ReadyAlert[]> {
+  const rows = (await db()
     .prepare(`${READY_SQL} ORDER BY a.created_at`)
-    .all() as unknown as ReadyRow[];
+    .all()) as unknown as ReadyRow[];
   const email = mailConfigured();
   return rows
     .filter((r) => r.whatsapp || !email)
@@ -191,9 +194,9 @@ export function listReadyAlerts(): ReadyAlert[] {
 }
 
 /** Demand for sizes still out of stock. */
-export function listWaiting(): WaitingGroup[] {
+export async function listWaiting(): Promise<WaitingGroup[]> {
   return (
-    db()
+    (await db()
       .prepare(
         `SELECT p.id AS product_id, p.name_ar, p.name_en, v.label,
                 COUNT(a.email) AS emails, COUNT(a.whatsapp) AS whatsapps
@@ -201,7 +204,7 @@ export function listWaiting(): WaitingGroup[] {
          WHERE NOT (${AVAILABLE})
          GROUP BY v.id ORDER BY COUNT(*) DESC, p.sort`,
       )
-      .all() as unknown as (Omit<WaitingGroup, "name" | "productId"> & { product_id: string; name_ar: string; name_en: string })[]
+      .all()) as unknown as (Omit<WaitingGroup, "name" | "productId"> & { product_id: string; name_ar: string; name_en: string })[]
   ).map((r) => ({
     productId: r.product_id,
     name: { ar: r.name_ar, en: r.name_en },
@@ -211,10 +214,10 @@ export function listWaiting(): WaitingGroup[] {
   }));
 }
 
-export function countReadyAlerts(): number {
-  return listReadyAlerts().length;
+export async function countReadyAlerts(): Promise<number> {
+  return (await listReadyAlerts()).length;
 }
 
-export function deleteAlert(id: string): boolean {
-  return Number(db().prepare("DELETE FROM stock_alerts WHERE id = ?").run(id).changes) > 0;
+export async function deleteAlert(id: string): Promise<boolean> {
+  return (await db().prepare("DELETE FROM stock_alerts WHERE id = ?").run(id)).changes > 0;
 }

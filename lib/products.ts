@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
-import { db } from "@/lib/db";
+import { Statement, db } from "@/lib/db";
 import { ratingSummaries } from "@/lib/reviews";
 import type {
   AdminProduct,
@@ -34,17 +34,17 @@ interface VariantRow {
   stock: number | null;
 }
 
-function load(where: string, ...params: string[]): AdminProduct[] {
-  const rows = db()
+async function load(where: string, ...params: string[]): Promise<AdminProduct[]> {
+  const rows = (await db()
     .prepare(`SELECT * FROM products ${where} ORDER BY sort, created_at`)
-    .all(...params) as unknown as ProductRow[];
+    .all(...params)) as unknown as ProductRow[];
   if (rows.length === 0) return [];
-  const variants = db()
-    .prepare(
-      `SELECT * FROM variants WHERE product_id IN (${rows.map(() => "?").join(",")}) ORDER BY sort`,
-    )
-    .all(...rows.map((r) => r.id)) as unknown as VariantRow[];
-  const ratings = ratingSummaries();
+  const [variants, ratings] = await Promise.all([
+    db()
+      .prepare(`SELECT * FROM variants WHERE product_id IN (${rows.map(() => "?").join(",")}) ORDER BY sort`)
+      .all(...rows.map((r) => r.id)) as Promise<unknown> as Promise<VariantRow[]>,
+    ratingSummaries(),
+  ]);
   const byProduct = new Map<string, Variant[]>();
   for (const v of variants) {
     const list = byProduct.get(v.product_id) ?? [];
@@ -81,7 +81,7 @@ export async function getCatalog(): Promise<CatalogProduct[]> {
   "use cache";
   cacheTag(PRODUCTS_TAG);
   cacheLife("minutes");
-  return load("WHERE visible = 1")
+  return (await load("WHERE visible = 1"))
     .filter((p) => p.variants.length > 0)
     .map((p) => ({
       id: p.id,
@@ -96,12 +96,12 @@ export async function getCatalog(): Promise<CatalogProduct[]> {
 }
 
 /** Admin reads: always fresh, include hidden products. */
-export function listAdminProducts(): AdminProduct[] {
+export function listAdminProducts(): Promise<AdminProduct[]> {
   return load("");
 }
 
-export function getAdminProduct(id: string): AdminProduct | undefined {
-  return load("WHERE id = ?", id)[0];
+export async function getAdminProduct(id: string): Promise<AdminProduct | undefined> {
+  return (await load("WHERE id = ?", id))[0];
 }
 
 export interface ProductInput {
@@ -120,119 +120,100 @@ export interface ProductInput {
   }[];
 }
 
-function tx<T>(fn: () => T): T {
-  const d = db();
-  d.exec("BEGIN IMMEDIATE");
-  try {
-    const out = fn();
-    d.exec("COMMIT");
-    return out;
-  } catch (e) {
-    d.exec("ROLLBACK");
-    throw e;
-  }
-}
-
-function writeVariants(productId: string, variants: ProductInput["variants"]) {
-  const d = db();
+/** Batch steps writing a product's sizes: reuses known ids, deletes sizes no longer listed. */
+async function variantSteps(productId: string, variants: ProductInput["variants"]): Promise<Statement[]> {
   const existing = new Set(
-    (d.prepare("SELECT id FROM variants WHERE product_id = ?").all(productId) as {
-      id: string;
-    }[]).map((r) => r.id),
+    ((await db().prepare("SELECT id FROM variants WHERE product_id = ?").all(productId)) as { id: string }[]).map(
+      (r) => r.id,
+    ),
   );
   const kept = new Set<string>();
-  variants.forEach((v, i) => {
+  const steps = variants.map((v, i) => {
     // Only reuse an id that already belongs to this product.
     const id = v.id && existing.has(v.id) ? v.id : randomUUID();
     kept.add(id);
-    d.prepare(
+    return new Statement(
       `INSERT INTO variants (id, product_id, label, price, sale_price, stock, sort) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET label = excluded.label, price = excluded.price,
          sale_price = excluded.sale_price, stock = excluded.stock, sort = excluded.sort`,
-    ).run(id, productId, v.label, v.price, v.salePrice, v.stock, i);
+      [id, productId, v.label, v.price, v.salePrice, v.stock, i],
+    );
   });
   for (const id of existing) {
-    if (!kept.has(id)) d.prepare("DELETE FROM variants WHERE id = ?").run(id);
+    if (!kept.has(id)) steps.push(new Statement("DELETE FROM variants WHERE id = ?", [id]));
   }
+  return steps;
 }
 
-export function createProduct(input: ProductInput, photo: string | null): string {
+export async function createProduct(input: ProductInput, photo: string | null): Promise<string> {
   const id = randomUUID();
-  tx(() => {
-    const { m } = db().prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS m FROM products").get() as {
-      m: number;
-    };
-    db()
-      .prepare(
-        `INSERT INTO products (id, category, name_ar, name_en, origin_ar, origin_en, desc_ar, desc_en, photo, visible, sort)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+  await db().batch([
+    new Statement(
+      `INSERT INTO products (id, category, name_ar, name_en, origin_ar, origin_en, desc_ar, desc_en, photo, visible, sort)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM products))`,
+      [
         id, input.category, input.name.ar, input.name.en, input.origin.ar, input.origin.en,
-        input.desc.ar, input.desc.en, photo, input.visible ? 1 : 0, m,
-      );
-    writeVariants(id, input.variants);
-  });
+        input.desc.ar, input.desc.en, photo, input.visible ? 1 : 0,
+      ],
+    ),
+    ...(await variantSteps(id, input.variants)),
+  ]);
   return id;
 }
 
 /** Returns the previous photo id when it was replaced/removed (to delete its files). */
-export function updateProduct(
+export async function updateProduct(
   id: string,
   input: ProductInput,
   photo: string | null | undefined,
-): { found: boolean; oldPhoto: string | null } {
-  return tx(() => {
-    const row = db().prepare("SELECT photo FROM products WHERE id = ?").get(id) as
-      | { photo: string | null }
-      | undefined;
-    if (!row) return { found: false, oldPhoto: null };
-    db()
-      .prepare(
-        `UPDATE products SET category = ?, name_ar = ?, name_en = ?, origin_ar = ?, origin_en = ?,
-           desc_ar = ?, desc_en = ?, visible = ?, photo = ?, updated_at = datetime('now')
-         WHERE id = ?`,
-      )
-      .run(
+): Promise<{ found: boolean; oldPhoto: string | null }> {
+  const row = (await db().prepare("SELECT photo FROM products WHERE id = ?").get(id)) as
+    | { photo: string | null }
+    | undefined;
+  if (!row) return { found: false, oldPhoto: null };
+  await db().batch([
+    new Statement(
+      `UPDATE products SET category = ?, name_ar = ?, name_en = ?, origin_ar = ?, origin_en = ?,
+         desc_ar = ?, desc_en = ?, visible = ?, photo = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+      [
         input.category, input.name.ar, input.name.en, input.origin.ar, input.origin.en,
         input.desc.ar, input.desc.en, input.visible ? 1 : 0,
         photo === undefined ? row.photo : photo, id,
-      );
-    writeVariants(id, input.variants);
-    const replaced = photo !== undefined && row.photo && row.photo !== photo;
-    return { found: true, oldPhoto: replaced ? row.photo : null };
-  });
+      ],
+    ),
+    ...(await variantSteps(id, input.variants)),
+  ]);
+  const replaced = photo !== undefined && row.photo && row.photo !== photo;
+  return { found: true, oldPhoto: replaced ? row.photo : null };
 }
 
 /** Returns the deleted product's photo id (to delete its files). */
-export function deleteProduct(id: string): { found: boolean; photo: string | null } {
-  return tx(() => {
-    const row = db().prepare("SELECT photo FROM products WHERE id = ?").get(id) as
-      | { photo: string | null }
-      | undefined;
-    if (!row) return { found: false, photo: null };
-    db().prepare("DELETE FROM products WHERE id = ?").run(id);
-    return { found: true, photo: row.photo };
-  });
+export async function deleteProduct(id: string): Promise<{ found: boolean; photo: string | null }> {
+  const [found] = await db().batch([
+    new Statement("SELECT photo FROM products WHERE id = ?", [id]),
+    new Statement("DELETE FROM products WHERE id = ?", [id]),
+  ]);
+  const row = found.rows[0] as { photo: string | null } | undefined;
+  return row ? { found: true, photo: row.photo } : { found: false, photo: null };
 }
 
-export function setVisible(id: string, visible: boolean): boolean {
-  const r = db()
+export async function setVisible(id: string, visible: boolean): Promise<boolean> {
+  const r = await db()
     .prepare("UPDATE products SET visible = ?, updated_at = datetime('now') WHERE id = ?")
     .run(visible ? 1 : 0, id);
-  return Number(r.changes) > 0;
+  return r.changes > 0;
 }
 
-export function setStock(variantId: string, stock: number | null): boolean {
-  const r = db().prepare("UPDATE variants SET stock = ? WHERE id = ?").run(stock, variantId);
-  if (Number(r.changes) > 0) {
-    db()
-      .prepare(
-        "UPDATE products SET updated_at = datetime('now') WHERE id = (SELECT product_id FROM variants WHERE id = ?)",
-      )
-      .run(variantId);
-  }
-  return Number(r.changes) > 0;
+export async function setStock(variantId: string, stock: number | null): Promise<boolean> {
+  const [r] = await db().batch([
+    new Statement("UPDATE variants SET stock = ? WHERE id = ?", [stock, variantId]),
+    new Statement(
+      "UPDATE products SET updated_at = datetime('now') WHERE id = (SELECT product_id FROM variants WHERE id = ?)",
+      [variantId],
+    ),
+  ]);
+  return r.changes > 0;
 }
 
 /** One visible product from the cached catalog (undefined if hidden/unknown). */

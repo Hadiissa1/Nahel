@@ -23,7 +23,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/admin/finan
   return (
     <>
       <AdminTop />
-      <FinanceDashboard key={`${period}-${from}-${to}`} period={period} report={buildReport(from, to)} today={shopDay()} />
+      <FinanceDashboard key={`${period}-${from}-${to}`} period={period} report={await buildReport(from, to)} today={shopDay()} />
     </>
   );
 }

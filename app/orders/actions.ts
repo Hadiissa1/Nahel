@@ -10,11 +10,11 @@ import { findUsablePromo } from "@/lib/promo";
 import { ZONES_TAG } from "@/lib/delivery";
 import { normalizeCode, type PromoError, type PromoRule } from "@/lib/promo-types";
 
-const perIp = rateLimiter(10, 60 * 60 * 1000);
-const siteWide = rateLimiter(300, 60 * 60 * 1000);
+const perIp = rateLimiter("order-ip", 10, 60 * 60 * 1000);
+const siteWide = rateLimiter("order-all", 300, 60 * 60 * 1000);
 // Code checks: enough for real customers, too few to guess codes by trying.
-const promoPerIp = rateLimiter(15, 10 * 60 * 1000);
-const promoSiteWide = rateLimiter(3000, 10 * 60 * 1000);
+const promoPerIp = rateLimiter("promo-ip", 15, 10 * 60 * 1000);
+const promoSiteWide = rateLimiter("promo-all", 3000, 10 * 60 * 1000);
 
 export type OrderState = {
   done?: { orderId: number; whatsappUrl: string };
@@ -68,9 +68,9 @@ export async function placeOrderAction(_prev: OrderState, fd: FormData): Promise
   const promo = rawPromo ? normalizeCode(rawPromo) : undefined;
   if (promo === null) return { error: "promo", promoError: "not_found" };
 
-  if (!perIp(await clientIp()) || !siteWide("all")) return { error: "rate" };
+  if (!(await perIp.hit(await clientIp())) || !(await siteWide.hit("all"))) return { error: "rate" };
 
-  const result = placeOrder({
+  const result = await placeOrder({
     lines,
     name,
     phone,
@@ -100,8 +100,8 @@ export type PromoCheck = { rule: PromoRule } | { error: PromoError | "rate" };
  */
 export async function checkPromoAction(raw: string): Promise<PromoCheck> {
   if (typeof raw !== "string" || raw.length > 40) return { error: "not_found" };
-  if (!promoPerIp(await clientIp()) || !promoSiteWide("all")) return { error: "rate" };
+  if (!(await promoPerIp.hit(await clientIp())) || !(await promoSiteWide.hit("all"))) return { error: "rate" };
   const code = normalizeCode(raw);
   if (!code) return { error: "not_found" };
-  return findUsablePromo(code);
+  return await findUsablePromo(code);
 }

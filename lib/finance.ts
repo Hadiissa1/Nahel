@@ -1,7 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { db } from "@/lib/db";
-import { flushVisits } from "@/lib/analytics";
+import { Statement, db } from "@/lib/db";
 import { addDays, dayOfSqlite, dayStartUtc, shopDay, sqliteUtc } from "@/lib/shop-time";
 
 /**
@@ -98,9 +97,7 @@ interface SaleRow {
   delivered_at: string;
 }
 
-export function buildReport(from: string, to: string): Report {
-  flushVisits(); // include the last few seconds of visits
-  const d = db();
+export async function buildReport(from: string, to: string): Promise<Report> {
   const start = sqliteUtc(dayStartUtc(from));
   const end = sqliteUtc(dayStartUtc(addDays(to, 1)));
 
@@ -108,12 +105,34 @@ export function buildReport(from: string, to: string): Report {
   for (let x = from; x <= to && days.length < 1200; x = addDays(x, 1)) days.push(x);
   const daily = new Map<string, DayRow>(days.map((day) => [day, { day, revenue: 0, sales: 0, visitors: 0, views: 0 }]));
 
-  const sales = d
-    .prepare(
+  // All reads in one round trip to the database.
+  const [salesR, itemsR, pendingR, cancelledR, placedR, expensesR, visitorsR, viewsR, pagesR] = await db().batch([
+    new Statement(
       `SELECT id, total, discount, delivery_fee, source, payment, delivered_at FROM orders
        WHERE status = 'delivered' AND delivered_at >= ? AND delivered_at < ?`,
-    )
-    .all(start, end) as unknown as SaleRow[];
+      [start, end],
+    ),
+    new Statement(
+      `SELECT i.variant_id, i.name_ar, i.name_en, i.label, i.unit_price, i.qty
+       FROM order_items i JOIN orders o ON o.id = i.order_id
+       WHERE o.status = 'delivered' AND o.delivered_at >= ? AND o.delivered_at < ?`,
+      [start, end],
+    ),
+    new Statement("SELECT COUNT(*) AS orders, COALESCE(SUM(total), 0) AS revenue FROM orders WHERE status = 'confirmed'"),
+    new Statement("SELECT COUNT(*) AS n FROM orders WHERE status = 'cancelled' AND updated_at >= ? AND updated_at < ?", [start, end]),
+    new Statement("SELECT COUNT(*) AS n FROM orders WHERE source = 'web' AND created_at >= ? AND created_at < ?", [start, end]),
+    new Statement(
+      "SELECT id, day, label, category, amount FROM expenses WHERE day >= ? AND day <= ? ORDER BY day DESC, created_at DESC",
+      [from, to],
+    ),
+    new Statement("SELECT day, COUNT(*) AS n FROM visit_days WHERE day >= ? AND day <= ? GROUP BY day", [from, to]),
+    new Statement("SELECT day, SUM(views) AS n FROM page_views WHERE day >= ? AND day <= ? GROUP BY day", [from, to]),
+    new Statement(
+      "SELECT path, SUM(views) AS views FROM page_views WHERE day >= ? AND day <= ? GROUP BY path ORDER BY views DESC LIMIT 10",
+      [from, to],
+    ),
+  ]);
+  const sales = salesR.rows as SaleRow[];
 
   const bySource = { web: { sales: 0, revenue: 0 }, counter: { sales: 0, revenue: 0 } };
   const byPayment = {
@@ -141,55 +160,40 @@ export function buildReport(from: string, to: string): Report {
     }
   }
 
-  const ids = sales.map((s) => s.id);
   let units = 0;
   const topMap = new Map<string, Report["top"][number]>();
-  if (ids.length) {
-    const items = d
-      .prepare(`SELECT variant_id, name_ar, name_en, label, unit_price, qty FROM order_items WHERE order_id IN (${ids.map(() => "?").join(",")})`)
-      .all(...ids) as { variant_id: string; name_ar: string; name_en: string; label: string; unit_price: number | null; qty: number }[];
-    for (const i of items) {
-      units += i.qty;
-      const t = topMap.get(i.variant_id) ?? { name: { ar: i.name_ar, en: i.name_en }, label: i.label, units: 0, revenue: 0 };
-      t.units += i.qty;
-      t.revenue += (i.unit_price ?? 0) * i.qty;
-      topMap.set(i.variant_id, t);
-    }
+  const items = itemsR.rows as {
+    variant_id: string; name_ar: string; name_en: string; label: string; unit_price: number | null; qty: number;
+  }[];
+  for (const i of items) {
+    units += i.qty;
+    const t = topMap.get(i.variant_id) ?? { name: { ar: i.name_ar, en: i.name_en }, label: i.label, units: 0, revenue: 0 };
+    t.units += i.qty;
+    t.revenue += (i.unit_price ?? 0) * i.qty;
+    topMap.set(i.variant_id, t);
   }
   const top = [...topMap.values()].sort((a, b) => b.revenue - a.revenue || b.units - a.units).slice(0, 10);
 
-  const p = d
-    .prepare("SELECT COUNT(*) AS orders, COALESCE(SUM(total), 0) AS revenue FROM orders WHERE status = 'confirmed'")
-    .get() as { orders: number; revenue: number };
+  const p = pendingR.rows[0] as { orders: number; revenue: number };
   // SQLite rows have no prototype: copy into plain objects for the page.
   const pending = { orders: p.orders, revenue: p.revenue };
-  const cancelled = (d
-    .prepare("SELECT COUNT(*) AS n FROM orders WHERE status = 'cancelled' AND updated_at >= ? AND updated_at < ?")
-    .get(start, end) as { n: number }).n;
-  const webOrdersPlaced = (d
-    .prepare("SELECT COUNT(*) AS n FROM orders WHERE source = 'web' AND created_at >= ? AND created_at < ?")
-    .get(start, end) as { n: number }).n;
+  const cancelled = (cancelledR.rows[0] as { n: number }).n;
+  const webOrdersPlaced = (placedR.rows[0] as { n: number }).n;
 
-  const list = (
-    d
-      .prepare("SELECT id, day, label, category, amount FROM expenses WHERE day >= ? AND day <= ? ORDER BY day DESC, created_at DESC")
-      .all(from, to) as unknown as Expense[]
-  ).map((e) => ({ id: e.id, day: e.day, label: e.label, category: e.category, amount: e.amount }));
+  const list = (expensesR.rows as Expense[]).map((e) => ({
+    id: e.id, day: e.day, label: e.label, category: e.category, amount: e.amount,
+  }));
   const expensesTotal = list.reduce((s, e) => s + e.amount, 0);
 
-  for (const r of d.prepare("SELECT day, COUNT(*) AS n FROM visit_days WHERE day >= ? AND day <= ? GROUP BY day").all(from, to) as { day: string; n: number }[]) {
+  for (const r of visitorsR.rows as { day: string; n: number }[]) {
     const row = daily.get(r.day);
     if (row) row.visitors = r.n;
   }
-  for (const r of d.prepare("SELECT day, SUM(views) AS n FROM page_views WHERE day >= ? AND day <= ? GROUP BY day").all(from, to) as { day: string; n: number }[]) {
+  for (const r of viewsR.rows as { day: string; n: number }[]) {
     const row = daily.get(r.day);
     if (row) row.views = r.n;
   }
-  const topPages = (
-    d
-      .prepare("SELECT path, SUM(views) AS views FROM page_views WHERE day >= ? AND day <= ? GROUP BY path ORDER BY views DESC LIMIT 10")
-      .all(from, to) as { path: string; views: number }[]
-  ).map((r) => ({ path: r.path, views: r.views }));
+  const topPages = (pagesR.rows as { path: string; views: number }[]).map((r) => ({ path: r.path, views: r.views }));
 
   const dailyRows = [...daily.values()];
   return {
@@ -206,15 +210,15 @@ export function buildReport(from: string, to: string): Report {
 }
 
 /** Delivered sales of a period, one line per order, for the accountant (CSV). */
-export function salesRows(from: string, to: string) {
+export async function salesRows(from: string, to: string) {
   const start = sqliteUtc(dayStartUtc(from));
   const end = sqliteUtc(dayStartUtc(addDays(to, 1)));
-  return db()
+  return (await db()
     .prepare(
       `SELECT id, delivered_at, source, payment, name, subtotal, discount, delivery_fee, total, handled_by
        FROM orders WHERE status = 'delivered' AND delivered_at >= ? AND delivered_at < ? ORDER BY delivered_at`,
     )
-    .all(start, end) as {
+    .all(start, end)) as {
     id: number; delivered_at: string; source: string; payment: string | null; name: string;
     subtotal: number | null; discount: number; delivery_fee: number | null; total: number | null; handled_by: string | null;
   }[];
@@ -225,12 +229,12 @@ export function salesRows(from: string, to: string) {
 export const EXPENSE_CATEGORIES = ["stock", "packaging", "transport", "marketing", "rent", "salaries", "other"] as const;
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
-export function addExpense(e: { day: string; label: string; category: ExpenseCategory; amount: number }) {
-  db()
+export async function addExpense(e: { day: string; label: string; category: ExpenseCategory; amount: number }) {
+  await db()
     .prepare("INSERT INTO expenses (id, day, label, category, amount) VALUES (?, ?, ?, ?, ?)")
     .run(randomUUID(), e.day, e.label, e.category, e.amount);
 }
 
-export function deleteExpense(id: string): boolean {
-  return Number(db().prepare("DELETE FROM expenses WHERE id = ?").run(id).changes) > 0;
+export async function deleteExpense(id: string): Promise<boolean> {
+  return (await db().prepare("DELETE FROM expenses WHERE id = ?").run(id)).changes > 0;
 }

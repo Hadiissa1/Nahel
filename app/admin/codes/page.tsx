@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <CodeManager codes={listPromoCodes()} />
+      <CodeManager codes={await listPromoCodes()} />
     </>
   );
 }

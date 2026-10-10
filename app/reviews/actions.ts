@@ -4,8 +4,8 @@ import { clientIp, rateLimiter } from "@/lib/rate-limit";
 import { submitReview } from "@/lib/reviews";
 import { REVIEW_LIMITS } from "@/lib/review-types";
 
-const perIp = rateLimiter(5, 60 * 60 * 1000);
-const siteWide = rateLimiter(200, 60 * 60 * 1000);
+const perIp = rateLimiter("review-ip", 5, 60 * 60 * 1000);
+const siteWide = rateLimiter("review-all", 200, 60 * 60 * 1000);
 
 export type ReviewState = {
   done?: boolean;
@@ -31,9 +31,9 @@ export async function submitReviewAction(_prev: ReviewState, fd: FormData): Prom
   if (text.length < REVIEW_LIMITS.textMin) return { error: "text_short" };
   if (name.length > REVIEW_LIMITS.name || text.length > REVIEW_LIMITS.textMax) return { error: "too_long" };
 
-  if (!perIp(await clientIp()) || !siteWide("all")) return { error: "rate" };
+  if (!(await perIp.hit(await clientIp())) || !(await siteWide.hit("all"))) return { error: "rate" };
 
-  const r = submitReview({
+  const r = await submitReview({
     productId: String(fd.get("product") ?? "").slice(0, 100),
     rating,
     name,

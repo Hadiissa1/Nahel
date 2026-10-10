@@ -2,7 +2,8 @@
 
 Bilingual (English ⇄ العربية, RTL) shop for Lebanese and Egyptian honey, hive
 products and beekeeping equipment. Built with Next.js 16, TypeScript,
-Tailwind CSS v4 and SQLite.
+Tailwind CSS v4 and SQLite. Runs on **Cloudflare Workers** (D1 database, R2
+files) — see `docs/DEPLOY-CLOUDFLARE.md` — or on any Node server.
 
 - Searchable catalog with category filters (Arabic-aware search)
 - Sizes (e.g. 250 g / 500 g / 1 kg) with their own price and stock
@@ -48,6 +49,10 @@ npm run start    # serve the production build
 npm run lint
 npm run check:security   # security check of a running site (BASE_URL=…, read-only)
 npm run check:load -- 100 30   # 100 visitors at once for 30 s (BASE_URL=…)
+
+# Cloudflare (see docs/DEPLOY-CLOUDFLARE.md)
+npm run cf:preview   # the Cloudflare build, run locally on http://localhost:8787
+SITE_URL=https://… npm run cf:deploy   # build and publish (needs CLOUDFLARE_API_TOKEN)
 ```
 
 ## Tests
@@ -82,12 +87,15 @@ npm run test:e2e          # browser tests (Playwright): builds the site and runs
 | Variable | Required | Meaning |
 |---|---|---|
 | `ADMIN_PASSWORD` | yes, for `/admin` | Password for the store management. **At least 12 characters.** Without it, admin sign-in is disabled. |
-| `DATA_DIR` | no | Folder for the database (`nahel.db`) and uploaded photos. Default: `./data`. **Must be on persistent storage** and backed up. |
+| `DATA_DIR` | no | Node server only: folder for the database (`nahel.db`) and uploaded photos. Default: `./data`. **Must be on persistent storage** and backed up. On Cloudflare, D1 and R2 are used instead. |
 | `SITE_URL` | **yes, in production** | Public address of the site, e.g. `https://nahel.com`. Used in email links (confirm, unsubscribe), share previews and the Google sitemap. **Set it before `npm run build`** too: share previews are built with it. |
 | `BREVO_API_KEY` | for emails | API key from [Brevo](https://www.brevo.com) (free plan: 300 emails/day). |
 | `MAIL_FROM_EMAIL` | for emails | Sender address, verified in Brevo (e.g. `offers@nahel.com`). |
 | `MAIL_FROM_NAME` | no | Sender name. Default: `Nahel`. |
-| `MAIL_DRIVER` | no | `log` writes emails to `DATA_DIR/outbox.log` instead of sending them (testing only). |
+| `MAIL_DRIVER` | no | `log` writes emails to `DATA_DIR/outbox.log` instead of sending them (local testing only). |
+
+On Cloudflare, `ADMIN_PASSWORD` and `BREVO_API_KEY` are secrets
+(`npx wrangler secret put …`); the others go in `vars` of `wrangler.jsonc`.
 
 Without the email settings, everything else works: email sign-ups are kept,
 and WhatsApp promotions work. Once email is set up, use **Subscribers →
@@ -323,6 +331,7 @@ link in the quick view, or share it:
 
 - `docs/ARCHITECTURE.md`: how honey e-shops are structured and how Nahel applies it
 - `docs/SECURITY.md`: security measures, test and load-test results, hosting advice
+- `docs/DEPLOY-CLOUDFLARE.md`: putting the site online on Cloudflare (Workers, D1, R2), backups, costs
 
 - ## pour tester le web site :
 - BASE_URL=https://votre-site.com npm run check:security

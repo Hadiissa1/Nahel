@@ -18,7 +18,7 @@ async function Content() {
   return (
     <>
       <AdminTop />
-      <OrderList orders={listOrders()} isOwner={me.role === "owner"} />
+      <OrderList orders={await listOrders()} isOwner={me.role === "owner"} />
     </>
   );
 }

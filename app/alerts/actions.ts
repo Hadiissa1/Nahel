@@ -4,8 +4,8 @@ import { clientIp, rateLimiter } from "@/lib/rate-limit";
 import { normalizeEmail, normalizeWhatsapp } from "@/lib/subscribers";
 import { requestAlert } from "@/lib/stock-alerts";
 
-const perIp = rateLimiter(10, 60 * 60 * 1000);
-const siteWide = rateLimiter(500, 60 * 60 * 1000);
+const perIp = rateLimiter("alert-ip", 10, 60 * 60 * 1000);
+const siteWide = rateLimiter("alert-all", 500, 60 * 60 * 1000);
 
 export type AlertState = {
   done?: "email" | "whatsapp";
@@ -26,9 +26,9 @@ export async function requestStockAlertAction(_prev: AlertState, fd: FormData): 
 
   const productId = String(fd.get("product") ?? "").slice(0, 100);
   const variantId = String(fd.get("variant") ?? "").slice(0, 100);
-  if (!perIp(await clientIp()) || !siteWide("all")) return { error: "rate" };
+  if (!(await perIp.hit(await clientIp())) || !(await siteWide.hit("all"))) return { error: "rate" };
 
-  const r = requestAlert({
+  const r = await requestAlert({
     productId,
     variantId,
     email,

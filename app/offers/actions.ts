@@ -10,8 +10,8 @@ import {
   unsubscribe,
 } from "@/lib/subscribers";
 
-const perIp = rateLimiter(10, 60 * 60 * 1000);
-const siteWide = rateLimiter(300, 60 * 60 * 1000);
+const perIp = rateLimiter("offer-ip", 10, 60 * 60 * 1000);
+const siteWide = rateLimiter("offer-all", 300, 60 * 60 * 1000);
 
 export type SubscribeState = {
   done?: "check_inbox" | "subscribed";
@@ -32,7 +32,7 @@ export async function subscribeAction(
   if (!email && !whatsapp) return { error: "need_contact" };
   if (fd.get("consent") !== "on") return { error: "consent" };
 
-  if (!perIp(await clientIp()) || !siteWide("all")) return { error: "rate" };
+  if (!(await perIp.hit(await clientIp())) || !(await siteWide.hit("all"))) return { error: "rate" };
 
   const lang = fd.get("lang") === "en" ? "en" : "ar";
   await subscribe({ email, whatsapp, lang });
@@ -42,9 +42,9 @@ export async function subscribeAction(
 export type TokenState = { result?: "ok" | "invalid" };
 
 export async function confirmAction(_prev: TokenState, fd: FormData): Promise<TokenState> {
-  return { result: confirmEmail(String(fd.get("token") ?? "")) ? "ok" : "invalid" };
+  return { result: await confirmEmail(String(fd.get("token") ?? "")) ? "ok" : "invalid" };
 }
 
 export async function unsubscribeAction(_prev: TokenState, fd: FormData): Promise<TokenState> {
-  return { result: unsubscribe(String(fd.get("token") ?? "")) ? "ok" : "invalid" };
+  return { result: await unsubscribe(String(fd.get("token") ?? "")) ? "ok" : "invalid" };
 }

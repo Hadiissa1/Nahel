@@ -191,14 +191,14 @@ export async function saveProductAction(_prev: SaveState, fd: FormData): Promise
   try {
     if (id) {
       const photo = newPhoto ?? (removePhoto ? null : undefined);
-      const { found, oldPhoto } = updateProduct(id, input, photo);
+      const { found, oldPhoto } = await updateProduct(id, input, photo);
       if (!found) {
         await deletePhoto(newPhoto);
         return { errors: { form: "not_found" } };
       }
       await deletePhoto(oldPhoto);
     } else {
-      createProduct(input, newPhoto);
+      await createProduct(input, newPhoto);
     }
   } catch {
     await deletePhoto(newPhoto);
@@ -213,7 +213,7 @@ export async function saveProductAction(_prev: SaveState, fd: FormData): Promise
 export async function deleteProductAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  const { found, photo } = deleteProduct(id);
+  const { found, photo } = await deleteProduct(id);
   if (found) {
     await deletePhoto(photo);
     updateTag(PRODUCTS_TAG);
@@ -224,7 +224,7 @@ export async function deleteProductAction(id: string): Promise<{ ok: boolean }> 
 export async function setVisibleAction(id: string, visible: boolean): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || typeof visible !== "boolean") return { ok: false };
-  const ok = setVisible(id, visible);
+  const ok = await setVisible(id, visible);
   if (ok) {
     updateTag(PRODUCTS_TAG);
     if (visible) notifyRestocks();
@@ -237,7 +237,7 @@ export async function setStockAction(variantId: string, raw: string): Promise<{ 
   if (typeof variantId !== "string" || typeof raw !== "string") return { ok: false };
   const stock = parseStock(raw.trim());
   if (stock === "invalid") return { ok: false };
-  const ok = setStock(variantId, stock);
+  const ok = await setStock(variantId, stock);
   if (ok) {
     updateTag(PRODUCTS_TAG);
     notifyRestocks();
@@ -250,7 +250,7 @@ export async function setStockAction(variantId: string, raw: string): Promise<{ 
 export async function deleteSubscriberAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  return { ok: deleteSubscriber(id) };
+  return { ok: await deleteSubscriber(id) };
 }
 
 export async function resendConfirmationsAction(): Promise<{ sent: number; failed: number } | null> {
@@ -315,7 +315,7 @@ export async function setOrderStatusAction(
   if (!Number.isInteger(id) || !ORDER_STATUSES.includes(status)) {
     return { ok: false, error: "transition" };
   }
-  const r = setOrderStatus(id, status, me.role === "owner" ? null : me.name);
+  const r = await setOrderStatus(id, status, me.role === "owner" ? null : me.name);
   if (r.ok && r.stockChanged) {
     updateTag(PRODUCTS_TAG);
     notifyRestocks(); // a cancellation can put stock back
@@ -326,7 +326,7 @@ export async function setOrderStatusAction(
 export async function deleteOrderAction(id: number): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (!Number.isInteger(id)) return { ok: false };
-  return { ok: deleteOrder(id) };
+  return { ok: await deleteOrder(id) };
 }
 
 // ---------- Promo codes ----------
@@ -363,7 +363,7 @@ export async function createPromoCodeAction(_prev: CodeState, fd: FormData): Pro
   if (maxUses !== null && maxUses < 1) errors.max_uses = "uses_invalid";
 
   if (Object.keys(errors).length) return { errors };
-  const r = createPromoCode({
+  const r = await createPromoCode({
     code: code!,
     kind,
     value,
@@ -379,13 +379,13 @@ export async function createPromoCodeAction(_prev: CodeState, fd: FormData): Pro
 export async function setPromoActiveAction(code: string, active: boolean): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof code !== "string" || typeof active !== "boolean" || code.length > 40) return { ok: false };
-  return { ok: setPromoActive(code, active) };
+  return { ok: await setPromoActive(code, active) };
 }
 
 export async function deletePromoCodeAction(code: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof code !== "string" || code.length > 40) return { ok: false };
-  return { ok: deletePromoCode(code) };
+  return { ok: await deletePromoCode(code) };
 }
 
 // ---------- Delivery zones ----------
@@ -406,7 +406,7 @@ export async function saveZoneAction(prev: ZoneState, fd: FormData): Promise<Zon
   if (Object.keys(errors).length) return { errors };
 
   const id = clean(fd.get("id")).slice(0, 100) || null;
-  const ok = saveZone(id, {
+  const ok = await saveZone(id, {
     name,
     fee: fee as number | null,
     freeFrom: freeFrom as number | null,
@@ -421,7 +421,7 @@ export async function saveZoneAction(prev: ZoneState, fd: FormData): Promise<Zon
 export async function deleteZoneAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  const ok = deleteZone(id);
+  const ok = await deleteZone(id);
   if (ok) updateTag(ZONES_TAG);
   return { ok };
 }
@@ -431,7 +431,7 @@ export async function deleteZoneAction(id: string): Promise<{ ok: boolean }> {
 export async function deleteAlertAction(id: string): Promise<{ ok: boolean }> {
   await requireStaff(); // staff send the WhatsApp alerts
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  return { ok: deleteAlert(id) };
+  return { ok: await deleteAlert(id) };
 }
 
 // ---------- Reviews ----------
@@ -439,7 +439,7 @@ export async function deleteAlertAction(id: string): Promise<{ ok: boolean }> {
 export async function setReviewApprovedAction(id: string, approved: boolean): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100 || typeof approved !== "boolean") return { ok: false };
-  const ok = setReviewApproved(id, approved);
+  const ok = await setReviewApproved(id, approved);
   if (ok) {
     updateTag(REVIEWS_TAG);
     updateTag(PRODUCTS_TAG); // ratings are part of the catalog
@@ -450,7 +450,7 @@ export async function setReviewApprovedAction(id: string, approved: boolean): Pr
 export async function deleteReviewAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  const ok = deleteReview(id);
+  const ok = await deleteReview(id);
   if (ok) {
     updateTag(REVIEWS_TAG);
     updateTag(PRODUCTS_TAG);
@@ -491,7 +491,7 @@ export async function saveLotAction(prev: LotState, fd: FormData): Promise<LotSt
   }
   const remove = fd.get("remove_certificate") === "1";
   const id = clean(fd.get("id")).slice(0, 100) || null;
-  const r = saveLot(
+  const r = await saveLot(
     id,
     { code: code!, productId, harvestOn, region, notes, current: fd.get("current") === "on" },
     newDoc ?? (remove ? null : undefined),
@@ -512,7 +512,7 @@ export async function saveLotAction(prev: LotState, fd: FormData): Promise<LotSt
 export async function deleteLotAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  const doc = deleteLot(id);
+  const doc = await deleteLot(id);
   if (doc === false) return { ok: false };
   await deleteDoc(doc);
   updateTag(LOTS_TAG);
@@ -553,7 +553,7 @@ export async function saveArticleAction(_prev: SaveState, fd: FormData): Promise
     }
   }
   const id = clean(fd.get("id")).slice(0, 100) || null;
-  const r = saveArticle(
+  const r = await saveArticle(
     id,
     { slug, title, summary, body, products, published: fd.get("published") === "on" },
     newPhoto ?? (fd.get("remove_photo") === "1" ? null : undefined),
@@ -570,7 +570,7 @@ export async function saveArticleAction(_prev: SaveState, fd: FormData): Promise
 export async function deleteArticleAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  const photo = deleteArticle(id);
+  const photo = await deleteArticle(id);
   if (photo === false) return { ok: false };
   await deletePhoto(photo);
   updateTag(ARTICLES_TAG);
@@ -591,7 +591,7 @@ export async function saveStockSettingsAction(prev: StockSettingsState, fd: Form
   const email = rawEmail ? normalizeEmail(rawEmail) : null;
   if (email === "invalid") errors.email = "email_invalid";
   if (Object.keys(errors).length) return { errors };
-  saveStockSettings({ threshold, email: email as string | null });
+  await saveStockSettings({ threshold, email: email as string | null });
   notifyRestocks(); // a new threshold or address may need an alert now
   refresh();
   return { saved: (prev.saved ?? 0) + 1 };
@@ -612,7 +612,7 @@ export async function createStaffAction(_prev: StaffState, fd: FormData): Promis
   const password = String(fd.get("password") ?? "");
   if (password.length < MIN_STAFF_PASSWORD_LENGTH || password.length > 200) errors.password = "password_short";
   if (Object.keys(errors).length) return { errors };
-  if (createStaff({ username, name, password }) === "taken") return { errors: { username: "username_taken" } };
+  if (await createStaff({ username, name, password }) === "taken") return { errors: { username: "username_taken" } };
   refresh();
   return { created: username };
 }
@@ -620,20 +620,20 @@ export async function createStaffAction(_prev: StaffState, fd: FormData): Promis
 export async function setStaffActiveAction(id: string, active: boolean): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100 || typeof active !== "boolean") return { ok: false };
-  return { ok: setStaffActive(id, active) };
+  return { ok: await setStaffActive(id, active) };
 }
 
 export async function setStaffPasswordAction(id: string, password: string): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100 || typeof password !== "string") return { ok: false };
   if (password.length < MIN_STAFF_PASSWORD_LENGTH || password.length > 200) return { ok: false, error: "password_short" };
-  return { ok: setStaffPassword(id, password) };
+  return { ok: await setStaffPassword(id, password) };
 }
 
 export async function deleteStaffAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  return { ok: deleteStaff(id) };
+  return { ok: await deleteStaff(id) };
 }
 
 // ---------- Till (counter sales) — owner and staff ----------
@@ -665,7 +665,7 @@ export async function counterSaleAction(input: {
       discount = { kind: "amount", value: v };
     }
   }
-  const r = recordCounterSale({
+  const r = await recordCounterSale({
     lines,
     discount,
     payment: input.payment as Payment,
@@ -696,7 +696,7 @@ export async function addExpenseAction(prev: ExpenseState, fd: FormData): Promis
   const amount = parsePrice(clean(fd.get("amount")));
   if (typeof amount !== "number" || amount <= 0) errors.amount = "amount_invalid";
   if (Object.keys(errors).length) return { errors };
-  addExpense({ day, label, category, amount: amount as number });
+  await addExpense({ day, label, category, amount: amount as number });
   refresh();
   return { saved: (prev.saved ?? 0) + 1 };
 }
@@ -704,5 +704,5 @@ export async function addExpenseAction(prev: ExpenseState, fd: FormData): Promis
 export async function deleteExpenseAction(id: string): Promise<{ ok: boolean }> {
   await requireAdmin();
   if (typeof id !== "string" || id.length > 100) return { ok: false };
-  return { ok: deleteExpense(id) };
+  return { ok: await deleteExpense(id) };
 }

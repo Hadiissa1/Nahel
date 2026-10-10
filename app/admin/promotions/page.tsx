@@ -16,7 +16,7 @@ export default function PromotionsPage() {
 
 async function Content() {
   await requireAdmin();
-  const subs = listSubscribers();
+  const subs = await listSubscribers();
   return (
     <>
       <AdminTop />
@@ -24,7 +24,7 @@ async function Content() {
         canEmail={mailConfigured()}
         emailCount={subs.filter((s) => s.email && s.emailConfirmed).length}
         whatsapp={subs.filter((s) => s.whatsapp).map((s) => ({ id: s.id, number: s.whatsapp!, lang: s.lang }))}
-        history={listCampaigns()}
+        history={await listCampaigns()}
       />
     </>
   );

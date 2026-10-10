@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
-import { db } from "@/lib/db";
+import { Statement, db } from "@/lib/db";
 import type { AdminArticle, Article } from "@/lib/article-types";
 
 export const ARTICLES_TAG = "articles";
@@ -55,9 +55,9 @@ export async function getPublishedArticles(): Promise<Article[]> {
   cacheTag(ARTICLES_TAG);
   cacheLife("minutes");
   return (
-    db()
+    (await db()
       .prepare("SELECT * FROM articles WHERE published = 1 ORDER BY published_on DESC, created_at DESC")
-      .all() as unknown as Row[]
+      .all()) as unknown as Row[]
   ).map(toPublic);
 }
 
@@ -70,18 +70,18 @@ export async function getArticle(slug: string): Promise<Article | undefined> {
   "use cache";
   cacheTag(ARTICLES_TAG);
   cacheLife("minutes");
-  const r = db().prepare("SELECT * FROM articles WHERE slug = ? AND published = 1").get(slug) as Row | undefined;
+  const r = (await db().prepare("SELECT * FROM articles WHERE slug = ? AND published = 1").get(slug)) as Row | undefined;
   return r ? toPublic(r) : undefined;
 }
 
 // ---------- Admin ----------
 
-export function listAdminArticles(): AdminArticle[] {
-  return (db().prepare("SELECT * FROM articles ORDER BY created_at DESC").all() as unknown as Row[]).map(toAdmin);
+export async function listAdminArticles(): Promise<AdminArticle[]> {
+  return ((await db().prepare("SELECT * FROM articles ORDER BY created_at DESC").all()) as unknown as Row[]).map(toAdmin);
 }
 
-export function getAdminArticle(id: string): AdminArticle | undefined {
-  const r = db().prepare("SELECT * FROM articles WHERE id = ?").get(id) as Row | undefined;
+export async function getAdminArticle(id: string): Promise<AdminArticle | undefined> {
+  const r = (await db().prepare("SELECT * FROM articles WHERE id = ?").get(id)) as Row | undefined;
   return r && toAdmin(r);
 }
 
@@ -99,17 +99,21 @@ export type SaveArticleResult =
   | { ok: false; error: "slug_taken" | "not_found" };
 
 /** photo: new id, null to remove, undefined to keep. */
-export function saveArticle(id: string | null, a: ArticleInput, photo: string | null | undefined): SaveArticleResult {
+export async function saveArticle(
+  id: string | null,
+  a: ArticleInput,
+  photo: string | null | undefined,
+): Promise<SaveArticleResult> {
   const d = db();
-  const clash = d.prepare("SELECT id FROM articles WHERE slug = ?").get(a.slug) as { id: string } | undefined;
+  const clash = (await d.prepare("SELECT id FROM articles WHERE slug = ?").get(a.slug)) as { id: string } | undefined;
   if (clash && clash.id !== id) return { ok: false, error: "slug_taken" };
   // Only products that exist are kept.
-  const known = new Set((d.prepare("SELECT id FROM products").all() as { id: string }[]).map((r) => r.id));
+  const known = new Set(((await d.prepare("SELECT id FROM products").all()) as { id: string }[]).map((r) => r.id));
   const products = a.products.filter((p) => known.has(p)).join(",");
 
   if (!id) {
     const newId = randomUUID();
-    d.prepare(
+    await d.prepare(
       `INSERT INTO articles (id, slug, title_ar, title_en, summary_ar, summary_en, body_ar, body_en, photo, products, published, published_on)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 1 THEN date('now') END)`,
     ).run(
@@ -118,9 +122,9 @@ export function saveArticle(id: string | null, a: ArticleInput, photo: string | 
     );
     return { ok: true, id: newId, oldPhoto: null };
   }
-  const row = d.prepare("SELECT photo FROM articles WHERE id = ?").get(id) as { photo: string | null } | undefined;
+  const row = (await d.prepare("SELECT photo FROM articles WHERE id = ?").get(id)) as { photo: string | null } | undefined;
   if (!row) return { ok: false, error: "not_found" };
-  d.prepare(
+  await d.prepare(
     `UPDATE articles SET slug = ?, title_ar = ?, title_en = ?, summary_ar = ?, summary_en = ?, body_ar = ?, body_en = ?,
        photo = ?, products = ?, published = ?,
        -- The publication date is set the first time an article is published.
@@ -136,9 +140,11 @@ export function saveArticle(id: string | null, a: ArticleInput, photo: string | 
 }
 
 /** Returns the article's photo id to delete, or false if not found. */
-export function deleteArticle(id: string): string | null | false {
-  const row = db().prepare("SELECT photo FROM articles WHERE id = ?").get(id) as { photo: string | null } | undefined;
-  if (!row) return false;
-  db().prepare("DELETE FROM articles WHERE id = ?").run(id);
-  return row.photo;
+export async function deleteArticle(id: string): Promise<string | null | false> {
+  const [found] = await db().batch([
+    new Statement("SELECT photo FROM articles WHERE id = ?", [id]),
+    new Statement("DELETE FROM articles WHERE id = ?", [id]),
+  ]);
+  const row = found.rows[0] as { photo: string | null } | undefined;
+  return row ? row.photo : false;
 }

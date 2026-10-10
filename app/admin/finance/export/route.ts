@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   };
   const lines = [
     "order,date_utc,channel,payment,customer,subtotal,discount,delivery,total,handled_by",
-    ...salesRows(from, to).map((r) =>
+    ...(await salesRows(from, to)).map((r) =>
       [r.id, r.delivered_at, r.source, r.payment ?? "on_delivery", text(r.name), money(r.subtotal), money(r.discount), money(r.delivery_fee), money(r.total), text(r.handled_by)].join(","),
     ),
   ];

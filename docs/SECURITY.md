@@ -283,22 +283,28 @@ Lancez le test de charge depuis un autre ordinateur que le serveur, et plutôt l
 
 ## 3. Mise en ligne recommandée
 
-La base de données (`nahel.db`) et les photos sont des **fichiers sur le disque** (`DATA_DIR`).
-Il faut donc un hébergement avec **disque permanent** :
+**Choix retenu : Cloudflare Workers** (voir `docs/DEPLOY-CLOUDFLARE.md`). Les données sont dans
+**D1** (base de données) et les photos / PDF dans **R2**, donc rien n'est perdu lors d'une mise à jour,
+et le site tourne dans les centres Cloudflare les plus proches des clients (Beyrouth, Le Caire…).
 
-- **Un petit serveur (VPS)** chez Hetzner, OVH, DigitalOcean… avec Node 22, ou
-- **Railway / Render / Fly.io** avec un **volume persistant** monté sur `DATA_DIR`.
+Ce qui change pour la sécurité sur Cloudflare :
+- **HTTPS** et protection contre les attaques par saturation (DDoS) inclus.
+- **Limites anti-spam et anti-devinette du mot de passe** gardées dans la base, communes à tous les
+  serveurs ; l'adresse IP vient de `CF-Connecting-IP` (posée par Cloudflare) et n'est stockée que
+  sous forme d'empreinte.
+- **Mot de passe du gérant** rangé comme secret Cloudflare (`wrangler secret put ADMIN_PASSWORD`).
+- **Écritures « tout ou rien »** : commande, confirmation (stock) et vente en caisse partent en un seul
+  lot, revérifié au moment d'écrire (pas de stock négatif même si deux personnes valident en même temps).
+- **Sauvegardes** : historique D1 (Time Travel) + export `wrangler d1 export`.
 
-⚠️ **Vercel « standard » ne convient plus** : son disque est effacé à chaque déploiement, ce qui ferait
-perdre les produits et les photos.
+Autre possibilité (sans Cloudflare Workers) : un serveur Node avec **disque permanent** (VPS, Railway,
+Render) où la base et les photos sont des fichiers dans `DATA_DIR`. Dans ce cas : `ADMIN_PASSWORD`,
+`DATA_DIR` et `SITE_URL` dans les réglages de l'hébergeur, sauvegarde de `DATA_DIR` chaque nuit, et
+Cloudflare (gratuit) devant pour le HTTPS et le cache.
 
-Dans tous les cas :
-1. Mettre **Cloudflare** (gratuit) devant le site : HTTPS automatique et cache des pages de la boutique.
-2. Définir `ADMIN_PASSWORD` (long, unique), `DATA_DIR` et `SITE_URL` (adresse publique, en HTTPS)
-   dans les réglages de l'hébergeur. `SITE_URL` doit aussi être présent **au moment du build**.
-3. **Sauvegarder `DATA_DIR`** régulièrement (base + photos), par exemple une copie chaque nuit.
-4. Toujours servir le site en **HTTPS** : le cookie d'administration ne fonctionne qu'en HTTPS
-   (sauf en test sur `localhost`).
+Dans tous les cas, `SITE_URL` (adresse publique en HTTPS) doit être présent **au moment du build**, et
+le site doit être servi en **HTTPS** : le cookie d'administration ne fonctionne qu'en HTTPS (sauf en
+test sur `localhost`).
 
 ## 4. Avant la mise en ligne (à faire par vous)
 

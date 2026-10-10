@@ -57,8 +57,8 @@ function toCode(r: Row, today: string): PromoCode {
  * The rule for a code customers may use right now. A paused code reads as
  * "not found" so customers can't tell paused codes from made-up ones.
  */
-export function findUsablePromo(code: string): { rule: PromoRule } | { error: PromoError } {
-  const row = db().prepare("SELECT * FROM promo_codes WHERE code = ?").get(code) as Row | undefined;
+export async function findUsablePromo(code: string): Promise<{ rule: PromoRule } | { error: PromoError }> {
+  const row = (await db().prepare("SELECT * FROM promo_codes WHERE code = ?").get(code)) as Row | undefined;
   if (!row) return { error: "not_found" };
   const c = toCode(row, shopToday());
   if (c.status === "paused") return { error: "not_found" };
@@ -69,9 +69,9 @@ export function findUsablePromo(code: string): { rule: PromoRule } | { error: Pr
 
 // ---------- Admin ----------
 
-export function listPromoCodes(): PromoCode[] {
+export async function listPromoCodes(): Promise<PromoCode[]> {
   const today = shopToday();
-  return (db().prepare("SELECT * FROM promo_codes ORDER BY created_at DESC, code").all() as unknown as Row[]).map(
+  return ((await db().prepare("SELECT * FROM promo_codes ORDER BY created_at DESC, code").all()) as unknown as Row[]).map(
     (r) => toCode(r, today),
   );
 }
@@ -85,21 +85,21 @@ export interface PromoInput {
   maxUses: number | null;
 }
 
-export function createPromoCode(p: PromoInput): "ok" | "taken" {
-  const r = db()
+export async function createPromoCode(p: PromoInput): Promise<"ok" | "taken"> {
+  const r = await db()
     .prepare(
       `INSERT INTO promo_codes (code, kind, value, min_total, expires_on, max_uses)
        VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(code) DO NOTHING`,
     )
     .run(p.code, p.kind, p.value, p.minTotal, p.expiresOn, p.maxUses);
-  return Number(r.changes) > 0 ? "ok" : "taken";
+  return r.changes > 0 ? "ok" : "taken";
 }
 
-export function setPromoActive(code: string, active: boolean): boolean {
-  const r = db().prepare("UPDATE promo_codes SET active = ? WHERE code = ?").run(active ? 1 : 0, code);
-  return Number(r.changes) > 0;
+export async function setPromoActive(code: string, active: boolean): Promise<boolean> {
+  const r = await db().prepare("UPDATE promo_codes SET active = ? WHERE code = ?").run(active ? 1 : 0, code);
+  return r.changes > 0;
 }
 
-export function deletePromoCode(code: string): boolean {
-  return Number(db().prepare("DELETE FROM promo_codes WHERE code = ?").run(code).changes) > 0;
+export async function deletePromoCode(code: string): Promise<boolean> {
+  return (await db().prepare("DELETE FROM promo_codes WHERE code = ?").run(code)).changes > 0;
 }

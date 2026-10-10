@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/db";
+import { Statement, db, guard, withRetry } from "@/lib/db";
 import { CONTACT } from "@/lib/config";
 import { MAX_CART_QTY, formatPrice } from "@/lib/catalog-types";
 import { findUsablePromo } from "@/lib/promo";
@@ -78,19 +78,6 @@ interface VariantRow {
   visible: number;
 }
 
-function tx<T>(fn: () => T): T {
-  const d = db();
-  d.exec("BEGIN IMMEDIATE");
-  try {
-    const out = fn();
-    d.exec("COMMIT");
-    return out;
-  } catch (e) {
-    d.exec("ROLLBACK");
-    throw e;
-  }
-}
-
 const pick = (t: { ar: string; en: string }, lang: "ar" | "en") =>
   t[lang] || t[lang === "ar" ? "en" : "ar"];
 
@@ -151,7 +138,7 @@ function whatsappMessage(
  * names and prices are taken from the database, never from the browser.
  * Stock is NOT reduced here (see setOrderStatus) so fake orders can't empty it.
  */
-export function placeOrder(req: OrderRequest): PlaceResult {
+export async function placeOrder(req: OrderRequest): Promise<PlaceResult> {
   // Merge duplicate lines and keep sane quantities.
   const merged = new Map<string, { id: string; variant: string; qty: number }>();
   for (const l of req.lines.slice(0, MAX_ORDER_LINES)) {
@@ -162,87 +149,101 @@ export function placeOrder(req: OrderRequest): PlaceResult {
   if (merged.size === 0) return { ok: false, error: "empty" };
 
   // While delivery zones are set up, the customer must pick an active one.
-  const zones = activeZones();
+  const zones = await activeZones();
   const zone = zones.find((z) => z.id === req.zone);
   if (zones.length > 0 && !zone) return { ok: false, error: "zone" };
 
-  return tx(() => {
-    const d = db();
-    const get = d.prepare(
-      `SELECT v.id AS variant_id, v.product_id, v.label,
-              CASE WHEN v.sale_price IS NOT NULL AND v.price IS NOT NULL AND v.sale_price < v.price
-                   THEN v.sale_price ELSE v.price END AS price,
-              v.stock,
-              p.name_ar, p.name_en, p.visible
-       FROM variants v JOIN products p ON p.id = v.product_id
-       WHERE v.id = ? AND v.product_id = ?`,
-    );
-    const items: OrderItem[] = [];
-    const shortages: Shortage[] = [];
-    for (const l of merged.values()) {
-      const row = get.get(l.variant, l.id) as VariantRow | undefined;
-      if (!row || row.visible !== 1) return { ok: false as const, error: "unavailable" as const };
-      const name = { ar: row.name_ar, en: row.name_en };
-      if (row.stock !== null && l.qty > row.stock) {
-        shortages.push({ name, label: row.label, available: Math.max(0, row.stock) });
-        continue;
-      }
-      items.push({
-        productId: row.product_id,
-        variantId: row.variant_id,
-        name,
-        label: row.label,
-        unitPrice: row.price,
-        qty: l.qty,
-      });
+  const items: OrderItem[] = [];
+  const shortages: Shortage[] = [];
+  for (const l of merged.values()) {
+    const row = (await VARIANT_FOR_ORDER.get(l.variant, l.id)) as VariantRow | undefined;
+    if (!row || row.visible !== 1) return { ok: false, error: "unavailable" };
+    const name = { ar: row.name_ar, en: row.name_en };
+    if (row.stock !== null && l.qty > row.stock) {
+      shortages.push({ name, label: row.label, available: Math.max(0, row.stock) });
+      continue;
     }
-    if (shortages.length) return { ok: false as const, error: "unavailable" as const, shortages };
+    items.push({
+      productId: row.product_id,
+      variantId: row.variant_id,
+      name,
+      label: row.label,
+      unitPrice: row.price,
+      qty: l.qty,
+    });
+  }
+  if (shortages.length) return { ok: false, error: "unavailable", shortages };
 
-    const subtotal = items.every((i) => i.unitPrice !== null)
-      ? items.reduce((s, i) => s + i.unitPrice! * i.qty, 0)
-      : null;
+  const subtotal = items.every((i) => i.unitPrice !== null)
+    ? items.reduce((s, i) => s + i.unitPrice! * i.qty, 0)
+    : null;
 
-    // Promo code: checked again here, whatever the cart showed.
-    let promo: { code: string; subtotal: number; discount: number } | null = null;
-    if (req.promo) {
-      const found = findUsablePromo(req.promo);
-      if ("error" in found) return { ok: false as const, error: "promo" as const, promoError: found.error };
-      if (subtotal === null) return { ok: false as const, error: "promo" as const, promoError: "needs_prices" as const };
-      if (found.rule.minTotal !== null && subtotal < found.rule.minTotal) {
-        return { ok: false as const, error: "promo" as const, promoError: "min_total" as const, minTotal: found.rule.minTotal };
-      }
-      promo = { code: found.rule.code, subtotal, discount: computeDiscount(found.rule, subtotal) };
+  // Promo code: checked again here, whatever the cart showed.
+  let promo: { code: string; subtotal: number; discount: number } | null = null;
+  if (req.promo) {
+    const found = await findUsablePromo(req.promo);
+    if ("error" in found) return { ok: false, error: "promo", promoError: found.error };
+    if (subtotal === null) return { ok: false, error: "promo", promoError: "needs_prices" };
+    if (found.rule.minTotal !== null && subtotal < found.rule.minTotal) {
+      return { ok: false, error: "promo", promoError: "min_total", minTotal: found.rule.minTotal };
     }
-    const goods = subtotal === null ? null : subtotal - (promo?.discount ?? 0);
-    const fee = zone ? deliveryFee(zone, goods) : null;
-    // An unknown fee ("to be confirmed") isn't added; the message says so.
-    const total = goods === null ? null : goods + (fee ?? 0);
+    promo = { code: found.rule.code, subtotal, discount: computeDiscount(found.rule, subtotal) };
+  }
+  const goods = subtotal === null ? null : subtotal - (promo?.discount ?? 0);
+  const fee = zone ? deliveryFee(zone, goods) : null;
+  // An unknown fee ("to be confirmed") isn't added; the message says so.
+  const total = goods === null ? null : goods + (fee ?? 0);
 
-    const r = d
-      .prepare(
-        `INSERT INTO orders (name, phone, address, note, lang, subtotal, promo_code, discount,
-           zone_ar, zone_en, delivery_fee, total)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+  const orderId = await insertOrder(
+    new Statement(
+      `INSERT INTO orders (name, phone, address, note, lang, subtotal, promo_code, discount,
+         zone_ar, zone_en, delivery_fee, total)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
         req.name, req.phone, req.address, req.note, req.lang, subtotal, promo?.code ?? null,
         promo?.discount ?? 0, zone?.name.ar ?? null, zone?.name.en ?? null, fee, total,
-      );
-    const orderId = Number(r.lastInsertRowid);
-    const insItem = d.prepare(
-      `INSERT INTO order_items (order_id, product_id, variant_id, name_ar, name_en, label, unit_price, qty)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
-    for (const i of items) {
-      insItem.run(orderId, i.productId, i.variantId, i.name.ar, i.name.en, i.label, i.unitPrice, i.qty);
-    }
-    const text = whatsappMessage(orderId, req, items, total, promo, zone ? { name: zone.name, fee } : null);
-    return {
-      ok: true as const,
-      orderId,
-      whatsappUrl: `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(text)}`,
-    };
-  });
+      ],
+    ),
+    items,
+  );
+  const text = whatsappMessage(orderId, req, items, total, promo, zone ? { name: zone.name, fee } : null);
+  return {
+    ok: true,
+    orderId,
+    whatsappUrl: `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(text)}`,
+  };
+}
+
+const VARIANT_FOR_ORDER = db().prepare(
+  `SELECT v.id AS variant_id, v.product_id, v.label,
+          CASE WHEN v.sale_price IS NOT NULL AND v.price IS NOT NULL AND v.sale_price < v.price
+               THEN v.sale_price ELSE v.price END AS price,
+          v.stock,
+          p.name_ar, p.name_en, p.visible
+   FROM variants v JOIN products p ON p.id = v.product_id
+   WHERE v.id = ? AND v.product_id = ?`,
+);
+
+/**
+ * Write an order and its lines in one batch (all or nothing). The lines find
+ * their order as the newest one: the batch runs alone, so it's ours.
+ * `extra` steps (guards, stock changes) run in the same batch, before it.
+ */
+async function insertOrder(order: Statement, items: OrderItem[], extra: Statement[] = []): Promise<number> {
+  const results = await db().batch([
+    ...extra,
+    order,
+    ...items.map(
+      (i) =>
+        new Statement(
+          `INSERT INTO order_items (order_id, product_id, variant_id, name_ar, name_en, label, unit_price, qty)
+           VALUES ((SELECT MAX(id) FROM orders), ?, ?, ?, ?, ?, ?, ?)`,
+          [i.productId, i.variantId, i.name.ar, i.name.en, i.label, i.unitPrice, i.qty],
+        ),
+    ),
+    new Statement("SELECT MAX(id) AS id FROM orders"),
+  ]);
+  return Number((results.at(-1)!.rows[0] as { id: number }).id);
 }
 
 // ---------- Admin ----------
@@ -281,17 +282,17 @@ interface ItemRow {
   qty: number;
 }
 
-export function listOrders(limit = 300): Order[] {
+export async function listOrders(limit = 300): Promise<Order[]> {
   const d = db();
-  const rows = d
+  const rows = (await d
     .prepare("SELECT * FROM orders ORDER BY id DESC LIMIT ?")
-    .all(limit) as unknown as OrderRow[];
+    .all(limit)) as unknown as OrderRow[];
   if (!rows.length) return [];
-  const items = d
+  const items = (await d
     .prepare(
       `SELECT * FROM order_items WHERE order_id IN (${rows.map(() => "?").join(",")}) ORDER BY id`,
     )
-    .all(...rows.map((r) => r.id)) as unknown as ItemRow[];
+    .all(...rows.map((r) => r.id))) as unknown as ItemRow[];
   const byOrder = new Map<number, OrderItem[]>();
   for (const i of items) {
     const list = byOrder.get(i.order_id) ?? [];
@@ -328,8 +329,8 @@ export function listOrders(limit = 300): Order[] {
   }));
 }
 
-export function countNewOrders(): number {
-  return (db().prepare("SELECT COUNT(*) AS n FROM orders WHERE status = 'new'").get() as { n: number }).n;
+export async function countNewOrders(): Promise<number> {
+  return ((await db().prepare("SELECT COUNT(*) AS n FROM orders WHERE status = 'new'").get()) as { n: number }).n;
 }
 
 const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -354,64 +355,101 @@ export type StatusResult =
  * cancellation), so unconfirmed fake orders can't use up a code.
  */
 /** `by`: staff member's name (null = the owner), recorded on the order. */
-export function setOrderStatus(id: number, next: OrderStatus, by: string | null = null): StatusResult {
-  return tx(() => {
-    const d = db();
-    const order = d.prepare("SELECT * FROM orders WHERE id = ?").get(id) as OrderRow | undefined;
-    if (!order) return { ok: false as const, error: "not_found" as const };
-    if (!TRANSITIONS[order.status].includes(next)) return { ok: false as const, error: "transition" as const };
+export function setOrderStatus(id: number, next: OrderStatus, by: string | null = null): Promise<StatusResult> {
+  // If the order or the stock changes between our reads and our writes (two
+  // people clicking at once), the guards cancel the writes and we start over.
+  return withRetry(() => changeStatus(id, next, by));
+}
 
-    const items = d.prepare("SELECT * FROM order_items WHERE order_id = ?").all(id) as unknown as ItemRow[];
-    const getStock = d.prepare("SELECT stock FROM variants WHERE id = ?");
-    let stockChanged = false;
+async function changeStatus(id: number, next: OrderStatus, by: string | null): Promise<StatusResult> {
+  const d = db();
+  const order = (await d.prepare("SELECT * FROM orders WHERE id = ?").get(id)) as OrderRow | undefined;
+  if (!order) return { ok: false, error: "not_found" };
+  if (!TRANSITIONS[order.status].includes(next)) return { ok: false, error: "transition" };
 
-    if (next === "confirmed" && !order.stock_applied) {
-      // Several lines may target the same size: compare totals.
-      const need = new Map<string, number>();
-      for (const i of items) need.set(i.variant_id, (need.get(i.variant_id) ?? 0) + i.qty);
-      const shortages: Shortage[] = [];
-      for (const [variantId, qty] of need) {
-        const v = getStock.get(variantId) as { stock: number | null } | undefined;
-        if (v && v.stock !== null && v.stock < qty) {
-          const i = items.find((x) => x.variant_id === variantId)!;
-          shortages.push({ name: { ar: i.name_ar, en: i.name_en }, label: i.label, available: Math.max(0, v.stock) });
-        }
+  const items = (await d.prepare("SELECT * FROM order_items WHERE order_id = ?").all(id)) as unknown as ItemRow[];
+  // Everything below is written together, only if the order is still as we read it.
+  const steps: Statement[] = [
+    guard(
+      "EXISTS (SELECT 1 FROM orders WHERE id = ? AND status = ? AND stock_applied = ? AND promo_counted = ?)",
+      id, order.status, order.stock_applied, order.promo_counted,
+    ),
+  ];
+  let stockChanged = false;
+
+  if (next === "confirmed" && !order.stock_applied) {
+    // Several lines may target the same size: compare totals.
+    const need = new Map<string, number>();
+    for (const i of items) need.set(i.variant_id, (need.get(i.variant_id) ?? 0) + i.qty);
+    const shortages: Shortage[] = [];
+    for (const [variantId, qty] of need) {
+      const v = (await d.prepare("SELECT stock FROM variants WHERE id = ?").get(variantId)) as
+        | { stock: number | null }
+        | undefined;
+      if (v && v.stock !== null && v.stock < qty) {
+        const i = items.find((x) => x.variant_id === variantId)!;
+        shortages.push({ name: { ar: i.name_ar, en: i.name_en }, label: i.label, available: Math.max(0, v.stock) });
       }
-      if (shortages.length) return { ok: false as const, error: "shortage" as const, shortages };
-      const dec = d.prepare("UPDATE variants SET stock = stock - ? WHERE id = ? AND stock IS NOT NULL");
-      for (const [variantId, qty] of need) stockChanged = Number(dec.run(qty, variantId).changes) > 0 || stockChanged;
-      d.prepare("UPDATE orders SET stock_applied = 1 WHERE id = ?").run(id);
+      if (v && v.stock !== null) stockChanged = true;
     }
-    if (next === "confirmed" && order.promo_code && !order.promo_counted) {
-      d.prepare("UPDATE promo_codes SET uses = uses + 1 WHERE code = ?").run(order.promo_code);
-      d.prepare("UPDATE orders SET promo_counted = 1 WHERE id = ?").run(id);
-    }
+    if (shortages.length) return { ok: false, error: "shortage", shortages };
+    for (const [variantId, qty] of need) steps.push(...takeStock(variantId, qty));
+    steps.push(new Statement("UPDATE orders SET stock_applied = 1 WHERE id = ?", [id]));
+  }
+  if (next === "confirmed" && order.promo_code && !order.promo_counted) {
+    steps.push(
+      new Statement("UPDATE promo_codes SET uses = uses + 1 WHERE code = ?", [order.promo_code]),
+      new Statement("UPDATE orders SET promo_counted = 1 WHERE id = ?", [id]),
+    );
+  }
 
-    if (next === "cancelled" && order.stock_applied) {
-      // Sizes deleted since then are simply skipped.
-      const inc = d.prepare("UPDATE variants SET stock = stock + ? WHERE id = ? AND stock IS NOT NULL");
-      for (const i of items) stockChanged = Number(inc.run(i.qty, i.variant_id).changes) > 0 || stockChanged;
-      d.prepare("UPDATE orders SET stock_applied = 0 WHERE id = ?").run(id);
+  if (next === "cancelled" && order.stock_applied) {
+    // Sizes deleted since then are simply skipped.
+    for (const i of items) {
+      steps.push(
+        new Statement("UPDATE variants SET stock = stock + ? WHERE id = ? AND stock IS NOT NULL", [i.qty, i.variant_id]),
+      );
     }
-    if (next === "cancelled" && order.promo_counted) {
-      d.prepare("UPDATE promo_codes SET uses = MAX(0, uses - 1) WHERE code = ?").run(order.promo_code);
-      d.prepare("UPDATE orders SET promo_counted = 0 WHERE id = ?").run(id);
-    }
+    steps.push(new Statement("UPDATE orders SET stock_applied = 0 WHERE id = ?", [id]));
+  }
+  if (next === "cancelled" && order.promo_counted) {
+    steps.push(
+      new Statement("UPDATE promo_codes SET uses = MAX(0, uses - 1) WHERE code = ?", [order.promo_code]),
+      new Statement("UPDATE orders SET promo_counted = 0 WHERE id = ?", [id]),
+    );
+  }
 
-    d.prepare(
+  steps.push(
+    new Statement(
       `UPDATE orders SET status = ?, handled_by = ?, updated_at = datetime('now'),
          -- Dates used by the finance reports (a sale counts on the day it was delivered).
          confirmed_at = CASE WHEN ? = 'confirmed' THEN datetime('now') WHEN ? = 'new' THEN NULL ELSE confirmed_at END,
          delivered_at = CASE WHEN ? = 'delivered' THEN datetime('now') ELSE NULL END
        WHERE id = ?`,
-    ).run(next, by, next, next, next, id);
-    return { ok: true as const, stockChanged };
-  });
+      [next, by, next, next, next, id],
+    ),
+  );
+  const results = await d.batch(steps);
+  if (next === "cancelled" && order.stock_applied) {
+    stockChanged = results.some((r, i) => i > 0 && r.changes > 0 && /^UPDATE variants/.test(steps[i].sql));
+  }
+  return { ok: true, stockChanged };
+}
+
+/**
+ * Batch steps taking `qty` out of a size's stock, cancelling the batch if the
+ * stock (when tracked) is no longer enough.
+ */
+function takeStock(variantId: string, qty: number): Statement[] {
+  return [
+    guard("COALESCE((SELECT stock FROM variants WHERE id = ?), ?) >= ?", variantId, qty, qty),
+    new Statement("UPDATE variants SET stock = stock - ? WHERE id = ? AND stock IS NOT NULL", [qty, variantId]),
+  ];
 }
 
 /** Only cancelled orders can be deleted (e.g. spam). */
-export function deleteOrder(id: number): boolean {
-  const r = db().prepare("DELETE FROM orders WHERE id = ? AND status = 'cancelled'").run(id);
+export async function deleteOrder(id: number): Promise<boolean> {
+  const r = await db().prepare("DELETE FROM orders WHERE id = ? AND status = 'cancelled'").run(id);
   return Number(r.changes) > 0;
 }
 
@@ -429,71 +467,62 @@ export type CounterResult =
  * delivered and paid, its stock taken at once (all or nothing). Prices come
  * from the database (sale prices included), never from the browser.
  */
-export function recordCounterSale(input: {
+export async function recordCounterSale(input: {
   lines: { id: string; variant: string; qty: number }[];
   /** Optional discount: a percent (0–100) or an amount in cents. */
   discount: { kind: "percent" | "amount"; value: number } | null;
   payment: Payment;
   customer: string;
   by: string | null;
-}): CounterResult {
+}): Promise<CounterResult> {
   const merged = new Map<string, { id: string; variant: string; qty: number }>();
   for (const l of input.lines.slice(0, MAX_ORDER_LINES)) {
     const k = `${l.id}:${l.variant}`;
     merged.set(k, { ...l, qty: Math.min(9999, (merged.get(k)?.qty ?? 0) + l.qty) });
   }
   if (merged.size === 0) return { ok: false, error: "empty" };
+  return withRetry(() => counterSale(input, [...merged.values()]));
+}
 
-  return tx(() => {
-    const d = db();
-    const get = d.prepare(
-      `SELECT v.id AS variant_id, v.product_id, v.label,
-              CASE WHEN v.sale_price IS NOT NULL AND v.price IS NOT NULL AND v.sale_price < v.price
-                   THEN v.sale_price ELSE v.price END AS price,
-              v.stock, p.name_ar, p.name_en, p.visible
-       FROM variants v JOIN products p ON p.id = v.product_id
-       WHERE v.id = ? AND v.product_id = ?`,
-    );
-    const items: OrderItem[] = [];
-    const shortages: Shortage[] = [];
-    for (const l of merged.values()) {
-      const row = get.get(l.variant, l.id) as VariantRow | undefined;
-      if (!row) return { ok: false as const, error: "unavailable" as const };
-      if (row.price === null) return { ok: false as const, error: "no_price" as const };
-      const name = { ar: row.name_ar, en: row.name_en };
-      if (row.stock !== null && l.qty > row.stock) {
-        shortages.push({ name, label: row.label, available: Math.max(0, row.stock) });
-        continue;
-      }
-      items.push({ productId: row.product_id, variantId: row.variant_id, name, label: row.label, unitPrice: row.price, qty: l.qty });
+async function counterSale(
+  input: Parameters<typeof recordCounterSale>[0],
+  lines: { id: string; variant: string; qty: number }[],
+): Promise<CounterResult> {
+  const items: OrderItem[] = [];
+  const shortages: Shortage[] = [];
+  for (const l of lines) {
+    const row = (await VARIANT_FOR_ORDER.get(l.variant, l.id)) as VariantRow | undefined;
+    if (!row) return { ok: false, error: "unavailable" };
+    if (row.price === null) return { ok: false, error: "no_price" };
+    const name = { ar: row.name_ar, en: row.name_en };
+    if (row.stock !== null && l.qty > row.stock) {
+      shortages.push({ name, label: row.label, available: Math.max(0, row.stock) });
+      continue;
     }
-    if (shortages.length) return { ok: false as const, error: "unavailable" as const, shortages };
+    items.push({ productId: row.product_id, variantId: row.variant_id, name, label: row.label, unitPrice: row.price, qty: l.qty });
+  }
+  if (shortages.length) return { ok: false, error: "unavailable", shortages };
 
-    const subtotal = items.reduce((s, i) => s + i.unitPrice! * i.qty, 0);
-    const dsc = input.discount;
-    const discount = !dsc ? 0 : dsc.kind === "percent" ? Math.round((subtotal * dsc.value) / 100) : dsc.value;
-    if (dsc && (dsc.value < 0 || (dsc.kind === "percent" && dsc.value > 100) || discount > subtotal)) {
-      return { ok: false as const, error: "discount" as const };
-    }
-    const total = subtotal - discount;
+  const subtotal = items.reduce((s, i) => s + i.unitPrice! * i.qty, 0);
+  const dsc = input.discount;
+  const discount = !dsc ? 0 : dsc.kind === "percent" ? Math.round((subtotal * dsc.value) / 100) : dsc.value;
+  if (dsc && (dsc.value < 0 || (dsc.kind === "percent" && dsc.value > 100) || discount > subtotal)) {
+    return { ok: false, error: "discount" };
+  }
+  const total = subtotal - discount;
 
-    const r = d
-      .prepare(
-        `INSERT INTO orders (status, name, phone, lang, subtotal, discount, total, stock_applied, source, payment,
-           handled_by, confirmed_at, delivered_at)
-         VALUES ('delivered', ?, '', 'ar', ?, ?, ?, 1, 'counter', ?, ?, datetime('now'), datetime('now'))`,
-      )
-      .run(input.customer, subtotal, discount, total, input.payment, input.by);
-    const orderId = Number(r.lastInsertRowid);
-    const insItem = d.prepare(
-      `INSERT INTO order_items (order_id, product_id, variant_id, name_ar, name_en, label, unit_price, qty)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
-    const dec = d.prepare("UPDATE variants SET stock = stock - ? WHERE id = ? AND stock IS NOT NULL");
-    for (const i of items) {
-      insItem.run(orderId, i.productId, i.variantId, i.name.ar, i.name.en, i.label, i.unitPrice, i.qty);
-      dec.run(i.qty, i.variantId);
-    }
-    return { ok: true as const, orderId, subtotal, discount, total };
-  });
+  // Stock is taken in the same batch as the sale (all or nothing).
+  const need = new Map<string, number>();
+  for (const i of items) need.set(i.variantId, (need.get(i.variantId) ?? 0) + i.qty);
+  const orderId = await insertOrder(
+    new Statement(
+      `INSERT INTO orders (status, name, phone, lang, subtotal, discount, total, stock_applied, source, payment,
+         handled_by, confirmed_at, delivered_at)
+       VALUES ('delivered', ?, '', 'ar', ?, ?, ?, 1, 'counter', ?, ?, datetime('now'), datetime('now'))`,
+      [input.customer, subtotal, discount, total, input.payment, input.by],
+    ),
+    items,
+    [...need].flatMap(([variantId, qty]) => takeStock(variantId, qty)),
+  );
+  return { ok: true, orderId, subtotal, discount, total };
 }

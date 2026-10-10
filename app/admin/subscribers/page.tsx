@@ -17,7 +17,7 @@ export default function SubscribersPage() {
 async function Content() {
   await requireAdmin();
   // Never send subscribers' private link tokens to the browser.
-  const subs = listSubscribers().map((s) => ({
+  const subs = (await listSubscribers()).map((s) => ({
     id: s.id,
     email: s.email,
     whatsapp: s.whatsapp,

@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nahel",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    // Self-reference used by OpenNext to revalidate pages (must match "name").
+    { "binding": "WORKER_SELF_REFERENCE", "service": "nahel" }
+  ],
+  "d1_databases": [
+    // Shop data. Tables are created by migrations/ (wrangler d1 migrations apply).
+    {
+      "binding": "DB",
+      "database_name": "nahel-db",
+      "database_id": "0bbb10d1-19a5-4747-9c43-20ce2b61f37a",
+      "migrations_dir": "migrations"
+    },
+    // Same database, used by OpenNext for cache tags.
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "nahel-db",
+      "database_id": "0bbb10d1-19a5-4747-9c43-20ce2b61f37a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Cloudflare Images: resizes uploaded photos (free up to 5,000 a month).
+  "images": { "binding": "IMAGES" },
+  "r2_buckets": [
+    // Product photos (uploads/) and lab PDFs (docs/).
+    { "binding": "FILES", "bucket_name": "nahel-files" },
+    // Same bucket, used by OpenNext for its page cache (incremental-cache/).
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "nahel-files" }
+  ],
+  "observability": { "enabled": true }
+}
