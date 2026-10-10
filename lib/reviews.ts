@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { cacheLife, cacheTag } from "next/cache";
+import { cached } from "@/lib/cache";
 import { db } from "@/lib/db";
 import type { RatingSummary, Review } from "@/lib/review-types";
 
@@ -49,16 +49,17 @@ export async function submitReview(input: {
 }
 
 /** Approved reviews of a product, newest first. Cached; approving expires it. */
-export async function getApprovedReviews(productId: string): Promise<Review[]> {
-  "use cache";
-  cacheTag(REVIEWS_TAG);
-  cacheLife("minutes");
-  return (
-    (await db()
-      .prepare("SELECT * FROM reviews WHERE product_id = ? AND approved = 1 ORDER BY created_at DESC LIMIT 50")
-      .all(productId)) as unknown as Row[]
-  ).map(toReview);
-}
+export const getApprovedReviews = cached(
+  async (productId: string): Promise<Review[]> => {
+    return (
+      (await db()
+        .prepare("SELECT * FROM reviews WHERE product_id = ? AND approved = 1 ORDER BY created_at DESC LIMIT 50")
+        .all(productId)) as unknown as Row[]
+    ).map(toReview);
+  },
+  "getApprovedReviews",
+  REVIEWS_TAG,
+);
 
 /** Average and count of approved reviews per product (for the catalog). */
 export async function ratingSummaries(): Promise<Map<string, RatingSummary>> {

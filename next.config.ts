@@ -34,8 +34,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Cache Components ("use cache", partial prerendering) are off: they hang
+  // on Cloudflare Workers until the adapter supports them
+  // (opennextjs/opennextjs-cloudflare#1318). Shop data is cached with
+  // unstable_cache instead (lib/cache.ts).
   poweredByHeader: false,
   experimental: {
     // Admin photo uploads (the browser shrinks photos to well under this).

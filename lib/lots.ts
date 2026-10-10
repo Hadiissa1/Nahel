@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { cacheLife, cacheTag } from "next/cache";
+import { cached } from "@/lib/cache";
 import { Statement, db } from "@/lib/db";
 import { docUrl, type AdminLot, type Lot } from "@/lib/lot-types";
 
@@ -38,25 +38,27 @@ const toLot = (r: Row): Lot => ({
  * A lot looked up by the code on the jar. Old lots stay findable (customers
  * may still have the jar), but only for products that are visible.
  */
-export async function getLotByCode(code: string): Promise<Lot | null> {
-  "use cache";
-  cacheTag(LOTS_TAG);
-  cacheLife("minutes");
-  const r = (await db().prepare(`${SELECT} WHERE l.code = ? AND p.visible = 1`).get(code)) as Row | undefined;
-  return r ? toLot(r) : null;
-}
+export const getLotByCode = cached(
+  async (code: string): Promise<Lot | null> => {
+    const r = (await db().prepare(`${SELECT} WHERE l.code = ? AND p.visible = 1`).get(code)) as Row | undefined;
+    return r ? toLot(r) : null;
+  },
+  "getLotByCode",
+  LOTS_TAG,
+);
 
 /** Current lots of a product, shown on its page. */
-export async function getProductLots(productId: string): Promise<Lot[]> {
-  "use cache";
-  cacheTag(LOTS_TAG);
-  cacheLife("minutes");
-  return (
-    (await db()
-      .prepare(`${SELECT} WHERE l.product_id = ? AND l.current = 1 ORDER BY l.harvest_on DESC, l.created_at DESC LIMIT 5`)
-      .all(productId)) as unknown as Row[]
-  ).map(toLot);
-}
+export const getProductLots = cached(
+  async (productId: string): Promise<Lot[]> => {
+    return (
+      (await db()
+        .prepare(`${SELECT} WHERE l.product_id = ? AND l.current = 1 ORDER BY l.harvest_on DESC, l.created_at DESC LIMIT 5`)
+        .all(productId)) as unknown as Row[]
+    ).map(toLot);
+  },
+  "getProductLots",
+  LOTS_TAG,
+);
 
 // ---------- Admin ----------
 

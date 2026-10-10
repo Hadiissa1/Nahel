@@ -77,6 +77,29 @@ automatique. Mettre ensuite `SITE_URL=https://nahel.com` et redéployer.
 - D1, R2 et Images restent gratuits aux volumes d'une boutique de miel
   (R2 : 10 Go ; Images : 5 000 photos redimensionnées par mois).
 
+## Deux réglages propres à Cloudflare (à connaître)
+
+- **Pas de « Cache Components »** (`cacheComponents` dans `next.config.ts`) : avec
+  Next.js 16.4, cette option bloque les pages sur Workers (« Worker's code had
+  hung »). La correction est en cours chez OpenNext
+  ([opennextjs-cloudflare#1318](https://github.com/opennextjs/opennextjs-cloudflare/pull/1318)).
+  En attendant, les données de la boutique sont mises en cache avec
+  `unstable_cache` (`lib/cache.ts`) : même résultat pour les visiteurs (pages en
+  cache, mises à jour à la minute ou aussitôt après une modification dans l'admin).
+- **Correctif de l'adaptateur** (`patches/@opennextjs+cloudflare+1.20.10.patch`,
+  appliqué tout seul par `npm install`) : il embarque `preview-props.json`, un
+  fichier de Next.js 16.4 que l'adaptateur oubliait (erreur « Unexpected
+  loadManifest »). À retirer quand une version corrigée sortira.
+
+## Ce qui a été vérifié dans le moteur Cloudflare (local)
+
+`npm run cf:preview`, base D1 et fichiers R2 locaux :
+- toutes les pages répondent (boutique, produits, articles, lots, admin, plan du site) ;
+- parcours de commande complet (panier → commande → confirmation par le gérant →
+  stock retiré, annulation, codes promo, tentatives de fraude refusées) ;
+- test de sécurité : tout passe ; 50 visiteurs en même temps pendant 15 s :
+  2 392 pages, aucune erreur, médiane 0,3 s.
+
 ## Différences avec un serveur classique
 
 - **Photos** : redimensionnées par Cloudflare Images. Si le service n'est pas

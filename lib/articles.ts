@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { cacheLife, cacheTag } from "next/cache";
+import { cached } from "@/lib/cache";
 import { Statement, db } from "@/lib/db";
 import type { AdminArticle, Article } from "@/lib/article-types";
 
@@ -50,29 +50,31 @@ const toPublic = (r: Row): Article => {
 };
 
 /** Published articles, newest first (cached; admin changes expire it). */
-export async function getPublishedArticles(): Promise<Article[]> {
-  "use cache";
-  cacheTag(ARTICLES_TAG);
-  cacheLife("minutes");
-  return (
-    (await db()
-      .prepare("SELECT * FROM articles WHERE published = 1 ORDER BY published_on DESC, created_at DESC")
-      .all()) as unknown as Row[]
-  ).map(toPublic);
-}
+export const getPublishedArticles = cached(
+  async (): Promise<Article[]> => {
+    return (
+      (await db()
+        .prepare("SELECT * FROM articles WHERE published = 1 ORDER BY published_on DESC, created_at DESC")
+        .all()) as unknown as Row[]
+    ).map(toPublic);
+  },
+  "getPublishedArticles",
+  ARTICLES_TAG,
+);
 
 /**
  * One published article. Cached per address (not taken from the list above):
  * a new article must show on its very first visit, and pages for addresses
  * unknown at build time could otherwise reuse the list as it was then.
  */
-export async function getArticle(slug: string): Promise<Article | undefined> {
-  "use cache";
-  cacheTag(ARTICLES_TAG);
-  cacheLife("minutes");
-  const r = (await db().prepare("SELECT * FROM articles WHERE slug = ? AND published = 1").get(slug)) as Row | undefined;
-  return r ? toPublic(r) : undefined;
-}
+export const getArticle = cached(
+  async (slug: string): Promise<Article | undefined> => {
+    const r = (await db().prepare("SELECT * FROM articles WHERE slug = ? AND published = 1").get(slug)) as Row | undefined;
+    return r ? toPublic(r) : undefined;
+  },
+  "getArticle",
+  ARTICLES_TAG,
+);
 
 // ---------- Admin ----------
 

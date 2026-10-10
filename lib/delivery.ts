@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { cacheLife, cacheTag } from "next/cache";
+import { cached } from "@/lib/cache";
 import { db } from "@/lib/db";
 import type { AdminZone, DeliveryZone } from "@/lib/delivery-types";
 
@@ -30,12 +30,13 @@ async function load(where = ""): Promise<AdminZone[]> {
 }
 
 /** Zones shown at checkout. Cached; admin changes expire it at once. */
-export async function getDeliveryZones(): Promise<DeliveryZone[]> {
-  "use cache";
-  cacheTag(ZONES_TAG);
-  cacheLife("minutes");
-  return (await load("WHERE active = 1")).map(({ id, name, fee, freeFrom }) => ({ id, name, fee, freeFrom }));
-}
+export const getDeliveryZones = cached(
+  async (): Promise<DeliveryZone[]> => {
+    return (await load("WHERE active = 1")).map(({ id, name, fee, freeFrom }) => ({ id, name, fee, freeFrom }));
+  },
+  "getDeliveryZones",
+  ZONES_TAG,
+);
 
 /** Fresh read for placing an order (never trusts the cache or the browser). */
 export function activeZones(): Promise<DeliveryZone[]> {

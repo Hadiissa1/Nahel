@@ -166,13 +166,16 @@ Points techniques à régler (déjà repérés) :
 
 - **`import "server-only"`** est en tête de presque tous les modules `lib/` :
   sous Vitest, alias vers `tests/setup/server-only.ts` (module vide).
-- **`"use cache"` / `cacheTag` / `cacheLife`** (`lib/products.ts`, etc.) :
-  `next/cache` est remplacé par des bouchons ; les fonctions marquées
-  `"use cache"` sont testées comme des fonctions normales.
+- **Cache** (`lib/cache.ts` → `unstable_cache`, utilisé par `lib/products.ts`, etc.) :
+  `next/cache` est remplacé par des bouchons ; les fonctions mises en cache
+  sont testées comme des fonctions normales. (Les Cache Components / `"use cache"`
+  ont été retirés : ils bloquent sur Cloudflare Workers, voir docs/DEPLOY-CLOUDFLARE.md.)
 - **`cookies()`** dans `lib/auth.ts` : `next/headers` est simulé avec un
   magasin de cookies en mémoire.
-- **Connexion unique** : `db()` garde la connexion dans
-  `globalThis.__nahelDb` et `DATA_DIR` est lu au chargement du module. Le setup
+- **Connexion unique** : `db()` garde le moteur dans `globalThis.__nahelDb`
+  (et la connexion SQLite locale dans `globalThis.__nahelSqlite`) ; `DATA_DIR`
+  est lu au chargement du module. Toutes les fonctions de base sont asynchrones
+  (même API que Cloudflare D1). Le setup
   définit `DATA_DIR` **avant** d'importer `lib/db.ts`, et Vitest isole chaque
   fichier (`pool: "forks"`), donc une base par fichier. Pour une base neuve par
   test, le setup ferme la connexion et vide `globalThis.__nahelDb` entre les

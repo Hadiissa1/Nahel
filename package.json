@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.10",
@@ -39,6 +40,7 @@
     "autocannon": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "patch-package": "^8.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.3",

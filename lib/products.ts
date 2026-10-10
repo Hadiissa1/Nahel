@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { cacheLife, cacheTag } from "next/cache";
+import { cached } from "@/lib/cache";
 import { Statement, db } from "@/lib/db";
 import { ratingSummaries } from "@/lib/reviews";
 import type {
@@ -77,23 +77,24 @@ async function load(where: string, ...params: string[]): Promise<AdminProduct[]>
  * expire it at once (updateTag), and other server processes pick changes up
  * within a minute.
  */
-export async function getCatalog(): Promise<CatalogProduct[]> {
-  "use cache";
-  cacheTag(PRODUCTS_TAG);
-  cacheLife("minutes");
-  return (await load("WHERE visible = 1"))
-    .filter((p) => p.variants.length > 0)
-    .map((p) => ({
-      id: p.id,
-      category: p.category,
-      name: p.name,
-      origin: p.origin,
-      desc: p.desc,
-      photo: p.photo,
-      variants: p.variants,
-      rating: p.rating,
-    }));
-}
+export const getCatalog = cached(
+  async (): Promise<CatalogProduct[]> => {
+    return (await load("WHERE visible = 1"))
+      .filter((p) => p.variants.length > 0)
+      .map((p) => ({
+        id: p.id,
+        category: p.category,
+        name: p.name,
+        origin: p.origin,
+        desc: p.desc,
+        photo: p.photo,
+        variants: p.variants,
+        rating: p.rating,
+      }));
+  },
+  "getCatalog",
+  PRODUCTS_TAG,
+);
 
 /** Admin reads: always fresh, include hidden products. */
 export function listAdminProducts(): Promise<AdminProduct[]> {
