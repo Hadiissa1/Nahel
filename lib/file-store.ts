@@ -1,5 +1,6 @@
 import "server-only";
 import { DATA_DIR } from "@/lib/db";
+import { sniffImage } from "@/lib/images";
 
 /**
  * Uploaded files (product photos, lab PDFs). Two places behind one API:
@@ -24,7 +25,6 @@ const CF_CONTEXT = Symbol.for("__cloudflare-context__");
 const bucket = () =>
   (globalThis as unknown as { [CF_CONTEXT]?: { env?: { FILES?: R2Like } } })[CF_CONTEXT]?.env?.FILES;
 
-// Local engine: the content type is kept in a small side file.
 async function fs() {
   return import(/* webpackIgnore: true */ "node:fs/promises");
 }
@@ -38,8 +38,8 @@ export async function putFile(key: string, body: Uint8Array, contentType: string
   const { mkdir, writeFile } = await fs();
   const path = `${DATA_DIR}/${key}`;
   await mkdir(path.slice(0, path.lastIndexOf("/")), { recursive: true });
+  // The type isn't stored locally: it is read back from the content.
   await writeFile(path, body);
-  await writeFile(`${path}.type`, contentType);
 }
 
 export async function getFile(key: string): Promise<StoredFile | null> {
@@ -53,8 +53,10 @@ export async function getFile(key: string): Promise<StoredFile | null> {
   try {
     const path = `${DATA_DIR}/${key}`;
     const data = await readFile(path);
-    const contentType = await readFile(`${path}.type`, "utf8").catch(() => "application/octet-stream");
-    return { body: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer, contentType };
+    return {
+      body: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer,
+      contentType: typeOf(new Uint8Array(data)),
+    };
   } catch {
     return null;
   }
@@ -68,7 +70,11 @@ export async function deleteFiles(keys: string[]): Promise<void> {
     return;
   }
   const { rm } = await fs();
-  await Promise.all(
-    keys.flatMap((k) => [rm(`${DATA_DIR}/${k}`, { force: true }), rm(`${DATA_DIR}/${k}.type`, { force: true })]),
-  );
+  await Promise.all(keys.map((k) => rm(`${DATA_DIR}/${k}`, { force: true })));
+}
+
+function typeOf(b: Uint8Array): string {
+  if (String.fromCharCode(...b.subarray(0, 5)) === "%PDF-") return "application/pdf";
+  const image = sniffImage(b);
+  return image ? `image/${image}` : "application/octet-stream";
 }

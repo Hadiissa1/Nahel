@@ -17,7 +17,7 @@ export interface VariantSpec {
   stock?: number | null;
 }
 
-export function makeProduct(
+export async function makeProduct(
   opts: { name?: string; category?: CategoryId; visible?: boolean; variants?: VariantSpec[] } = {},
 ) {
   const name = opts.name ?? `Test honey ${randomUUID().slice(0, 6)}`;
@@ -34,34 +34,34 @@ export function makeProduct(
       stock: v.stock === undefined ? 10 : v.stock,
     })),
   };
-  const id = createProduct(input, null);
-  const product = getAdminProduct(id)!;
+  const id = await createProduct(input, null);
+  const product = (await getAdminProduct(id))!;
   return { id, name, product, variantIds: product.variants.map((v) => v.id) };
 }
 
 /** Current stock of a size, read straight from the database. */
-export function stockOf(variantId: string): number | null {
-  const row = db().prepare("SELECT stock FROM variants WHERE id = ?").get(variantId) as { stock: number | null };
+export async function stockOf(variantId: string): Promise<number | null> {
+  const row = await db().prepare("SELECT stock FROM variants WHERE id = ?").get(variantId) as { stock: number | null };
   return row.stock;
 }
 
-export function makeZone(opts: { fee?: number | null; freeFrom?: number | null; active?: boolean } = {}) {
+export async function makeZone(opts: { fee?: number | null; freeFrom?: number | null; active?: boolean } = {}) {
   const en = `Zone ${randomUUID().slice(0, 6)}`;
-  saveZone(null, {
+  await saveZone(null, {
     name: { en, ar: en },
     fee: opts.fee === undefined ? 300 : opts.fee,
     freeFrom: opts.freeFrom ?? null,
     active: opts.active ?? true,
   });
-  return listAdminZones().find((z) => z.name.en === en)!;
+  return (await listAdminZones()).find((z) => z.name.en === en)!;
 }
 
 /** Removes the starter delivery zones, so checkout no longer needs a zone. */
-export function clearZones() {
-  db().exec("DELETE FROM delivery_zones");
+export async function clearZones() {
+  await db().prepare("DELETE FROM delivery_zones").run();
 }
 
-export function makePromo(opts: Partial<PromoInput> = {}) {
+export async function makePromo(opts: Partial<PromoInput> = {}) {
   const input: PromoInput = {
     code: opts.code ?? `T${randomUUID().slice(0, 8).toUpperCase()}`,
     kind: opts.kind ?? "percent",
@@ -70,11 +70,11 @@ export function makePromo(opts: Partial<PromoInput> = {}) {
     expiresOn: opts.expiresOn ?? null,
     maxUses: opts.maxUses ?? null,
   };
-  createPromoCode(input);
+  await createPromoCode(input);
   return input;
 }
 
 /** Sets how many confirmed orders already used a code. */
-export function setPromoUses(code: string, uses: number) {
-  db().prepare("UPDATE promo_codes SET uses = ? WHERE code = ?").run(uses, code);
+export async function setPromoUses(code: string, uses: number) {
+  await db().prepare("UPDATE promo_codes SET uses = ? WHERE code = ?").run(uses, code);
 }

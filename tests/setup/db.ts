@@ -17,10 +17,11 @@ delete process.env.MAIL_FROM_EMAIL;
 delete process.env.SITE_URL;
 delete process.env.ADMIN_PASSWORD;
 
-const g = globalThis as unknown as { __nahelDb?: DatabaseSync };
+const g = globalThis as unknown as { __nahelDb?: unknown; __nahelSqlite?: DatabaseSync };
 
 function closeDb() {
-  g.__nahelDb?.close();
+  g.__nahelSqlite?.close();
+  g.__nahelSqlite = undefined;
   g.__nahelDb = undefined;
 }
 

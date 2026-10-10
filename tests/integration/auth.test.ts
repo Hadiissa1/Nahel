@@ -20,13 +20,13 @@ const COOKIE = "nahel_admin";
 // The failed-login counter lives in memory for the whole file: each test
 // signs in from its own made-up IP address so tests don't block each other.
 let nextIp = 0;
-beforeEach(() => {
+beforeEach(async () => {
   resetRequest();
   nextIp++;
   setRequestHeaders({ "x-forwarded-for": `10.0.0.${nextIp}` });
   process.env.ADMIN_PASSWORD = OWNER_PASSWORD;
 });
-afterEach(() => {
+afterEach(async () => {
   delete process.env.ADMIN_PASSWORD;
   vi.useRealTimers();
 });
@@ -36,9 +36,9 @@ const redirectOf = async (p: Promise<unknown>) => {
   return e instanceof RedirectError ? e.url : null;
 };
 
-function staff(username = `amal${randomUUID().slice(0, 4)}`, password = "staff-password-1") {
-  expect(createStaff({ username, name: "Amal", password })).toBe("ok");
-  return { username, password, id: listStaff().find((s) => s.username === username)!.id };
+async function staff(username = `amal${randomUUID().slice(0, 4)}`, password = "staff-password-1") {
+  expect(await createStaff({ username, name: "Amal", password })).toBe("ok");
+  return { username, password, id: (await listStaff()).find((s) => s.username === username)!.id };
 }
 
 describe("owner password", () => {
@@ -129,30 +129,30 @@ describe("sessions", () => {
 
 describe("staff accounts", () => {
   it("signs staff in by username (case-insensitive)", async () => {
-    const s = staff("karim");
+    const s = await staff("karim");
     expect(await login("  Karim ", s.password)).toBe("ok");
     expect(await getSession()).toEqual({ role: "staff", userId: s.id, name: "Amal" });
     expect(await isAdmin()).toBe(false);
-    expect(listStaff()[0].lastLogin).not.toBeNull();
+    expect((await listStaff())[0].lastLogin).not.toBeNull();
   });
 
   it("refuses a wrong password or an unknown username the same way", async () => {
-    const s = staff();
+    const s = await staff();
     expect(await login(s.username, "wrong-password")).toBe("invalid");
     expect(await login("nobody", s.password)).toBe("invalid");
   });
 
   it("does not let staff sign in with the owner password", async () => {
-    const s = staff();
+    const s = await staff();
     expect(await login(s.username, OWNER_PASSWORD)).toBe("invalid");
   });
 
-  it("refuses a username that is taken", () => {
-    staff("samir");
-    expect(createStaff({ username: "samir", name: "Other", password: "another-pass" })).toBe("taken");
+  it("refuses a username that is taken", async () => {
+    await staff("samir");
+    expect(await createStaff({ username: "samir", name: "Other", password: "another-pass" })).toBe("taken");
   });
 
-  it("salts every password (same password, different hashes, never stored in clear)", () => {
+  it("salts every password (same password, different hashes, never stored in clear)", async () => {
     const a = hashPassword("same-password");
     const b = hashPassword("same-password");
     expect(a).not.toBe(b);
@@ -161,36 +161,36 @@ describe("staff accounts", () => {
   });
 
   it("signs out and blocks a deactivated account at once", async () => {
-    const s = staff();
+    const s = await staff();
     await login(s.username, s.password);
-    expect(setStaffActive(s.id, false)).toBe(true);
+    expect(await setStaffActive(s.id, false)).toBe(true);
     expect(await getSession()).toBeNull();
     expect(await login(s.username, s.password)).toBe("invalid");
 
-    setStaffActive(s.id, true);
+    await setStaffActive(s.id, true);
     expect(await login(s.username, s.password)).toBe("ok");
   });
 
   it("signs the person out when their password is changed", async () => {
-    const s = staff();
+    const s = await staff();
     await login(s.username, s.password);
-    expect(setStaffPassword(s.id, "brand-new-password")).toBe(true);
+    expect(await setStaffPassword(s.id, "brand-new-password")).toBe(true);
     expect(await getSession()).toBeNull();
     expect(await login(s.username, s.password)).toBe("invalid");
     expect(await login(s.username, "brand-new-password")).toBe("ok");
   });
 
   it("signs the person out when the account is deleted", async () => {
-    const s = staff();
+    const s = await staff();
     await login(s.username, s.password);
-    expect(deleteStaff(s.id)).toBe(true);
+    expect(await deleteStaff(s.id)).toBe(true);
     expect(await getSession()).toBeNull();
-    expect(deleteStaff(s.id)).toBe(false);
+    expect(await deleteStaff(s.id)).toBe(false);
   });
 
-  it("returns false for an unknown account", () => {
-    expect(setStaffActive("nope", false)).toBe(false);
-    expect(setStaffPassword("nope", "whatever-pass")).toBe(false);
+  it("returns false for an unknown account", async () => {
+    expect(await setStaffActive("nope", false)).toBe(false);
+    expect(await setStaffPassword("nope", "whatever-pass")).toBe(false);
   });
 });
 
@@ -207,7 +207,7 @@ describe("access rules", () => {
   });
 
   it("keeps staff out of owner-only pages (sent to orders)", async () => {
-    const s = staff();
+    const s = await staff();
     await login(s.username, s.password);
     expect(await redirectOf(requireAdmin())).toBe("/admin/orders");
     expect(await requireStaff()).toMatchObject({ role: "staff", userId: s.id });

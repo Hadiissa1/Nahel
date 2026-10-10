@@ -488,6 +488,8 @@ async function nodeEngine(): Promise<Engine> {
       await new Promise((r) => setTimeout(r, 100));
     }
   }
+  // Kept so tests can close it and start from an empty database.
+  (globalThis as unknown as { __nahelSqlite?: unknown }).__nahelSqlite = d;
   const run = (sql: string, params: Param[]): BatchResult => {
     const st = d.prepare(sql);
     if (isReader(sql)) return { rows: st.all(...params), changes: 0, lastInsertRowid: 0 };

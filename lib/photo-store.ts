@@ -24,7 +24,7 @@ export async function savePhoto(file: File): Promise<string> {
   if (file.size > MAX_UPLOAD_BYTES) throw new PhotoError("too_large");
   const input = new Uint8Array(await file.arrayBuffer());
   const format = sniffImage(input);
-  if (!format) throw new PhotoError("format");
+  if (!format) throw new PhotoError("unreadable");
 
   const id = randomUUID();
   try {
