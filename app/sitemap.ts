@@ -3,6 +3,9 @@ import { getCatalog } from "@/lib/products";
 import { getPublishedArticles } from "@/lib/articles";
 import { siteUrl } from "@/lib/site";
 
+// Built when requested (from the real database), not at `next build`.
+export const dynamic = "force-dynamic";
+
 /** /sitemap.xml: home page, products, tips (needs SITE_URL). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();

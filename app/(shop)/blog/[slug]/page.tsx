@@ -4,15 +4,10 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ArticleView } from "@/components/BlogViews";
-import { getArticle, getPublishedArticles } from "@/lib/articles";
+import { getArticle } from "@/lib/articles";
 import { siteUrl } from "@/lib/site";
 import { photoUrl } from "@/lib/catalog-types";
 import type { Article } from "@/lib/article-types";
-
-export async function generateStaticParams() {
-  const articles = await getPublishedArticles();
-  return articles.length ? articles.map((a) => ({ slug: a.slug })) : [{ slug: "__none__" }];
-}
 
 const titleOf = (a: Article) => `${[a.title.ar, a.title.en].filter(Boolean).join(" | ")} — نحّال Nahel`;
 

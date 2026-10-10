@@ -9,10 +9,6 @@ import { getProduct } from "@/lib/products";
 import { normalizeLotCode } from "@/lib/lot-types";
 
 /** Lot pages render on first visit (codes are typed or scanned by customers). */
-export async function generateStaticParams() {
-  return [{ code: "__none__" }];
-}
-
 export const metadata: Metadata = {
   title: "تحقّق من الدفعة · Check a lot — نحّال Nahel",
   // One page per jar batch: useful to customers, not to search results.

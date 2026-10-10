@@ -12,12 +12,6 @@ import type { Review } from "@/lib/review-types";
 import { isOutOfStock, photoUrl, type CatalogProduct } from "@/lib/catalog-types";
 
 /** Products that exist at build time are prerendered; new ones render on first visit. */
-export async function generateStaticParams() {
-  const products = await getCatalog();
-  // Cache Components needs at least one entry; an unknown id simply 404s.
-  return products.length ? products.map((p) => ({ id: p.id })) : [{ id: "__none__" }];
-}
-
 const shorten = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
 function titleOf(p: CatalogProduct) {
@@ -118,12 +112,7 @@ export default function ProductPage({ params }: PageProps<"/product/[id]">) {
   );
 }
 
-/**
- * params must be awaited inside <Suspense> (Cache Components + Partial
- * Prefetching): reading them at the top level makes runtime regeneration fail.
- * Consequence: the very first visit to an unknown product answers 200 with the
- * not-found page and a noindex tag; later visits answer 404.
- */
+/** The page body; params are read inside <Suspense> so the header shows at once. */
 async function Content({ params }: { params: PageProps<"/product/[id]">["params"] }) {
   const { id } = await params;
   const product = await getProduct(id);

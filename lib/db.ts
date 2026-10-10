@@ -298,7 +298,8 @@ const SEEDS: { marker: string; statements: () => Statement[] }[] = [
       STARTER_ZONES.map(
         ([ar, en], i) =>
           new Statement("INSERT INTO delivery_zones (id, name_ar, name_en, sort) VALUES (?, ?, ?, ?)", [
-            crypto.randomUUID(), ar, en, i,
+            // Fixed ids: the same in every database (local, build, Cloudflare).
+            `zone-${en.toLowerCase().replace(/\s+/g, "-")}`, ar, en, i,
           ]),
       ),
   },
