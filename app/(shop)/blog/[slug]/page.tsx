@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
@@ -47,27 +46,17 @@ function jsonLd(a: Article) {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
-export default function ArticlePage({ params }: PageProps<"/blog/[slug]">) {
-  return (
-    <>
-      <Header />
-      {/* params are read inside <Suspense> (see the product page). */}
-      <Suspense fallback={<main className="min-h-[70vh] flex-1 bg-cream" />}>
-        <Content params={params} />
-      </Suspense>
-      <Footer />
-    </>
-  );
-}
-
-async function Content({ params }: { params: PageProps<"/blog/[slug]">["params"] }) {
+export default async function ArticlePage({ params }: PageProps<"/blog/[slug]">) {
   const { slug } = await params;
+  // Checked before anything is sent, so unknown articles answer 404.
   const article = await getArticle(slug);
   if (!article) notFound();
   return (
     <>
+      <Header />
       <ArticleView article={article} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(article) }} />
+      <Footer />
     </>
   );
 }

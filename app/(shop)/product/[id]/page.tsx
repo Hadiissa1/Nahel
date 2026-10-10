@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
@@ -11,7 +10,6 @@ import { getProductLots } from "@/lib/lots";
 import type { Review } from "@/lib/review-types";
 import { isOutOfStock, photoUrl, type CatalogProduct } from "@/lib/catalog-types";
 
-/** Products that exist at build time are prerendered; new ones render on first visit. */
 const shorten = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
 function titleOf(p: CatalogProduct) {
@@ -100,31 +98,23 @@ function jsonLd(p: CatalogProduct, reviews: Review[]) {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
-export default function ProductPage({ params }: PageProps<"/product/[id]">) {
+export default async function ProductPage({ params }: PageProps<"/product/[id]">) {
+  const { id } = await params;
+  // Checked before anything is sent, so unknown or hidden products answer 404.
+  const product = await getProduct(id);
+  if (!product) notFound();
+  const [reviews, lots, catalog] = await Promise.all([
+    getApprovedReviews(product.id),
+    getProductLots(product.id),
+    getCatalog(),
+  ]);
+  const related = catalog.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   return (
     <>
       <Header />
-      <Suspense fallback={<main className="min-h-[70vh] flex-1 bg-cream" />}>
-        <Content params={params} />
-      </Suspense>
-      <Footer />
-    </>
-  );
-}
-
-/** The page body; params are read inside <Suspense> so the header shows at once. */
-async function Content({ params }: { params: PageProps<"/product/[id]">["params"] }) {
-  const { id } = await params;
-  const product = await getProduct(id);
-  if (!product) notFound();
-  const [reviews, lots] = await Promise.all([getApprovedReviews(product.id), getProductLots(product.id)]);
-  const related = (await getCatalog())
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-  return (
-    <>
       <ProductDetail product={product} related={related} reviews={reviews} lots={lots} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(product, reviews) }} />
+      <Footer />
     </>
   );
 }

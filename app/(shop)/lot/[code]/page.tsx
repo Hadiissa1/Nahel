@@ -22,7 +22,7 @@ export default function LotPage({ params }: PageProps<"/lot/[code]">) {
       <main className="flex-1 bg-cream pt-28 pb-20">
         <div className="mx-auto max-w-2xl space-y-6 px-4">
           <LotHeading />
-          {/* params are read inside <Suspense> (see the product page). */}
+          {/* The search box shows at once; the result streams in. */}
           <Suspense fallback={<div className="h-48 rounded-3xl bg-white/50" />}>
             <Content params={params} />
           </Suspense>
