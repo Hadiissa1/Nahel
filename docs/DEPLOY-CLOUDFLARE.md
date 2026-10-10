@@ -93,12 +93,19 @@ automatique. Mettre ensuite `SITE_URL=https://nahel.com` et redéployer.
 
 ## Ce qui a été vérifié dans le moteur Cloudflare (local)
 
-`npm run cf:preview`, base D1 et fichiers R2 locaux :
+`npm run cf:preview`, base D1 et fichiers R2 locaux, version finale :
 - toutes les pages répondent (boutique, produits, articles, lots, admin, plan du site) ;
+  un produit ou un article inconnu répond 404 ;
 - parcours de commande complet (panier → commande → confirmation par le gérant →
   stock retiré, annulation, codes promo, tentatives de fraude refusées) ;
-- test de sécurité : tout passe ; 50 visiteurs en même temps pendant 15 s :
-  2 392 pages, aucune erreur, médiane 0,3 s.
+- parcours client, bouton WhatsApp, test de sécurité : tout passe ;
+- 50 visiteurs en même temps pendant 15 s : aucune erreur. Sur l'ordinateur de test
+  (un seul processus), réponse médiane 1,7 s ; en ligne, Cloudflare répartit les
+  visiteurs sur ses serveurs.
+
+Les pages de la boutique sont fabriquées à chaque visite (pas au moment du build,
+qui ne voit qu'une base de départ) ; les données qu'elles affichent restent en cache
+(`lib/cache.ts`), donc la base D1 n'est lue qu'une fois par minute au plus.
 
 ## Différences avec un serveur classique
 
