@@ -471,7 +471,8 @@ async function nodeEngine(): Promise<Engine> {
   // Loaded only outside Cloudflare (the module doesn't exist there).
   const { DatabaseSync } = await import(/* webpackIgnore: true */ "node:sqlite");
   const { mkdirSync } = await import(/* webpackIgnore: true */ "node:fs");
-  mkdirSync(DATA_DIR, { recursive: true });
+  // Uploaded photos and PDFs live next to the database (see lib/file-store.ts).
+  for (const dir of ["uploads", "docs"]) mkdirSync(`${DATA_DIR}/${dir}`, { recursive: true });
   const d = new DatabaseSync(`${DATA_DIR}/nahel.db`);
   // WAL + busy timeout: safe when several server processes share the file.
   // The timeout comes first so the statements below wait for each other.
