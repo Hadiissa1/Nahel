@@ -23,7 +23,7 @@ test("a customer orders from the shop and gets a WhatsApp message ready", async 
 });
 
 test("checkout asks for a valid phone number", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/shop");
   await productCard(page, "Lemon Blossom Honey").getByRole("button", { name: "Add to cart" }).click();
   const cart = page.getByRole("dialog", { name: "Your Cart" });
   await cart.getByRole("button", { name: "Continue to order" }).click();

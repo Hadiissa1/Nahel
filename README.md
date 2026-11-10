@@ -6,6 +6,13 @@ Tailwind CSS v4 and SQLite. Runs on **Cloudflare Workers** (D1 database, R2
 files) — see `docs/DEPLOY-CLOUDFLARE.md` — or on any Node server.
 
 - Searchable catalog with category filters (Arabic-aware search)
+- **One page per chapter**: `/` (home), `/shop` (honey, bee products and
+  equipment together; `/shop#honey` etc. pick the tab), `/why`, `/payment`,
+  `/faq`, `/contact`, `/blog`
+- **"How bees make honey"** on `/why`: six illustrated steps with checked
+  facts, and a 3D bee (pure CSS, `components/Bee3D.tsx`) that flies down the
+  page as the visitor scrolls (`components/HoneyJourney.tsx`, texts in
+  `lib/translations.ts` → `journey`)
 - **Honey Finder** on the home page: three choices on a honeycomb, then the
   honey that suits the visitor (texts in `lib/translations.ts` → `finder`,
   matching rules in `components/HoneyFinder.tsx`)

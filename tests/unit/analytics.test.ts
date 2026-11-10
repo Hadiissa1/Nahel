@@ -8,6 +8,9 @@ describe("normalizePath", () => {
     ["/blog", "/blog"],
     ["/blog/raw-honey-101", "/blog/raw-honey-101"],
     ["/lot", "/lot"],
+    ["/shop", "/shop"],
+    ["/why", "/why"],
+    ["/contact", "/contact"],
     ["/offers/confirm", "/offers/confirm"],
   ])("counts the shop page %s", (raw, expected) => {
     expect(normalizePath(raw)).toBe(expected);

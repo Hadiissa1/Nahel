@@ -18,7 +18,7 @@ export function adminRow(page: Page, name: string) {
 
 /** Adds a product to the cart from the shop, checks out, and returns the order number. */
 export async function orderFromShop(page: Page, productName: string, qty = 1) {
-  await page.goto("/");
+  await page.goto("/shop");
   await productCard(page, productName).getByRole("button", { name: "Add to cart" }).click();
 
   const cart = page.getByRole("dialog", { name: "Your Cart" });

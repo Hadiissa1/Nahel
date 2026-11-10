@@ -1,20 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLang } from "@/components/LanguageProvider";
 import { useCart } from "@/components/CartProvider";
 import { t } from "@/lib/translations";
 import { Bag } from "@/components/icons";
 
+// The three product shelves share one page (/shop, the hash picks the tab);
+// every other chapter has its own page.
 const links = [
-  { id: "honey", key: "honey" as const },
-  { id: "equipment", key: "equipment" as const },
-  { id: "health", key: "health" as const },
-  { id: "why", key: "why" as const },
-  { id: "pay", key: "pay" as const },
-  { id: "faq", key: "faq" as const },
-  { id: "contact", key: "contact" as const },
+  { href: "/shop#honey", key: "honey" as const },
+  { href: "/shop#equipment", key: "equipment" as const },
+  { href: "/shop#health", key: "health" as const },
+  { href: "/why", key: "why" as const },
+  { href: "/payment", key: "pay" as const },
+  { href: "/faq", key: "faq" as const },
+  { href: "/contact", key: "contact" as const },
+  { href: "/blog", key: "tips" as const },
 ];
 
 export function Header() {
@@ -22,6 +26,9 @@ export function Header() {
   const { count, setOpen: setCartOpen } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  // Shelf links stay neutral: all three live on /shop.
+  const isCurrent = (href: string) => !href.includes("#") && (pathname === href || pathname.startsWith(`${href}/`));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -54,20 +61,21 @@ export function Header() {
 
         <ul className="hidden items-center gap-6 lg:flex">
           {links.map((l) => (
-            <li key={l.id}>
+            <li key={l.href}>
+              {/* Plain links: a hash change must reach the shop's tabs. */}
               <a
-                href={`/#${l.id}`}
-                className="text-sm font-medium text-bark/80 transition-colors hover:text-amber"
+                href={l.href}
+                aria-current={isCurrent(l.href) ? "page" : undefined}
+                className={`relative py-2 text-sm font-medium transition-colors hover:text-amber ${
+                  isCurrent(l.href)
+                    ? "text-amber after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-gradient-to-r after:from-honey after:to-amber"
+                    : "text-bark/80"
+                }`}
               >
                 {t.nav[l.key][lang]}
               </a>
             </li>
           ))}
-          <li>
-            <Link href="/blog" className="text-sm font-medium text-bark/80 transition-colors hover:text-amber">
-              {t.nav.tips[lang]}
-            </Link>
-          </li>
         </ul>
 
         <div className="flex items-center gap-2">
@@ -113,25 +121,19 @@ export function Header() {
         <div className="border-t border-bark/10 bg-cream/95 backdrop-blur-md lg:hidden">
           <ul className="space-y-1 px-4 py-3">
             {links.map((l) => (
-              <li key={l.id}>
+              <li key={l.href}>
                 <a
-                  href={`/#${l.id}`}
+                  href={l.href}
                   onClick={() => setOpen(false)}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-bark/80 hover:bg-honey/10 hover:text-amber"
+                  aria-current={isCurrent(l.href) ? "page" : undefined}
+                  className={`block rounded-lg px-3 py-2 text-sm font-medium hover:bg-honey/10 hover:text-amber ${
+                    isCurrent(l.href) ? "bg-honey/15 text-amber" : "text-bark/80"
+                  }`}
                 >
                   {t.nav[l.key][lang]}
                 </a>
               </li>
             ))}
-            <li>
-              <Link
-                href="/blog"
-                onClick={() => setOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-bark/80 hover:bg-honey/10 hover:text-amber"
-              >
-                {t.nav.tips[lang]}
-              </Link>
-            </li>
           </ul>
         </div>
       )}

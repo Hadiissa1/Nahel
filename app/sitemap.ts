@@ -13,6 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, articles] = await Promise.all([getCatalog(), getPublishedArticles()]);
   return [
     { url: `${base}/`, changeFrequency: "daily", priority: 1 },
+    { url: `${base}/shop`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${base}/why`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/payment`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${base}/faq`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/contact`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/lot`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${base}/blog`, changeFrequency: "weekly", priority: 0.6 },
     ...articles.map((a) => ({

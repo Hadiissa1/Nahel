@@ -10,14 +10,14 @@ export function Footer() {
   const { lang } = useLang();
 
   const nav = [
-    { id: "honey", key: "honey" as const },
-    { id: "equipment", key: "equipment" as const },
-    { id: "health", key: "health" as const },
-    { id: "why", key: "why" as const },
-    { id: "pay", key: "pay" as const },
-    { id: "faq", key: "faq" as const },
-    { id: "offers", key: "offers" as const },
-    { id: "contact", key: "contact" as const },
+    { href: "/shop#honey", key: "honey" as const },
+    { href: "/shop#equipment", key: "equipment" as const },
+    { href: "/shop#health", key: "health" as const },
+    { href: "/why", key: "why" as const },
+    { href: "/payment", key: "pay" as const },
+    { href: "/faq", key: "faq" as const },
+    { href: "/#offers", key: "offers" as const },
+    { href: "/contact", key: "contact" as const },
   ];
 
   return (
@@ -49,9 +49,9 @@ export function Footer() {
           </h3>
           <ul className="mt-4 space-y-2.5 text-sm">
             {nav.map((l) => (
-              <li key={l.id}>
+              <li key={l.href}>
                 <a
-                  href={`/#${l.id}`}
+                  href={l.href}
                   className="text-cream/70 transition-colors hover:text-honey-light"
                 >
                   {t.nav[l.key][lang]}

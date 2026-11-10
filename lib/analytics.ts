@@ -18,7 +18,7 @@ export function normalizePath(raw: unknown): string | null {
   const path = raw.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
   if (path.startsWith("/admin") || path.startsWith("/api") || path.startsWith("/_next")) return null;
   if (path.startsWith("/lot/")) return "/lot/*";
-  if (!/^\/(product|blog)(\/[\w%.-]{1,100})?$|^\/(lot|offers\/[a-z-]+)?$/.test(path)) return null;
+  if (!/^\/(product|blog)(\/[\w%.-]{1,100})?$|^\/(lot|shop|why|payment|faq|contact|offers\/[a-z-]+)?$/.test(path)) return null;
   return path;
 }
 

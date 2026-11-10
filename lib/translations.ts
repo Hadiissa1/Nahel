@@ -20,6 +20,100 @@ export const t = {
     offers: { en: "Offers", ar: "العروض" },
     contact: { en: "Contact", ar: "تواصل" },
     tips: { en: "Tips", ar: "نصائح" },
+    shop: { en: "Shop", ar: "المتجر" },
+    menu: { en: "Menu", ar: "القائمة" },
+  },
+
+  // Home page: doors to the other pages.
+  explore: {
+    eyebrow: { en: "Our Shop", ar: "متجرنا" },
+    title: { en: "Three shelves, one hive", ar: "ثلاثة رفوف من خلية واحدة" },
+    subtitle: {
+      en: "Choose where to start — everything is on one products page.",
+      ar: "اختر من أين تبدأ، وكل شيء في صفحة منتجات واحدة.",
+    },
+    open: { en: "Open the shelf", ar: "افتح الرف" },
+    count: { en: "{n} products", ar: "{n} منتجاً" },
+    categories: {
+      honey: { en: "Raw honeys from Lebanon and Egypt, in the size you want.", ar: "عسل خام من لبنان ومصر، بالحجم الذي تريده." },
+      equipment: { en: "Hives, frames, wax and tools for beekeepers.", ar: "خلايا وإطارات وشمع وأدوات للنحّالين." },
+      health: { en: "Pollen, royal jelly and propolis from the hive.", ar: "حبوب لقاح وغذاء ملكات وعكبر من الخلية." },
+    },
+    moreTitle: { en: "Get to know us", ar: "تعرّف علينا" },
+    more: [
+      { href: "/why", icon: "🐝", title: { en: "How our honey is made", ar: "كيف يُصنع عسلنا" }, text: { en: "Follow a bee from the flower to the jar.", ar: "رافق نحلة من الزهرة إلى المرطبان." } },
+      { href: "/payment", icon: "💳", title: { en: "Payment & delivery", ar: "الدفع والتوصيل" }, text: { en: "Cash, card or Whish Money — you choose.", ar: "نقداً أو بالبطاقة أو ويش موني، كما تحب." } },
+      { href: "/faq", icon: "💬", title: { en: "Questions & answers", ar: "أسئلة وأجوبة" }, text: { en: "Crystallized honey, storage, orders.", ar: "تبلور العسل، الحفظ، الطلبات." } },
+      { href: "/contact", icon: "📞", title: { en: "Talk to us", ar: "تحدّث معنا" }, text: { en: "We answer on WhatsApp, every day.", ar: "نجيب على واتساب كل يوم." } },
+    ],
+  },
+
+  // "From flower to jar": how bees make honey (facts checked; figures are rounded).
+  journey: {
+    eyebrow: { en: "From Flower to Jar", ar: "من الزهرة إلى المرطبان" },
+    title: { en: "How bees make honey", ar: "كيف يصنع النحل العسل" },
+    subtitle: {
+      en: "Scroll down and follow our bee through the six steps of a jar of honey.",
+      ar: "انزل في الصفحة ورافق نحلتنا في الخطوات الست لصنع مرطبان عسل.",
+    },
+    stepLabel: { en: "Step {n}", ar: "الخطوة {n}" },
+    factLabel: { en: "Did you know?", ar: "هل تعلم؟" },
+    steps: [
+      {
+        title: { en: "The forager's flight", ar: "رحلة النحلة الجامعة" },
+        text: {
+          en: "A worker bee visits 50 to 100 flowers on every trip. She sucks up the nectar with her long tongue and carries it in a special \"honey stomach\", separate from her own.",
+          ar: "تزور النحلة العاملة من ٥٠ إلى ١٠٠ زهرة في كل رحلة. تمتص الرحيق بلسانها الطويل وتحمله في «معدة العسل»، وهي معدة خاصة منفصلة عن معدتها.",
+        },
+        fact: { en: "Fresh nectar is about 70–80% water.", ar: "الرحيق الطازج يحتوي على نحو ٧٠–٨٠٪ ماء." },
+      },
+      {
+        title: { en: "Enzymes at work", ar: "الأنزيمات تبدأ العمل" },
+        text: {
+          en: "In the honey stomach, an enzyme called invertase starts splitting the nectar's sucrose into glucose and fructose. Back at the hive, she passes the nectar mouth to mouth to the house bees, who add more enzymes.",
+          ar: "في معدة العسل، يبدأ أنزيم اسمه «الإنفرتاز» بتحويل سكر القصب في الرحيق إلى غلوكوز وفركتوز. وعند عودتها إلى الخلية، تنقل الرحيق من فم إلى فم إلى نحلات المنزل اللواتي يضفن أنزيمات أخرى.",
+        },
+        fact: { en: "This mouth-to-mouth sharing is called trophallaxis.", ar: "يُسمّى هذا التبادل من فم إلى فم «التغذية المتبادلة»." },
+      },
+      {
+        title: { en: "Into the comb", ar: "إلى أقراص الشمع" },
+        text: {
+          en: "House bees place the nectar in six-sided wax cells. The wax comes from glands under the belly of young workers, and the hexagon stores the most honey with the least wax.",
+          ar: "تضع نحلات المنزل الرحيق في عيون شمعية سداسية. يخرج الشمع من غدد تحت بطن العاملات الصغيرات، والشكل السداسي يخزّن أكبر كمية من العسل بأقل كمية من الشمع.",
+        },
+        fact: { en: "Bees eat about 6–8 kg of honey to build 1 kg of wax.", ar: "يأكل النحل نحو ٦–٨ كغ من العسل ليبني ١ كغ من الشمع." },
+      },
+      {
+        title: { en: "Fanning the water away", ar: "تجفيف الرحيق بالأجنحة" },
+        text: {
+          en: "Day and night, the bees fan their wings over the open cells. The warm air of the hive (about 35 °C) dries the nectar until it thickens into honey.",
+          ar: "ليلاً ونهاراً، يرفرف النحل بأجنحته فوق العيون المفتوحة. هواء الخلية الدافئ (نحو ٣٥ درجة مئوية) يجفف الرحيق حتى يصبح عسلاً كثيفاً.",
+        },
+        fact: { en: "Water falls from about 70% to under 18%.", ar: "تنخفض نسبة الماء من نحو ٧٠٪ إلى أقل من ١٨٪." },
+      },
+      {
+        title: { en: "Sealed with wax", ar: "الختم بالشمع" },
+        text: {
+          en: "When the honey is ripe, the bees close each cell with a thin wax cap. Sealed honey keeps for years: it is too dry and too acidic for microbes to grow.",
+          ar: "عندما ينضج العسل، يغلق النحل كل عين بغطاء رقيق من الشمع. العسل المختوم يبقى سنوات: فهو جاف وحمضي لدرجة لا تسمح للميكروبات بالنمو.",
+        },
+        fact: { en: "A fully capped comb means the honey is ready.", ar: "القرص المختوم بالكامل يعني أن العسل جاهز." },
+      },
+      {
+        title: { en: "From hive to jar", ar: "من الخلية إلى المرطبان" },
+        text: {
+          en: "We take only the surplus capped frames, cut off the wax caps, spin the honey out in an extractor and strain it. No heating, nothing added — then straight into the jar.",
+          ar: "نأخذ فقط الإطارات المختومة الفائضة، نزيل أغطية الشمع، نستخرج العسل بالفرّازة ثم نصفّيه. بلا تسخين وبلا أي إضافات، ثم مباشرة إلى المرطبان.",
+        },
+        fact: { en: "The bees keep enough honey for their winter.", ar: "يبقى للنحل ما يكفيه من العسل لفصل الشتاء." },
+      },
+    ],
+    stats: [
+      { value: { en: "1/12", ar: "١/١٢" }, label: { en: "of a teaspoon: the honey one worker bee makes in her whole life", ar: "من ملعقة صغيرة: ما تصنعه نحلة عاملة واحدة طوال حياتها" } },
+      { value: { en: "≈ 2 million", ar: "≈ ٢ مليون" }, label: { en: "flower visits for about 500 g of honey", ar: "زيارة للأزهار لصنع نحو ٥٠٠ غ من العسل" } },
+      { value: { en: "< 18%", ar: "< ١٨٪" }, label: { en: "water in ripe honey — that is why it keeps so long", ar: "ماء في العسل الناضج، ولهذا يبقى طويلاً" } },
+    ],
+    cta: { en: "Taste the result", ar: "تذوّق النتيجة" },
   },
 
   hero: {

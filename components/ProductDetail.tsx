@@ -40,13 +40,13 @@ export function ProductDetail({
     <main className="flex-1 bg-cream pt-24 pb-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" className="text-sm text-bark/60">
-          <Link href="/" className="hover:text-amber">
+          <Link href="/shop" className="hover:text-amber">
             {s.backToShop[lang]}
           </Link>
           <span className="mx-2">›</span>
-          <Link href={`/#${product.category}`} className="hover:text-amber">
+          <a href={`/shop#${product.category}`} className="hover:text-amber">
             {t.nav[product.category][lang]}
-          </Link>
+          </a>
         </nav>
 
         <article className="mt-5 grid overflow-hidden rounded-3xl border border-bark/10 bg-white shadow-sm md:grid-cols-2">

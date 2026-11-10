@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCatalog } from "@/components/CatalogProvider";
 import { useLang } from "@/components/LanguageProvider";
@@ -178,9 +179,9 @@ export function HoneyFinder() {
                 >
                   ↻ {f.restart[lang]}
                 </button>
-                <a href="#shop" className="text-amber underline-offset-4 hover:underline">
+                <Link href="/shop" className="text-amber underline-offset-4 hover:underline">
                   {f.seeAll[lang]}
-                </a>
+                </Link>
               </p>
             </div>
           )}

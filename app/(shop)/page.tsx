@@ -1,14 +1,10 @@
 import { Header } from "@/components/Header";
 import { ShuffleHero } from "@/components/ShuffleHero";
 import { TrustBar } from "@/components/TrustBar";
-import { Shop } from "@/components/Shop";
+import { HomeExplore } from "@/components/HomeExplore";
 import { HoneyFinder } from "@/components/HoneyFinder";
-import { Faq } from "@/components/Faq";
 import { Subscribe } from "@/components/Subscribe";
-import { WhyOurHoney } from "@/components/WhyOurHoney";
-import { Payments } from "@/components/Payments";
 import { Testimonials } from "@/components/Testimonials";
-import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { LatestTips } from "@/components/BlogViews";
 import { getPublishedArticles } from "@/lib/articles";
@@ -23,16 +19,11 @@ export default async function Home() {
         <ShuffleHero />
 
         <TrustBar />
-        <Shop />
+        <HomeExplore />
         <HoneyFinder />
-
-        <WhyOurHoney />
-        <Payments />
         <Testimonials />
         <LatestTips articles={articles} />
-        <Faq />
         <Subscribe />
-        <Contact />
       </main>
       <Footer />
     </>

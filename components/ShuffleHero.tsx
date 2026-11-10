@@ -114,13 +114,13 @@ export function ShuffleHero() {
 
           <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
             <a
-              href="#honey"
+              href="/shop#honey"
               className="rounded-full bg-gradient-to-br from-honey to-amber px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-honey/30 transition-transform hover:scale-105"
             >
               {t.hero.ctaPrimary[lang]}
             </a>
             <a
-              href="#equipment"
+              href="/shop#equipment"
               className="rounded-full border border-bark/20 bg-white/70 px-7 py-3 text-sm font-semibold text-bark transition-colors hover:border-honey hover:text-amber"
             >
               {t.hero.ctaSecondary[lang]}
