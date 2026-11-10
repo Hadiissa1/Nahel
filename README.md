@@ -6,6 +6,9 @@ Tailwind CSS v4 and SQLite. Runs on **Cloudflare Workers** (D1 database, R2
 files) — see `docs/DEPLOY-CLOUDFLARE.md` — or on any Node server.
 
 - Searchable catalog with category filters (Arabic-aware search)
+- **Honey Finder** on the home page: three choices on a honeycomb, then the
+  honey that suits the visitor (texts in `lib/translations.ts` → `finder`,
+  matching rules in `components/HoneyFinder.tsx`)
 - Sizes (e.g. 250 g / 500 g / 1 kg) with their own price and stock
 - Cart saved in the browser, checked against the live catalog and stock
 - Orders recorded on the site (order number, customer details), then sent through WhatsApp

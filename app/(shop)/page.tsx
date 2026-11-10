@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { ShuffleHero } from "@/components/ShuffleHero";
 import { TrustBar } from "@/components/TrustBar";
 import { Shop } from "@/components/Shop";
+import { HoneyFinder } from "@/components/HoneyFinder";
 import { Faq } from "@/components/Faq";
 import { Subscribe } from "@/components/Subscribe";
 import { WhyOurHoney } from "@/components/WhyOurHoney";
@@ -23,6 +24,7 @@ export default async function Home() {
 
         <TrustBar />
         <Shop />
+        <HoneyFinder />
 
         <WhyOurHoney />
         <Payments />

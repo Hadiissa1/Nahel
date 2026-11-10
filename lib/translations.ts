@@ -66,6 +66,48 @@ export const t = {
     },
   },
 
+  finder: {
+    eyebrow: { en: "Honey Finder", ar: "اكتشف عسلك" },
+    title: { en: "Which honey is made for you?", ar: "أي عسل يناسبك؟" },
+    subtitle: {
+      en: "Three quick choices and the hive picks a jar for you.",
+      ar: "ثلاثة اختيارات سريعة والخلية تختار لك المرطبان المناسب.",
+    },
+    step: { en: "Question {n} of 3", ar: "السؤال {n} من ٣" },
+    questions: [
+      {
+        title: { en: "What taste do you like?", ar: "أي مذاق تحب؟" },
+        options: [
+          { id: "mild", icon: "🌼", label: { en: "Mild & sweet", ar: "خفيف وحلو" } },
+          { id: "rich", icon: "🌰", label: { en: "Dark & rich", ar: "داكن وقوي" } },
+          { id: "floral", icon: "🌸", label: { en: "Floral & fresh", ar: "زهري ومنعش" } },
+        ],
+      },
+      {
+        title: { en: "When will you enjoy it?", ar: "متى ستستمتع به؟" },
+        options: [
+          { id: "tea", icon: "🍵", label: { en: "In tea & drinks", ar: "مع الشاي والمشروبات" } },
+          { id: "breakfast", icon: "🥖", label: { en: "At breakfast", ar: "على الفطور" } },
+          { id: "wellness", icon: "💪", label: { en: "For wellness", ar: "للصحة والنشاط" } },
+          { id: "gift", icon: "🎁", label: { en: "As a gift", ar: "كهدية" } },
+        ],
+      },
+      {
+        title: { en: "Where should it come from?", ar: "من أين تفضّله؟" },
+        options: [
+          { id: "lebanon", icon: "🌲", label: { en: "Lebanon", ar: "لبنان" } },
+          { id: "egypt", icon: "☀️", label: { en: "Egypt", ar: "مصر" } },
+          { id: "any", icon: "🐝", label: { en: "Surprise me", ar: "فاجئني" } },
+        ],
+      },
+    ],
+    working: { en: "The bees are choosing…", ar: "النحل يختار لك…" },
+    resultTitle: { en: "The hive recommends", ar: "الخلية تنصحك بـ" },
+    because: { en: "Your choices:", ar: "اختياراتك:" },
+    restart: { en: "Start again", ar: "ابدأ من جديد" },
+    back: { en: "Back", ar: "رجوع" },
+    seeAll: { en: "See all honeys", ar: "شاهد كل أنواع العسل" },
+  },
   why: {
     eyebrow: { en: "Why Our Honey", ar: "لماذا عسلنا" },
     title: { en: "Honest Honey, Nothing Added", ar: "عسل صادق، بلا أي إضافات" },
