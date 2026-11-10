@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhyOurHoney } from "@/components/WhyOurHoney";
+import { BeeLifeCycle } from "@/components/BeeLifeCycle";
 import { HoneyJourney } from "@/components/HoneyJourney";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function WhyPage() {
       {/* pt-16: room for the fixed header. */}
       <main className="flex-1 pt-16">
         <WhyOurHoney />
+        <BeeLifeCycle />
         <HoneyJourney />
       </main>
       <Footer />

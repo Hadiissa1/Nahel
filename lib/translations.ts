@@ -48,6 +48,26 @@ export const t = {
     ],
   },
 
+  // "The life of a honey bee" (content in lib/life-cycle.ts).
+  life: {
+    eyebrow: { en: "Life Cycle", ar: "دورة الحياة" },
+    title: { en: "The life of a honey bee", ar: "حياة نحلة العسل" },
+    subtitle: {
+      en: "From the egg to the adult in about three weeks. Scroll down: our bee flies with you through each stage.",
+      ar: "من البيضة إلى النحلة البالغة في نحو ثلاثة أسابيع. انزل في الصفحة ونحلتنا تطير معك في كل مرحلة.",
+    },
+    stage: { en: "Stage {n}", ar: "المرحلة {n}" },
+    factLabel: { en: "Did you know?", ar: "هل تعلم؟" },
+    photoBy: { en: "Photo: {a}, {l}, via Wikimedia Commons (cropped)", ar: "الصورة: {a}، {l}، عبر ويكيميديا كومنز (مقصوصة)" },
+    castesTitle: { en: "From egg to adult, by caste", ar: "من البيضة إلى النحلة البالغة، حسب الطائفة" },
+    daysUnit: { en: "days", ar: "يوماً" },
+    approx: {
+      en: "Approximate values: they vary with the temperature of the brood nest and the bee's race.",
+      ar: "قيم تقريبية: تتغير حسب حرارة عش الحضنة وسلالة النحل.",
+    },
+    sources: { en: "Sources", ar: "المصادر" },
+  },
+
   // "From flower to jar": how bees make honey (facts checked; figures are rounded).
   journey: {
     eyebrow: { en: "From Flower to Jar", ar: "من الزهرة إلى المرطبان" },

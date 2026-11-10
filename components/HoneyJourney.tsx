@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Bee3D } from "@/components/Bee3D";
 import { JourneyArt } from "@/components/JourneyArt";
 import { useLang } from "@/components/LanguageProvider";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -13,13 +12,11 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 const ON_LINE = "absolute start-6 h-0 w-0 lg:start-1/2";
 const CENTRED = "absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2";
 
-/** "How bees make honey": six steps; a 3D bee flies down the page with the scroll. */
+/** "How bees make honey": six steps along a line that fills with the scroll. */
 export function HoneyJourney() {
   const { lang } = useLang();
   const j = t.journey;
   const track = useRef<HTMLDivElement>(null);
-  const anchor = useRef<HTMLDivElement>(null);
-  const bee = useRef<HTMLDivElement>(null);
   const fill = useRef<HTMLDivElement>(null);
   const steps = useRef<(HTMLLIElement | null)[]>([]);
   const [active, setActive] = useState(-1);
@@ -27,20 +24,14 @@ export function HoneyJourney() {
 
   useEffect(() => {
     let frame = 0;
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const update = () => {
       frame = 0;
       const el = track.current;
-      if (!el || !anchor.current || !bee.current || !fill.current) return;
+      if (!el || !fill.current) return;
       const rect = el.getBoundingClientRect();
-      // The bee sits at mid-screen while the steps scroll past it.
+      // The line fills up to mid-screen while the steps scroll past.
       const p = clamp((window.innerHeight * 0.5 - rect.top) / rect.height, 0, 1);
       const y = p * rect.height;
-      const wave = p * j.steps.length * Math.PI;
-      const amp = calm ? 0 : window.innerWidth >= 1024 ? 42 : 8;
-      anchor.current.style.transform = `translateY(${y}px)`;
-      // Sways from side to side and turns to face the way it flies.
-      bee.current.style.transform = `translateX(${Math.sin(wave) * amp}px) scaleX(${Math.cos(wave) >= 0 ? 1 : -1}) rotate(16deg)`;
       fill.current.style.height = `${y}px`;
       let near = -1;
       steps.current.forEach((li, i) => {
@@ -75,14 +66,6 @@ export function HoneyJourney() {
             <div className="absolute inset-y-0 left-0 -translate-x-1/2 border-s-2 border-dashed border-honey/40" />
             <div ref={fill} className="absolute left-0 top-0 w-1 -translate-x-1/2 rounded-full bg-gradient-to-b from-honey-light to-amber" />
           </div>
-          <div ref={anchor} className={`${ON_LINE} top-0 z-20 will-change-transform`} aria-hidden="true">
-            <div className={CENTRED}>
-              <div ref={bee} className="transition-transform duration-150 ease-out motion-reduce:transition-none">
-                <Bee3D className="origin-center scale-[0.6] lg:scale-100" />
-              </div>
-            </div>
-          </div>
-
           <ol className="space-y-14 lg:space-y-28">
             {j.steps.map((s, i) => {
               const on = i <= reached;
