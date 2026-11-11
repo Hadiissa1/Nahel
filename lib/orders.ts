@@ -82,7 +82,7 @@ const pick = (t: { ar: string; en: string }, lang: "ar" | "en") =>
   t[lang] || t[lang === "ar" ? "en" : "ar"];
 
 const MSG = {
-  intro: { ar: "مرحباً نحّال! طلب رقم", en: "Hello Nahel! Order no." },
+  intro: { ar: "مرحباً نحل لبنان! طلب رقم", en: "Hello Bee Lebanon! Order no." },
   subtotal: { ar: "المجموع", en: "Subtotal" },
   code: { ar: "كود الخصم", en: "Promo code" },
   delivery: { ar: "التوصيل", en: "Delivery" },

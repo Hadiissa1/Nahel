@@ -185,7 +185,7 @@ describe("placeOrder: prices and totals", () => {
     const r = await placed(order([{ id: p.id, variant: p.variantIds[0], qty: 2 }], { zone: zone.id, note: "Ring twice" }));
     expect(r.whatsappUrl.startsWith(`https://wa.me/${CONTACT.whatsapp}?text=`)).toBe(true);
     const text = message(r.whatsappUrl);
-    expect(text).toContain(`Hello Nahel! Order no. #${r.orderId}`);
+    expect(text).toContain(`Hello Bee Lebanon! Order no. #${r.orderId}`);
     expect(text).toContain("• Sidr (1kg) ×2 — $91");
     expect(text).toContain(`Delivery (${zone.name.en}): $3`);
     expect(text).toContain("Total: $94");
@@ -197,7 +197,7 @@ describe("placeOrder: prices and totals", () => {
     const zone = (await makeZone()).id;
     const p = await makeProduct();
     const text = message((await placed(order([{ id: p.id, variant: p.variantIds[0], qty: 1 }], { zone, lang: "ar" }))).whatsappUrl);
-    expect(text).toContain("مرحباً نحّال! طلب رقم");
+    expect(text).toContain("مرحباً نحل لبنان! طلب رقم");
     expect(text).toContain(`عسل ${p.name}`);
   });
 });

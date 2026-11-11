@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Contact } from "@/components/Contact";
 
 export const metadata: Metadata = {
-  title: "تواصل معنا · Contact — نحّال Nahel",
+  title: "تواصل معنا · Contact — نحل لبنان Bee Lebanon",
   description: "راسلنا على واتساب أو اتصل بنا. Message us on WhatsApp or call us.",
   alternates: { canonical: "/contact" },
 };

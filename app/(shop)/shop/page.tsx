@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Shop } from "@/components/Shop";
 
 export const metadata: Metadata = {
-  title: "المتجر · Shop — نحّال Nahel",
+  title: "المتجر · Shop — نحل لبنان Bee Lebanon",
   description: "عسل لبناني ومصري، منتجات النحل ومعدات النحّالين. Lebanese and Egyptian honey, bee products and beekeeping equipment.",
   alternates: { canonical: "/shop" },
 };

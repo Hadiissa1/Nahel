@@ -58,7 +58,7 @@ export async function sendMail(mail: Mail): Promise<boolean> {
         body: JSON.stringify({
           sender: {
             email: process.env.MAIL_FROM_EMAIL,
-            name: process.env.MAIL_FROM_NAME || "Nahel",
+            name: process.env.MAIL_FROM_NAME || "Bee Lebanon",
           },
           to: [{ email: mail.to }],
           subject: mail.subject,
@@ -106,7 +106,7 @@ export function layout(opts: {
     : "";
   return `<!doctype html><html lang="${opts.lang}" dir="${rtl ? "rtl" : "ltr"}"><body style="margin:0;background:#fbf6ec;font-family:Tahoma,Arial,sans-serif;color:#2b1d0e">
 <div style="max-width:560px;margin:0 auto;padding:28px 20px;text-align:${rtl ? "right" : "left"}">
-<p style="font-size:22px;font-weight:bold;color:#3f2611;margin:0 0 20px">${rtl ? "نحّال" : "Nahel"} 🍯</p>
+<p style="font-size:22px;font-weight:bold;color:#3f2611;margin:0 0 20px">${rtl ? "نحل لبنان" : "Bee Lebanon"} 🍯</p>
 <div style="background:#fff;border-radius:16px;padding:24px;line-height:1.7;font-size:15px">${body}${button}</div>
 ${opts.footerHtml ? `<p style="font-size:12px;color:#8a7560;margin-top:18px;line-height:1.6">${opts.footerHtml}</p>` : ""}
 </div></body></html>`;

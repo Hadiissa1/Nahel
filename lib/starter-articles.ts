@@ -108,7 +108,7 @@ Honey may darken slightly and its flavour slowly develops — that is normal. Cr
 - تحليل مخبري متاح (الرطوبة، HMF، تركيبة السكريات).
 - سعر منطقي: العسل الحقيقي يتطلب عملاً كبيراً، والسعر المنخفض جداً مثير للشك.
 
-## في نحّال
+## في نحل لبنان
 يحمل كل برطمان رقم دفعة. أدخله في صفحة «تحقّق من الدفعة» (الرابط في أسفل الموقع) لترى تاريخ القطاف والمصدر وتحليل المختبر عند توفره.`,
       en: `Honey is one of the most adulterated foods in the world, so it is natural to wonder whether what you buy is genuine.
 
@@ -121,7 +121,7 @@ The glass-of-water, thumb or flame tests are popular, but they prove nothing rel
 - A lab analysis you can see (moisture, HMF, sugar profile).
 - A sensible price: real honey takes a lot of work, so a very low price is a warning sign.
 
-## At Nahel
+## At Bee Lebanon
 Every jar carries a lot number. Enter it on the “Check a lot number” page (link at the bottom of the site) to see the harvest date, the origin and, when available, the lab analysis.`,
     },
   },

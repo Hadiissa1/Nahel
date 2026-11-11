@@ -10,7 +10,7 @@ import { normalizeLotCode } from "@/lib/lot-types";
 
 /** Lot pages render on first visit (codes are typed or scanned by customers). */
 export const metadata: Metadata = {
-  title: "تحقّق من الدفعة · Check a lot — نحّال Nahel",
+  title: "تحقّق من الدفعة · Check a lot — نحل لبنان Bee Lebanon",
   // One page per jar batch: useful to customers, not to search results.
   robots: { index: false },
 };

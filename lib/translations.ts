@@ -3,7 +3,7 @@ import type { Lang, LocalizedText } from "./data";
 export type { Lang, LocalizedText };
 
 export const t = {
-  brand: { en: "Nahel", ar: "نحّال" },
+  brand: { en: "Bee Lebanon", ar: "نحل لبنان" },
   tagline: {
     en: "Artisanal Honey & Beekeeping",
     ar: "عسل وأدوات نحل بصناعة حرفية",
@@ -422,8 +422,8 @@ export const t = {
     whatsappHint: { en: "With country code, e.g. +961 70 123 456", ar: "مع رمز البلد، مثلاً ‎+961 70 123 456" },
     oneOf: { en: "Fill in at least one of the two.", ar: "املأ واحداً منهما على الأقل." },
     consent: {
-      en: "I agree to receive Nahel offers. I can unsubscribe at any time.",
-      ar: "أوافق على تلقي عروض نحّال، ويمكنني إلغاء الاشتراك في أي وقت.",
+      en: "I agree to receive Bee Lebanon offers. I can unsubscribe at any time.",
+      ar: "أوافق على تلقي عروض نحل لبنان، ويمكنني إلغاء الاشتراك في أي وقت.",
     },
     privacy: {
       en: "We only use your email or number to send offers, and never share them.",
@@ -600,7 +600,7 @@ export const t = {
       en: "We couldn't find lot “{c}”. Check the number on the label, or contact us on WhatsApp.",
       ar: "لم نجد الدفعة «{c}». تحقّق من الرقم على الملصق، أو تواصل معنا عبر واتساب.",
     },
-    authentic: { en: "Authentic Nahel lot", ar: "دفعة أصلية من نحّال" },
+    authentic: { en: "Authentic Bee Lebanon lot", ar: "دفعة أصلية من نحل لبنان" },
     product: { en: "Product", ar: "المنتج" },
     viewProduct: { en: "See the product", ar: "عرض المنتج" },
     another: { en: "Check another lot", ar: "تحقّق من دفعة أخرى" },
@@ -609,10 +609,10 @@ export const t = {
 
   whatsappButton: {
     label: { en: "Chat on WhatsApp", ar: "تواصل عبر واتساب" },
-    hello: { en: "Hello Nahel! I have a question.", ar: "مرحباً نحّال! لدي سؤال." },
+    hello: { en: "Hello Bee Lebanon! I have a question.", ar: "مرحباً نحل لبنان! لدي سؤال." },
     aboutProduct: {
-      en: "Hello Nahel! I'm interested in: {p}",
-      ar: "مرحباً نحّال! أنا مهتم بـ: {p}",
+      en: "Hello Bee Lebanon! I'm interested in: {p}",
+      ar: "مرحباً نحل لبنان! أنا مهتم بـ: {p}",
     },
   },
 

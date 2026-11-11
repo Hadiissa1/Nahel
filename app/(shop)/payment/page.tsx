@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Payments } from "@/components/Payments";
 
 export const metadata: Metadata = {
-  title: "الدفع · Payment — نحّال Nahel",
+  title: "الدفع · Payment — نحل لبنان Bee Lebanon",
   description: "ادفع نقداً أو بالبطاقة أو عبر ويش موني. Pay by cash, card or Whish Money.",
   alternates: { canonical: "/payment" },
 };

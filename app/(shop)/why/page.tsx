@@ -6,7 +6,7 @@ import { BeeLifeCycle } from "@/components/BeeLifeCycle";
 import { HoneyJourney } from "@/components/HoneyJourney";
 
 export const metadata: Metadata = {
-  title: "كيف يُصنع العسل · How honey is made — نحّال Nahel",
+  title: "كيف يُصنع العسل · How honey is made — نحل لبنان Bee Lebanon",
   description: "رافق النحلة من الزهرة إلى المرطبان في ست خطوات. Follow the bee from flower to jar in six steps, and see why our honey is raw and pure.",
   alternates: { canonical: "/why" },
 };

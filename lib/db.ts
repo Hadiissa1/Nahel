@@ -241,7 +241,7 @@ const STARTER_ZONES: [ar: string, en: string][] = [
 
 
 /** Bump when SCHEMA / ADDED_COLUMNS / seeds change, so running databases re-check them. */
-const SCHEMA_VERSION = "1";
+const SCHEMA_VERSION = "2";
 
 function seedStatements(): Statement[] {
   const out: Statement[] = [];
@@ -449,6 +449,12 @@ async function prepareSchema(e: Engine) {
     new Statement(
       "UPDATE orders SET confirmed_at = updated_at WHERE status IN ('confirmed','delivered') AND confirmed_at IS NULL",
     ),
+  ]);
+  // The shop was renamed: the starter article written under the old name
+  // gets its heading updated (other texts are the owner's and stay as they are).
+  await e.batch([
+    new Statement("UPDATE articles SET body_en = replace(body_en, '## At Nahel', '## At Bee Lebanon') WHERE body_en LIKE '%## At Nahel%'"),
+    new Statement("UPDATE articles SET body_ar = replace(body_ar, '## في نحّال', '## في نحل لبنان') WHERE body_ar LIKE '%## في نحّال%'"),
   ]);
   for (const seed of SEEDS) {
     if ((await e.all("SELECT 1 FROM meta WHERE key = ?", [seed.marker])).length) continue;

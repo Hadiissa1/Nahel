@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Faq } from "@/components/Faq";
 
 export const metadata: Metadata = {
-  title: "أسئلة وأجوبة · FAQ — نحّال Nahel",
+  title: "أسئلة وأجوبة · FAQ — نحل لبنان Bee Lebanon",
   description: "تبلور العسل، الحفظ، الطلب والتوصيل. Crystallized honey, storage, ordering and delivery.",
   alternates: { canonical: "/faq" },
 };

@@ -28,7 +28,7 @@ const SITE = siteUrl();
 export const metadata: Metadata = {
   // Makes share-preview and canonical URLs absolute (set SITE_URL at build time).
   ...(SITE && { metadataBase: new URL(SITE) }),
-  title: "Nahel — Artisanal Honey & Beekeeping | نحّال — عسل ومعدات نحل",
+  title: "Bee Lebanon — Artisanal Honey & Beekeeping | نحل لبنان — عسل ومعدات نحل",
   description:
     "Authentic Lebanese and Egyptian honey and professional beekeeping supplies. عسل لبناني ومصري أصيل ومعدات نحل احترافية.",
 };

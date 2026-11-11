@@ -511,8 +511,8 @@ export const a = {
     confirmDelete: L("Delete this subscriber?", "حذف هذا المشترك؟"),
     empty: L("No subscribers yet.", "لا يوجد مشتركون بعد."),
     privacyNote: L(
-      "Personal data: use it only to send Nahel offers, never share it. Unsubscribing deletes the person automatically.",
-      "بيانات شخصية: استخدمها فقط لإرسال عروض نحّال ولا تشاركها. إلغاء الاشتراك يحذف الشخص تلقائياً.",
+      "Personal data: use it only to send Bee Lebanon offers, never share it. Unsubscribing deletes the person automatically.",
+      "بيانات شخصية: استخدمها فقط لإرسال عروض نحل لبنان ولا تشاركها. إلغاء الاشتراك يحذف الشخص تلقائياً.",
     ),
   },
 

@@ -82,7 +82,7 @@ export function PosTerminal({ products }: { products: AdminProduct[] }) {
     return (
       <div className="mx-auto max-w-md px-4 py-6">
         <div id="receipt" className="rounded-2xl border border-bark/10 bg-white p-5 print:border-0 print:shadow-none">
-          <p className="text-center font-display text-xl font-bold text-bark-deep">نحّال · Nahel</p>
+          <p className="text-center font-display text-xl font-bold text-bark-deep">نحل لبنان · Bee Lebanon</p>
           <p role="status" className="mt-1 text-center text-sm font-semibold text-leaf">✓ {k.receipt[lang].replace("{n}", String(done.orderId))}</p>
           <p className="text-center text-xs text-bark/50">{done.at}</p>
           <table className="mt-4 w-full text-sm">

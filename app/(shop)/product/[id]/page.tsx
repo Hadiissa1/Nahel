@@ -13,13 +13,13 @@ import { isOutOfStock, photoUrl, type CatalogProduct } from "@/lib/catalog-types
 const shorten = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
 function titleOf(p: CatalogProduct) {
-  return `${[p.name.ar, p.name.en].filter(Boolean).join(" | ")} — نحّال Nahel`;
+  return `${[p.name.ar, p.name.en].filter(Boolean).join(" | ")} — نحل لبنان Bee Lebanon`;
 }
 
 export async function generateMetadata({ params }: PageProps<"/product/[id]">): Promise<Metadata> {
   const { id } = await params;
   const p = await getProduct(id);
-  if (!p) return { title: "نحّال Nahel", robots: { index: false } };
+  if (!p) return { title: "نحل لبنان Bee Lebanon", robots: { index: false } };
 
   const title = titleOf(p);
   const description = shorten([p.desc.ar, p.desc.en].filter(Boolean).join(" — "), 200);
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps<"/product/[id]">): 
     alternates: { canonical: url },
     openGraph: {
       type: "website",
-      siteName: "نحّال Nahel",
+      siteName: "نحل لبنان Bee Lebanon",
       locale: "ar_LB",
       alternateLocale: ["en_US"],
       title,
@@ -73,7 +73,7 @@ function jsonLd(p: CatalogProduct, reviews: Review[]) {
     ...(p.name.ar && p.name.en && { alternateName: p.name.en }),
     description: p.desc.ar || p.desc.en,
     ...(p.photo && { image: `${base}${photoUrl(p.photo, "lg")}` }),
-    brand: { "@type": "Brand", name: "Nahel" },
+    brand: { "@type": "Brand", name: "Bee Lebanon" },
     url,
     ...(offers.length && { offers }),
     // Only approved reviews; Google shows the stars in search results.

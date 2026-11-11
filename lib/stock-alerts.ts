@@ -84,8 +84,8 @@ export function productUrl(productId: string) {
 const TEXT = {
   subject: { ar: "عاد إلى المخزون: {p}", en: "Back in stock: {p}" },
   body: {
-    ar: "خبر سار! {p} متوفر من جديد في نحّال.\nالكمية محدودة، اطلبه قبل نفاده.",
-    en: "Good news! {p} is available again at Nahel.\nQuantities are limited, order before it runs out.",
+    ar: "خبر سار! {p} متوفر من جديد في نحل لبنان.\nالكمية محدودة، اطلبه قبل نفاده.",
+    en: "Good news! {p} is available again at Bee Lebanon.\nQuantities are limited, order before it runs out.",
   },
   button: { ar: "اطلب الآن", en: "Order now" },
   footer: {
@@ -93,8 +93,8 @@ const TEXT = {
     en: "You asked to be told when this product was back. This is a one-time message; your address has been removed from this list.",
   },
   whatsapp: {
-    ar: "مرحباً! {p} متوفر من جديد في نحّال 🍯\n{u}",
-    en: "Hello! {p} is back in stock at Nahel 🍯\n{u}",
+    ar: "مرحباً! {p} متوفر من جديد في نحل لبنان 🍯\n{u}",
+    en: "Hello! {p} is back in stock at Bee Lebanon 🍯\n{u}",
   },
 };
 

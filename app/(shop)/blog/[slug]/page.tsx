@@ -8,12 +8,12 @@ import { siteUrl } from "@/lib/site";
 import { photoUrl } from "@/lib/catalog-types";
 import type { Article } from "@/lib/article-types";
 
-const titleOf = (a: Article) => `${[a.title.ar, a.title.en].filter(Boolean).join(" | ")} — نحّال Nahel`;
+const titleOf = (a: Article) => `${[a.title.ar, a.title.en].filter(Boolean).join(" | ")} — نحل لبنان Bee Lebanon`;
 
 export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const a = await getArticle(slug);
-  if (!a) return { title: "نحّال Nahel", robots: { index: false } };
+  if (!a) return { title: "نحل لبنان Bee Lebanon", robots: { index: false } };
   const title = titleOf(a);
   const description = [a.summary.ar, a.summary.en].filter(Boolean).join(" — ").slice(0, 200);
   const url = `/blog/${a.slug}`;
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: "article", siteName: "نحّال Nahel", title, description, url, images, publishedTime: a.publishedOn ?? undefined },
+    openGraph: { type: "article", siteName: "نحل لبنان Bee Lebanon", title, description, url, images, publishedTime: a.publishedOn ?? undefined },
     twitter: { card: images ? "summary_large_image" : "summary", title, description },
   };
 }
@@ -38,8 +38,8 @@ function jsonLd(a: Article) {
     description: a.summary.ar || a.summary.en,
     ...(a.photo && { image: `${base}${photoUrl(a.photo, "lg")}` }),
     ...(a.publishedOn && { datePublished: a.publishedOn }),
-    author: { "@type": "Organization", name: "Nahel" },
-    publisher: { "@type": "Organization", name: "Nahel" },
+    author: { "@type": "Organization", name: "Bee Lebanon" },
+    publisher: { "@type": "Organization", name: "Bee Lebanon" },
     mainEntityOfPage: `${base}/blog/${a.slug}`,
   };
   // "<" escaped so text can never close the script tag.

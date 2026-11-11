@@ -1,4 +1,9 @@
-# Nahel — Artisanal Honey & Beekeeping / نحّال
+# Bee Lebanon — Artisanal Honey & Beekeeping / نحل لبنان
+
+> The shop was first called "Nahel": that name remains in technical places
+> only (repository, Cloudflare worker and database names, cookies), which
+> customers never see. The name shown on the site is set in
+> `lib/translations.ts` → `brand`.
 
 Bilingual (English ⇄ العربية, RTL) shop for Lebanese and Egyptian honey, hive
 products and beekeeping equipment. Built with Next.js 16, TypeScript,

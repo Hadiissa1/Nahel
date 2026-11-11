@@ -4,8 +4,8 @@ import { Footer } from "@/components/Footer";
 import { LotHeading, LotSearch } from "@/components/LotSearch";
 
 export const metadata: Metadata = {
-  title: "تحقّق من الدفعة · Check a lot — نحّال Nahel",
-  description: "Check where and when your Nahel honey was harvested, with its lab analysis.",
+  title: "تحقّق من الدفعة · Check a lot — نحل لبنان Bee Lebanon",
+  description: "Check where and when your Bee Lebanon honey was harvested, with its lab analysis.",
   alternates: { canonical: "/lot" },
 };
 

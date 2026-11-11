@@ -59,15 +59,15 @@ export function normalizeWhatsapp(raw: string): string | null | "invalid" {
 // ---------- Emails ----------
 
 const T = {
-  confirmSubject: { ar: "أكّد اشتراكك في عروض نحّال", en: "Confirm your Nahel offers subscription" },
+  confirmSubject: { ar: "أكّد اشتراكك في عروض نحل لبنان", en: "Confirm your Bee Lebanon offers subscription" },
   confirmBody: {
-    ar: "مرحباً!\n\nطلبت تلقي عروض وتخفيضات نحّال على هذا البريد. اضغط على الزر لتأكيد اشتراكك.\n\nإذا لم تطلب ذلك، تجاهل هذه الرسالة ولن تصلك أي رسائل.",
-    en: "Hello!\n\nYou asked to receive Nahel offers and sales at this address. Tap the button to confirm your subscription.\n\nIf this wasn't you, just ignore this email and you won't hear from us.",
+    ar: "مرحباً!\n\nطلبت تلقي عروض وتخفيضات نحل لبنان على هذا البريد. اضغط على الزر لتأكيد اشتراكك.\n\nإذا لم تطلب ذلك، تجاهل هذه الرسالة ولن تصلك أي رسائل.",
+    en: "Hello!\n\nYou asked to receive Bee Lebanon offers and sales at this address. Tap the button to confirm your subscription.\n\nIf this wasn't you, just ignore this email and you won't hear from us.",
   },
   confirmButton: { ar: "تأكيد الاشتراك", en: "Confirm subscription" },
   footer: {
-    ar: "تصلك هذه الرسالة لأنك اشتركت في عروض نحّال.",
-    en: "You receive this email because you subscribed to Nahel offers.",
+    ar: "تصلك هذه الرسالة لأنك اشتركت في عروض نحل لبنان.",
+    en: "You receive this email because you subscribed to Bee Lebanon offers.",
   },
   unsubscribe: { ar: "إلغاء الاشتراك", en: "Unsubscribe" },
 };

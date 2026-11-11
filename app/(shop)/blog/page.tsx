@@ -5,7 +5,7 @@ import { BlogIndex } from "@/components/BlogViews";
 import { getPublishedArticles } from "@/lib/articles";
 
 export const metadata: Metadata = {
-  title: "نصائح حول العسل · Honey tips — نحّال Nahel",
+  title: "نصائح حول العسل · Honey tips — نحل لبنان Bee Lebanon",
   description:
     "نصائح عملية من المنحل: حفظ العسل واختياره. Practical advice from the apiary: storing, choosing and enjoying honey.",
   alternates: { canonical: "/blog" },
