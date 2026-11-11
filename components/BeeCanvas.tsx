@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { Bee3D } from "@/components/Bee3D";
 import type { BeeFlight } from "@/components/bee3d/scene";
 
@@ -8,7 +8,7 @@ import type { BeeFlight } from "@/components/bee3d/scene";
  * The 3D bee (Three.js, loaded only when this component appears). Falls back
  * to the lighter CSS bee when WebGL isn't available.
  */
-export function BeeCanvas({ flight, className = "" }: { flight: BeeFlight; className?: string }) {
+export function BeeCanvas({ flight, className = "" }: { flight: RefObject<BeeFlight>; className?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -26,7 +26,7 @@ export function BeeCanvas({ flight, className = "" }: { flight: BeeFlight; class
     import("@/components/bee3d/scene")
       .then(({ createBeeScene }) => {
         if (cancelled) return;
-        const scene = createBeeScene(el, flight, opts);
+        const scene = createBeeScene(el, flight.current, opts);
         // Draw only while the bee is on screen and the tab is visible.
         let onScreen = false;
         const sync = () => scene.setRunning(onScreen && !document.hidden);

@@ -9,12 +9,15 @@ files) — see `docs/DEPLOY-CLOUDFLARE.md` — or on any Node server.
 - **One page per chapter**: `/` (home), `/shop` (honey, bee products and
   equipment together; `/shop#honey` etc. pick the tab), `/why`, `/payment`,
   `/faq`, `/contact`, `/blog`
-- **"The life of a honey bee"** on `/why`: egg, larva, pupa, adult with real
-  photographs (Wikimedia Commons, credits in `public/life-cycle/CREDITS.md`)
-  and sourced facts. A 3D bee drawn with Three.js (`components/bee3d/`, modelled in
-  code, loaded only on that page) flies in a zigzag tied to the scroll
-  (`components/bee3d/use-scroll-flight.ts`). Texts, photos and sources: `lib/life-cycle.ts`.
-  Without WebGL a lighter CSS bee is shown; reduced-motion settings are respected.
+- **"The life of a honey bee"** on `/why`: a pinned scroll story (the screen
+  stays in place while the visitor scrolls; egg, larva, pupa, adult follow
+  one another) with real photographs (Wikimedia Commons, credits in
+  `public/life-cycle/CREDITS.md`) and sourced facts. A 3D bee drawn with
+  Three.js (`components/bee3d/`, modelled in code, loaded only on that page)
+  zigzags over the stage, tied to the scroll
+  (`components/bee3d/use-story-scroll.ts`). Texts, photos and sources:
+  `lib/life-cycle.ts`. Without WebGL a lighter CSS bee is shown;
+  reduced-motion settings are respected.
 - **"How bees make honey"** on `/why`: six illustrated steps with checked
   facts, along a line that fills as the visitor scrolls
   (`components/HoneyJourney.tsx`, texts in
